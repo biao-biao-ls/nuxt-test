@@ -1,0 +1,64 @@
+{
+  "3D Printing": [
+    {
+      "employeeEnName": "test_01",
+      "quickCepId": "1938524999731687426",
+      "imageFileIndexId": "8454635530497527808",
+      "roleNameEn": "Business Development Representative",
+      "isOnline": false
+    },
+    {
+      "employeeEnName": "Alex",
+      "quickCepId": "1946056607741292545",
+      "imageFileIndexId": "8593772229182779392",
+      "roleNameEn": "Client Relations Manager",
+      "isOnline": false
+    },
+    {
+      "employeeEnName": "Xie Yulang",
+      "quickCepId": "1948591855846862849",
+      "imageFileIndexId": "8636932414868172800",
+      "roleNameEn": "Account Manager",
+      "isOnline": false
+    }
+  ],
+  "PCB/SMT/Steel": [
+    {
+      "employeeEnName": "caocao",
+      "quickCepId": "1942407035945005058",
+      "imageFileIndexId": "8454682774852571136",
+      "roleNameEn": "Quality Assurance Agent",
+      "isOnline": false
+    },
+    {
+      "employeeEnName": "xiaozhou",
+      "quickCepId": "1938144757068906498",
+      "imageFileIndexId": "8593772030083227648",
+      "roleNameEn": "Technical Support Specialist",
+      "isOnline": false
+    },
+    {
+      "employeeEnName": "yxy",
+      "quickCepId": "1938475369237098497",
+      "imageFileIndexId": "8630496439324213248",
+      "roleNameEn": "Account Manager",
+      "isOnline": false
+    }
+  ],
+  "PCB Layout": [
+    {
+      "employeeEnName": "2121",
+      "quickCepId": "1938532940512280577",
+      "imageFileIndexId": "8455707418908921856",
+      "roleNameEn": "Customer Service Representative",
+      "isOnline": false
+    },
+    {
+      "employeeEnName": "Ryan",
+      "quickCepId": "1942107108466016257",
+      "imageFileIndexId": "8630498147114913792",
+      "roleNameEn": "Sales Consultant",
+      "isOnline": false
+    }
+  ]
+}
