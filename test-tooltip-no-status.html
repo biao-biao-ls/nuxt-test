@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tooltip 不显示在线状态测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .section {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .before .section-title {
+            color: #dc3545;
+        }
+        
+        .after .section-title {
+            color: #28a745;
+        }
+        
+        .agent-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.2s ease;
+        }
+        
+        .agent-item:hover {
+            background: #f0f8ff;
+            border-color: #007bff;
+        }
+        
+        .agent-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .agent-info {
+            flex: 1;
+        }
+        
+        .agent-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        
+        .agent-role {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+            z-index: 99999;
+            display: none;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            max-width: 250px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .improvements {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .improvements h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+        
+        .improvements ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .improvements li {
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .improvement-item {
+            color: #28a745;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Tooltip 不显示在线状态测试</div>
+        <div class="description">
+            对比修改前后的 tooltip 内容，确认不再显示在线状态信息
+        </div>
+        
+        <div class="comparison">
+            <div class="section before">
+                <div class="section-title">修改前 - 显示在线状态</div>
+                
+                <div class="agent-item" 
+                     onmouseover="showOldTooltip(event, 'James', 'Sales Manager - 在线空闲')"
+                     onmouseout="hideTooltip('old-tooltip')">
+                    <div class="agent-avatar">J</div>
+                    <div class="agent-info">
+                        <div class="agent-name">James</div>
+                        <div class="agent-role">Sales Manager</div>
+                    </div>
+                </div>
+                
+                <div class="agent-item" 
+                     onmouseover="showOldTooltip(event, 'Nathan', 'Technical Support - 在线忙碌')"
+                     onmouseout="hideTooltip('old-tooltip')">
+                    <div class="agent-avatar">N</div>
+                    <div class="agent-info">
+                        <div class="agent-name">Nathan</div>
+                        <div class="agent-role">Technical Support</div>
+                    </div>
+                </div>
+                
+                <div class="agent-item" 
+                     onmouseover="showOldTooltip(event, 'Michael', 'Account Manager - 离线')"
+                     onmouseout="hideTooltip('old-tooltip')">
+                    <div class="agent-avatar">M</div>
+                    <div class="agent-info">
+                        <div class="agent-name">Michael</div>
+                        <div class="agent-role">Account Manager</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section after">
+                <div class="section-title">修改后 - 不显示在线状态</div>
+                
+                <div class="agent-item" 
+                     onmouseover="showNewTooltip(event, 'James', 'Sales Manager')"
+                     onmouseout="hideTooltip('new-tooltip')">
+                    <div class="agent-avatar">J</div>
+                    <div class="agent-info">
+                        <div class="agent-name">James</div>
+                        <div class="agent-role">Sales Manager</div>
+                    </div>
+                </div>
+                
+                <div class="agent-item" 
+                     onmouseover="showNewTooltip(event, 'Nathan', 'Technical Support')"
+                     onmouseout="hideTooltip('new-tooltip')">
+                    <div class="agent-avatar">N</div>
+                    <div class="agent-info">
+                        <div class="agent-name">Nathan</div>
+                        <div class="agent-role">Technical Support</div>
+                    </div>
+                </div>
+                
+                <div class="agent-item" 
+                     onmouseover="showNewTooltip(event, 'Michael', 'Account Manager')"
+                     onmouseout="hideTooltip('new-tooltip')">
+                    <div class="agent-avatar">M</div>
+                    <div class="agent-info">
+                        <div class="agent-name">Michael</div>
+                        <div class="agent-role">Account Manager</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="improvements">
+            <h3>修改内容</h3>
+            <ul>
+                <li class="improvement-item">移除了 tooltip 中的在线状态显示（如"在线空闲"、"在线忙碌"、"离线"）</li>
+                <li class="improvement-item">移除了 title 属性中的在线状态信息</li>
+                <li class="improvement-item">保留了客服姓名和职位信息</li>
+                <li class="improvement-item">简化了 tooltip 内容，使其更加简洁</li>
+                <li class="improvement-item">修改涉及 renderOnlineAgents 和 renderCurrentAgent 方法</li>
+            </ul>
+        </div>
+        
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ffc107;">
+            <strong>测试说明：</strong>
+            <p style="margin: 5px 0 0 0;">
+                鼠标悬停在左右两侧的客服头像上，对比 tooltip 内容的差异。
+                修改后的版本不再显示"在线空闲"、"在线忙碌"等状态信息，只显示客服姓名和职位。
+            </p>
+        </div>
+    </div>
+    
+    <!-- Tooltip 元素 -->
+    <div id="old-tooltip" class="tooltip"></div>
+    <div id="new-tooltip" class="tooltip"></div>
+    
+    <script>
+        function showOldTooltip(event, name, roleWithStatus) {
+            const tooltip = document.getElementById('old-tooltip');
+            tooltip.innerHTML = `<div style="font-weight: 600; margin-bottom: 2px;">${name}</div><div style="opacity: 0.9; font-size: 12px;">${roleWithStatus}</div>`;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (event.clientX + 12) + 'px';
+            tooltip.style.top = (event.clientY - 50) + 'px';
+        }
+        
+        function showNewTooltip(event, name, role) {
+            const tooltip = document.getElementById('new-tooltip');
+            tooltip.innerHTML = `<div style="font-weight: 600; margin-bottom: 2px;">${name}</div><div style="opacity: 0.9; font-size: 12px;">${role}</div>`;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (event.clientX + 12) + 'px';
+            tooltip.style.top = (event.clientY - 50) + 'px';
+        }
+        
+        function hideTooltip(tooltipId) {
+            const tooltip = document.getElementById(tooltipId);
+            if (tooltip) {
+                tooltip.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

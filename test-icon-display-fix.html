@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width-device-width, initial-scale=1.0">
+    <title>图标显示修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .comparison-item {
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .comparison-item h4 {
+            margin: 0 0 15px 0;
+            color: #495057;
+        }
+        .icon-container {
+            position: relative;
+            width: 200px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0 auto 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 修复前的样式 */
+        .old-open-leftbar-icon {
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: absolute;
+          top: 10px;
+          right: 65px;
+        }
+
+        .old-open-leftbar-icon svg {
+          fill: white;
+        }
+        
+        /* 修复后的样式 */
+        .new-open-leftbar-icon {
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: absolute;
+          top: 10px;
+          right: 65px;
+        }
+
+        .new-open-leftbar-icon svg {
+          fill: white !important;
+          width: 24px;
+          height: 24px;
+        }
+
+        .new-open-leftbar-icon svg path {
+          fill: white !important;
+        }
+
+        .expand-icon-reverse {
+          transform: rotate(180deg);
+        }
+        
+        .problem-list {
+            text-align: left;
+            margin-top: 10px;
+        }
+        .problem-list li {
+            margin: 5px 0;
+            color: #dc3545;
+        }
+        .fix-list {
+            text-align: left;
+            margin-top: 10px;
+        }
+        .fix-list li {
+            margin: 5px 0;
+            color: #28a745;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-title">图标显示修复对比测试</div>
+        
+        <div class="comparison-grid">
+            <div class="comparison-item">
+                <h4>修复前（问题版本）</h4>
+                <div class="icon-container">
+                    <div class="old-open-leftbar-icon" title="修复前的图标">
+                        <svg t="1758522231178" class="expand-icon-reverse" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
+                          <path d="M387.498667 640.341333a37.973333 37.973333 0 0 1-41.898667-62.762666l3.157333-2.304 99.925334-66.645334-103.210667-86.016a37.930667 37.930667 0 1 1 48.554667-58.24l142.250666 118.485334a37.973333 37.973333 0 0 1-3.242666 60.714666L390.826667 638.293333l-3.328 2.005334zM715.818667 132.693333V867.584a37.930667 37.930667 0 1 1-75.818667 0V132.693333a37.930667 37.930667 0 0 1 75.818667 0z" fill="#999" p-id="15574"></path>
+                          <path d="M274.944 161.152V85.333333H749.013333v75.818667H274.944z m-113.792 113.792V749.056a113.792 113.792 0 0 0 113.792 113.792H749.013333a113.792 113.792 0 0 0 113.792-113.792V274.944V938.666667l9.770667 0.256a189.653333 189.653333 0 0 1 179.626667 179.626667L938.666667 274.944V749.056a189.653333 189.653333 0 0 1-179.882667 189.354667L749.013333 938.666667H274.986667l-9.813334-0.256A189.610667 189.610667 0 0 1 85.333333 749.056V274.944l0.256-9.728a189.653333 189.653333 0 0 1 179.626667-179.626667l9.728-0.256V161.152a113.834667 113.834667 0 0 0-113.792 113.792z" fill="#999" p-id="15575"></path>
+                        </svg>
+                    </div>
+                </div>
+                <ul class="problem-list">
+                    <li>图标颜色为灰色 (#999)</li>
+                    <li>SVG尺寸20x20可能显示不全</li>
+                    <li>内联fill属性覆盖CSS</li>
+                </ul>
+            </div>
+            
+            <div class="comparison-item">
+                <h4>修复后（正确版本）</h4>
+                <div class="icon-container">
+                    <div class="new-open-leftbar-icon" title="修复后的图标">
+                        <svg class="expand-icon-reverse" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+                          <path d="M387.498667 640.341333a37.973333 37.973333 0 0 1-41.898667-62.762666l3.157333-2.304 99.925334-66.645334-103.210667-86.016a37.930667 37.930667 0 1 1 48.554667-58.24l142.250666 118.485334a37.973333 37.973333 0 0 1-3.242666 60.714666L390.826667 638.293333l-3.328 2.005334zM715.818667 132.693333V867.584a37.930667 37.930667 0 1 1-75.818667 0V132.693333a37.930667 37.930667 0 0 1 75.818667 0z"></path>
+                          <path d="M274.944 161.152V85.333333H749.013333v75.818667H274.944z m-113.792 113.792V749.056a113.792 113.792 0 0 0 113.792 113.792H749.013333a113.792 113.792 0 0 0 113.792-113.792V274.944V938.666667l9.770667 0.256a189.653333 189.653333 0 0 1 179.626667 179.626667L938.666667 274.944V749.056a189.653333 189.653333 0 0 1-179.882667 189.354667L749.013333 938.666667H274.986667l-9.813334-0.256A189.610667 189.610667 0 0 1 85.333333 749.056V274.944l0.256-9.728a189.653333 189.653333 0 0 1 179.626667-179.626667l9.728-0.256V161.152a113.834667 113.834667 0 0 0-113.792 113.792z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <ul class="fix-list">
+                    <li>图标颜色为白色</li>
+                    <li>SVG尺寸调整为24x24</li>
+                    <li>使用!important强制覆盖</li>
+                    <li>移除内联fill属性</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-container">
+            <h4>问题分析</h4>
+            <div class="code-block">
+<strong>问题1：内联fill属性覆盖CSS</strong>
+SVG中的 fill="#999" 内联样式优先级高于CSS的 fill: white
+
+<strong>问题2：SVG尺寸不合适</strong>
+原来：width="20" height="20" 在28px容器中可能显示不完整
+修复：width="24" height="24" 更好地填充容器
+
+<strong>问题3：CSS选择器优先级不够</strong>
+原来：.open-leftbar-icon svg { fill: white; }
+修复：.open-leftbar-icon svg { fill: white !important; }
+      .open-leftbar-icon svg path { fill: white !important; }
+            </div>
+        </div>
+        
+        <div class="test-container">
+            <h4>修复方案</h4>
+            <div class="code-block">
+<strong>1. 移除SVG内联fill属性</strong>
+- 从 &lt;path fill="#999"&gt; 改为 &lt;path&gt;
+- 让CSS样式能够生效
+
+<strong>2. 调整SVG尺寸</strong>
+- 从 width="20" height="20" 改为 width="24" height="24"
+- 在28px容器中有更好的显示效果
+
+<strong>3. 增强CSS选择器</strong>
+- 添加 !important 确保样式优先级
+- 同时设置svg和path的fill属性
+
+<strong>4. 清理不必要的属性</strong>
+- 移除 t、version、p-id 等不必要的SVG属性
+- 保持代码简洁
+            </div>
+        </div>
+    </div>
+</body>
+</html>

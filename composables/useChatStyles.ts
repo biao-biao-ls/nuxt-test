@@ -10,19 +10,14 @@ export class ChatStyles {
     return `
       <style>
         .chat-header {
-          background: #f8f9fa;
-          padding: 8px 12px;
-          border-bottom: 1px solid #e9ecef;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         .chat-header-agents {
           display: flex;
           align-items: center;
-          gap: 8px;
         }
 
         .chat-header-controls {
@@ -31,13 +26,43 @@ export class ChatStyles {
           gap: 8px;
         }
 
-        .current-agent, .online-agent {
+        .online-agent {
           position: relative;
           cursor: pointer;
           transition: transform 0.2s ease;
+          z-index: 1;
         }
 
-        .current-agent:hover, .online-agent:hover {
+        .current-agent {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-right: 12px;
+        }
+
+        .agent-avatar-wrapper {
+          position: relative;
+          flex-shrink: 0;
+        }
+
+        .default-avatar {
+          display: block;
+          border-radius: 50%;
+          overflow: hidden;
+        }
+
+        .agent-name-display {
+          font-size: 14px;
+          font-weight: 500;
+          color: #444;
+          white-space: nowrap;
+        }
+
+        .online-agent:not(:first-child) {
+          margin-left: -3px;
+        }
+
+        .online-agent:hover {
           transform: scale(1.05);
         }
 
@@ -48,22 +73,22 @@ export class ChatStyles {
         }
 
         .agent-avatar.current {
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           border-width: 2px;
         }
 
         .agent-avatar.online {
-          width: 28px;
-          height: 28px;
+          width: 25px;
+          height: 25px;
         }
 
         .status-indicator {
           position: absolute;
           right: 0px;
           top: 2px;
-          width: 6px;
-          height: 6px;
+          width: 4px;
+          height: 4px;
           border: 1px solid white;
           border-radius: 50%;
         }
@@ -89,6 +114,34 @@ export class ChatStyles {
 
         .more-agents:hover {
           background: #5a6268;
+        }
+
+        .open-leftbar-icon {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: absolute;
+          top: 10px;
+          right: 65px;
+          overflow: visible;
+        }
+
+        .open-leftbar-icon svg {
+          fill: white !important;
+          width: 24px;
+          height: 24px;
+          display: block;
+        }
+
+        .open-leftbar-icon svg path {
+          fill: white !important;
+        }
+
+        .expand-icon-reverse {
         }
 
         .no-agents {
@@ -119,17 +172,34 @@ export class ChatStyles {
         }
 
         .agent-tooltip {
-          position: absolute;
-          background: rgba(0,0,0,0.8);
-          color: white;
-          padding: 6px 10px;
-          border-radius: 4px;
-          font-size: 12px;
-          z-index: 1000;
-          display: none;
-          pointer-events: none;
-          white-space: nowrap;
+          position: absolute !important;
+          background: rgba(0, 0, 0, 0.9) !important;
+          color: white !important;
+          padding: 10px 12px !important;
+          border-radius: 8px !important;
+          font-size: 13px !important;
+          font-weight: 500 !important;
+          line-height: 1.4 !important;
+          z-index: 10000 !important;
+          display: none !important;
+          pointer-events: none !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+          max-width: 250px !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
         }
+
+        .agent-tooltip::before {
+          content: '' !important;
+          position: absolute !important;
+          top: 100% !important;
+          left: 50% !important;
+          margin-left: -5px !important;
+          border-width: 5px !important;
+          border-style: solid !important;
+          border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent !important;
+        }
+
       </style>
     `;
   }
@@ -145,7 +215,6 @@ export class ChatStyles {
           height: 100%;
           background: white;
           box-sizing: border-box;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           z-index: 999;
           display: flex;
           flex-direction: column;
@@ -306,16 +375,32 @@ export class ChatStyles {
         }
 
         .full-agent-tooltip {
-          position: absolute;
-          background: rgba(0,0,0,0.9);
-          color: white;
-          padding: 8px 12px;
-          border-radius: 6px;
-          font-size: 12px;
-          z-index: 1000;
-          display: none;
-          pointer-events: none;
-          max-width: 200px;
+          position: absolute !important;
+          background: rgba(0, 0, 0, 0.9) !important;
+          color: white !important;
+          padding: 12px 14px !important;
+          border-radius: 10px !important;
+          font-size: 13px !important;
+          line-height: 1.5 !important;
+          z-index: 10000 !important;
+          display: none !important;
+          pointer-events: none !important;
+          max-width: 280px !important;
+          min-width: 140px !important;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3) !important;
+          backdrop-filter: blur(4px) !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .full-agent-tooltip::before {
+          content: '' !important;
+          position: absolute !important;
+          top: 100% !important;
+          left: 20px !important;
+          border-width: 6px !important;
+          border-style: solid !important;
+          border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent !important;
         }
       </style>
     `;
@@ -334,7 +419,6 @@ export class ChatStyles {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         .footer-btn {
@@ -348,7 +432,7 @@ export class ChatStyles {
         }
 
         .footer-btn.voice {
-          background: #28a745;
+          background: #48DE8C;
           color: white;
         }
 

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原始图标显示修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .comparison-item {
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .comparison-item h4 {
+            margin: 0 0 15px 0;
+            color: #495057;
+        }
+        .icon-container {
+            position: relative;
+            width: 200px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0 auto 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 原始小尺寸版本 */
+        .small-icon {
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          position: absolute;
+          top: 10px;
+          right: 65px;
+        }
+
+        .small-icon svg {
+          fill: white !important;
+          width: 24px;
+          height: 24px;
+        }
+
+        .small-icon svg path {
+          fill: white !important;
+        }
+        
+        /* 修复后的大尺寸版本 */
+        .large-icon {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          position: absolute;
+          top: 8px;
+          right: 63px;
+          overflow: visible;
+        }
+
+        .large-icon svg {
+          fill: white !important;
+          width: 28px;
+          height: 28px;
+          display: block;
+        }
+
+        .large-icon svg path {
+          fill: white !important;
+        }
+
+        /* 调试版本 - 带边框 */
+        .debug-icon {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          position: absolute;
+          top: 8px;
+          right: 63px;
+          overflow: visible;
+          border: 2px solid rgba(255,255,255,0.5);
+          background: rgba(255,255,255,0.1);
+        }
+
+        .debug-icon svg {
+          fill: white !important;
+          width: 28px;
+          height: 28px;
+          display: block;
+          border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .debug-icon svg path {
+          fill: white !important;
+        }
+
+        .expand-icon-reverse {
+          transform: rotate(180deg);
+        }
+        
+        .description {
+            text-align: left;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .description li {
+            margin: 5px 0;
+        }
+        .pros {
+            color: #28a745;
+        }
+        .cons {
+            color: #dc3545;
+        }
+        .neutral {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-title">原始图标尺寸调整对比测试</div>
+        
+        <div class="comparison-grid">
+            <div class="comparison-item">
+                <h4>原始小尺寸（问题版本）</h4>
+                <div class="icon-container">
+                    <div class="small-icon" title="原始小尺寸">
+                        <svg class="expand-icon-reverse" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M387.498667 640.341333a37.973333 37.973333 0 0 1-41.898667-62.762666l3.157333-2.304 99.925334-66.645334-103.210667-86.016a37.930667 37.930667 0 1 1 48.554667-58.24l142.250666 118.485334a37.973333 37.973333 0 0 1-3.242666 60.714666L390.826667 638.293333l-3.328 2.005334zM715.818667 132.693333V867.584a37.930667 37.930667 0 1 1-75.818667 0V132.693333a37.930667 37.930667 0 0 1 75.818667 0z"></path>
+                          <path d="M274.944 161.152V85.333333H749.013333v75.818667H274.944z m-113.792 113.792V749.056a113.792 113.792 0 0 0 113.792 113.792H749.013333a113.792 113.792 0 0 0 113.792-113.792V274.944V938.666667l9.770667 0.256a189.653333 189.653333 0 0 1 179.626667 179.626667L938.666667 274.944V749.056a189.653333 189.653333 0 0 1-179.882667 189.354667L749.013333 938.666667H274.986667l-9.813334-0.256A189.610667 189.610667 0 0 1 85.333333 749.056V274.944l0.256-9.728a189.653333 189.653333 0 0 1 179.626667-179.626667l9.728-0.256V161.152a113.834667 113.834667 0 0 0-113.792 113.792z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <ul class="description">
+                    <li class="cons">容器: 28×28px</li>
+                    <li class="cons">SVG: 24×24px</li>
+                    <li class="cons">可能显示不完整</li>
+                    <li class="neutral">viewBox: 1024×1024</li>
+                </ul>
+            </div>
+            
+            <div class="comparison-item">
+                <h4>修复后大尺寸</h4>
+                <div class="icon-container">
+                    <div class="large-icon" title="修复后大尺寸">
+                        <svg class="expand-icon-reverse" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M387.498667 640.341333a37.973333 37.973333 0 0 1-41.898667-62.762666l3.157333-2.304 99.925334-66.645334-103.210667-86.016a37.930667 37.930667 0 1 1 48.554667-58.24l142.250666 118.485334a37.973333 37.973333 0 0 1-3.242666 60.714666L390.826667 638.293333l-3.328 2.005334zM715.818667 132.693333V867.584a37.930667 37.930667 0 1 1-75.818667 0V132.693333a37.930667 37.930667 0 0 1 75.818667 0z"></path>
+                          <path d="M274.944 161.152V85.333333H749.013333v75.818667H274.944z m-113.792 113.792V749.056a113.792 113.792 0 0 0 113.792 113.792H749.013333a113.792 113.792 0 0 0 113.792-113.792V274.944V938.666667l9.770667 0.256a189.653333 189.653333 0 0 1 179.626667 179.626667L938.666667 274.944V749.056a189.653333 189.653333 0 0 1-179.882667 189.354667L749.013333 938.666667H274.986667l-9.813334-0.256A189.610667 189.610667 0 0 1 85.333333 749.056V274.944l0.256-9.728a189.653333 189.653333 0 0 1 179.626667-179.626667l9.728-0.256V161.152a113.834667 113.834667 0 0 0-113.792 113.792z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <ul class="description">
+                    <li class="pros">容器: 32×32px</li>
+                    <li class="pros">SVG: 28×28px</li>
+                    <li class="pros">更大显示空间</li>
+                    <li class="pros">overflow: visible</li>
+                </ul>
+            </div>
+
+            <div class="comparison-item">
+                <h4>调试版本（带边框）</h4>
+                <div class="icon-container">
+                    <div class="debug-icon" title="调试版本">
+                        <svg class="expand-icon-reverse" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M387.498667 640.341333a37.973333 37.973333 0 0 1-41.898667-62.762666l3.157333-2.304 99.925334-66.645334-103.210667-86.016a37.930667 37.930667 0 1 1 48.554667-58.24l142.250666 118.485334a37.973333 37.973333 0 0 1-3.242666 60.714666L390.826667 638.293333l-3.328 2.005334zM715.818667 132.693333V867.584a37.930667 37.930667 0 1 1-75.818667 0V132.693333a37.930667 37.930667 0 0 1 75.818667 0z"></path>
+                          <path d="M274.944 161.152V85.333333H749.013333v75.818667H274.944z m-113.792 113.792V749.056a113.792 113.792 0 0 0 113.792 113.792H749.013333a113.792 113.792 0 0 0 113.792-113.792V274.944V938.666667l9.770667 0.256a189.653333 189.653333 0 0 1 179.626667 179.626667L938.666667 274.944V749.056a189.653333 189.653333 0 0 1-179.882667 189.354667L749.013333 938.666667H274.986667l-9.813334-0.256A189.610667 189.610667 0 0 1 85.333333 749.056V274.944l0.256-9.728a189.653333 189.653333 0 0 1 179.626667-179.626667l9.728-0.256V161.152a113.834667 113.834667 0 0 0-113.792 113.792z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <ul class="description">
+                    <li class="pros">可见容器边界</li>
+                    <li class="pros">可见SVG边界</li>
+                    <li class="pros">便于调试定位</li>
+                    <li class="neutral">保持原始图标</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-container">
+            <h4>修复策略说明</h4>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0;">
+                <h5>问题分析：</h5>
+                <ul>
+                    <li><strong>尺寸过小</strong>: 原始容器28×28px，SVG 24×24px 对于复杂图标可能不够</li>
+                    <li><strong>压缩比过高</strong>: viewBox 1024×1024 压缩到24×24，压缩比42.67:1</li>
+                    <li><strong>细节丢失</strong>: 复杂路径在小尺寸下可能丢失细节</li>
+                </ul>
+                
+                <h5>修复方案：</h5>
+                <ul>
+                    <li><strong>增大容器</strong>: 从28×28px 增加到32×32px</li>
+                    <li><strong>增大SVG</strong>: 从24×24px 增加到28×28px</li>
+                    <li><strong>调整位置</strong>: 微调top和right位置适应新尺寸</li>
+                    <li><strong>添加overflow</strong>: 设置overflow: visible 防止裁剪</li>
+                    <li><strong>保持图标</strong>: 完全保留原始图标设计</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-container">
+            <h4>尺寸对比表</h4>
+            <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                <tr style="background: #f8f9fa;">
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">属性</th>
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">原始尺寸</th>
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">修复后尺寸</th>
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">改进</th>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">容器尺寸</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">28×28px</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">32×32px</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; color: #28a745;">+14.3%</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">SVG尺寸</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">24×24px</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">28×28px</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; color: #28a745;">+16.7%</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">压缩比</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">42.67:1</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">36.57:1</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; color: #28a745;">-14.3%</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">top位置</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">10px</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">8px</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; color: #6c757d;">微调</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">right位置</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">65px</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">63px</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; color: #6c757d;">微调</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="test-container">
+            <h4>预期效果</h4>
+            <ul style="margin: 10px 0;">
+                <li>✅ <strong>保持原始图标</strong>: 完全使用原来的图标设计</li>
+                <li>✅ <strong>完整显示</strong>: 增大尺寸确保图标完整可见</li>
+                <li>✅ <strong>白色填充</strong>: 图标颜色为白色</li>
+                <li>✅ <strong>清晰可见</strong>: 在深色背景下清晰可见</li>
+                <li>✅ <strong>功能正常</strong>: 点击和hover效果正常</li>
+                <li>✅ <strong>位置准确</strong>: 微调位置保持在正确位置</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
