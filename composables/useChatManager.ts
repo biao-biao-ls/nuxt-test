@@ -10,6 +10,17 @@ declare global {
   }
 }
 
+// 定义客服数据接口
+interface CustomerServiceAgent {
+  employeeEnName: string;
+  quickCepId: string;
+  imageFileIndexId: string;
+  roleNameEn: string;
+  isOnline: boolean;
+  status: number;
+  businessLine: string;
+}
+
 /**
  * 聊天管理器
  * 负责初始化和管理整个聊天系统
@@ -19,15 +30,16 @@ export class ChatManager {
   private isInitialized: boolean = false;
   private retryCount: number = 0;
   private readonly maxRetries: number = 20;
+  private customerServiceData?: CustomerServiceAgent[];
 
-  constructor() {
-    // 构造函数保持简洁
+  constructor(customerServiceData?: CustomerServiceAgent[]) {
+    this.customerServiceData = customerServiceData;
   }
 
   /**
    * 初始化聊天系统
    */
-  async init(): Promise<void> {
+  async init(customerServiceData?: CustomerServiceAgent[]): Promise<void> {
     if (this.isInitialized) {
       console.log("聊天系统已经初始化");
       return;
@@ -39,8 +51,17 @@ export class ChatManager {
       // 等待API准备就绪
       await this.waitForAPI();
 
+      // 使用传入的客服数据或构造函数中的数据
+      const finalCustomerServiceData = customerServiceData || this.customerServiceData;
+
       // 创建UI管理器实例
-      this.chatUI = new ChatCustomUI();
+      this.chatUI = new ChatCustomUI(finalCustomerServiceData);
+
+      if (finalCustomerServiceData) {
+        console.log(`使用传入的客服数据，共 ${finalCustomerServiceData.length} 个客服`);
+      } else {
+        console.log("使用默认客服数据");
+      }
 
       // 设置客服状态变化回调
       this.chatUI.setOnAgentStatusChangeCallback(() => {
@@ -120,8 +141,9 @@ export class ChatManager {
       window.quickChatApi.customHeader.mount((container: HTMLElement) => {
         if (this.chatUI) {
           this.chatUI.state.containers.header = container;
-          container.innerHTML = this.chatUI.generateHeaderHTML();
-          console.log("头部组件已挂载");
+          // 初始化时只渲染 .current-agent，其他元素等待特定时机
+          container.innerHTML = this.chatUI.generateInitialHeaderHTML();
+          console.log("头部组件已挂载（初始状态）");
         }
       });
     }
@@ -131,13 +153,14 @@ export class ChatManager {
       window.quickChatApi.customLeftBar.mount((container: HTMLElement) => {
         if (this.chatUI) {
           this.chatUI.state.containers.leftBar = container;
-          container.innerHTML = this.chatUI.generateLeftBarHTML();
-          console.log("左侧栏组件已挂载");
+          // 初始化时不渲染内容，等待特定时机
+          container.innerHTML = "";
+          console.log("左侧栏组件已挂载（等待初始化）");
         }
       });
 
-      // 根据客服在线状态决定是否显示左侧栏
-      this.updateLeftBarVisibility();
+      // 初始时隐藏左侧栏
+      window.quickChatApi.customLeftBar.setIsShow(false);
     }
 
     // 挂载底部组件
@@ -145,11 +168,15 @@ export class ChatManager {
       window.quickChatApi.customFooter.mount((container: HTMLElement) => {
         if (this.chatUI) {
           this.chatUI.state.containers.footer = container;
-          container.innerHTML = this.chatUI.generateFooterHTML();
-          console.log("底部组件已挂载");
+          // 初始化时不渲染内容，等待特定时机
+          container.innerHTML = "";
+          console.log("底部组件已挂载（等待初始化）");
         }
       });
     }
+
+    // 开始监听聊天窗口状态
+    this.startChatWindowMonitoring();
   }
 
   /**
@@ -356,6 +383,247 @@ export class ChatManager {
   }
 
   /**
+   * 开始监听聊天窗口状态
+   * 使用 MutationObserver 监听 iframe 中的 DOM 变化
+   */
+  private startChatWindowMonitoring(): void {
+    console.log("开始监听聊天窗口状态（使用 MutationObserver）...");
+    
+    let isCustomElementsInitialized = false;
+    let iframeObserver: MutationObserver | null = null;
+    let chatBodyObserver: MutationObserver | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    const checkChatWindow = (): boolean => {
+      try {
+        const iframe = document.getElementById("quick-chat-iframe") as HTMLIFrameElement;
+        if (!iframe || !iframe.contentDocument) {
+          return false;
+        }
+
+        const chatBodyContent = iframe.contentDocument.querySelector("#chat-body-content");
+        const visitorMessage = chatBodyContent?.querySelector(".visitor-message");
+        
+        if (visitorMessage && !isCustomElementsInitialized) {
+          console.log("检测到聊天窗口已准备就绪，开始初始化自定义元素");
+          isCustomElementsInitialized = true;
+          
+          // 清理观察器和定时器
+          cleanup();
+          
+          this.initializeCustomElements();
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        // 忽略跨域错误，继续监听
+        return false;
+      }
+    };
+
+    const cleanup = () => {
+      if (iframeObserver) {
+        iframeObserver.disconnect();
+        iframeObserver = null;
+      }
+      if (chatBodyObserver) {
+        chatBodyObserver.disconnect();
+        chatBodyObserver = null;
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    const setupChatBodyObserver = (iframe: HTMLIFrameElement) => {
+      try {
+        if (!iframe.contentDocument) return;
+        
+        const chatBodyContent = iframe.contentDocument.querySelector("#chat-body-content");
+        if (chatBodyContent) {
+          console.log("找到 #chat-body-content，开始监听其子元素变化");
+          
+          chatBodyObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+              if (mutation.type === 'childList') {
+                // 检查新增的节点中是否有 .visitor-message
+                for (const node of mutation.addedNodes) {
+                  if (node.nodeType === Node.ELEMENT_NODE) {
+                    const element = node as Element;
+                    if (element.classList?.contains('visitor-message') || 
+                        element.querySelector?.('.visitor-message')) {
+                      console.log("检测到 .visitor-message 元素被添加");
+                      if (checkChatWindow()) {
+                        return;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          });
+
+          chatBodyObserver.observe(chatBodyContent, {
+            childList: true,
+            subtree: true
+          });
+        } else {
+          console.log("#chat-body-content 尚未存在，继续等待");
+        }
+      } catch (error) {
+        console.warn("设置 chat-body 观察器时出错:", error);
+      }
+    };
+
+    const setupIframeObserver = () => {
+      // 监听页面中 iframe 的变化
+      iframeObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type === 'childList') {
+            for (const node of mutation.addedNodes) {
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                const element = node as Element;
+                if (element.id === 'quick-chat-iframe' || 
+                    element.querySelector?.('#quick-chat-iframe')) {
+                  console.log("检测到 iframe 被添加到页面");
+                  setTimeout(() => {
+                    const iframe = document.getElementById("quick-chat-iframe") as HTMLIFrameElement;
+                    if (iframe) {
+                      setupIframeLoadListener(iframe);
+                    }
+                  }, 100);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      iframeObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    };
+
+    const setupIframeLoadListener = (iframe: HTMLIFrameElement) => {
+      const onIframeLoad = () => {
+        console.log("iframe 加载完成，检查内容并设置观察器");
+        
+        // 立即检查一次
+        if (checkChatWindow()) {
+          return;
+        }
+        
+        // 设置 iframe 内容观察器
+        setupChatBodyObserver(iframe);
+        
+        // 如果 iframe 内容还没有 #chat-body-content，监听其变化
+        try {
+          if (iframe.contentDocument) {
+            const iframeContentObserver = new MutationObserver((mutations) => {
+              for (const mutation of mutations) {
+                if (mutation.type === 'childList') {
+                  for (const node of mutation.addedNodes) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                      const element = node as Element;
+                      if (element.id === 'chat-body-content' || 
+                          element.querySelector?.('#chat-body-content')) {
+                        console.log("检测到 #chat-body-content 被添加");
+                        setupChatBodyObserver(iframe);
+                        iframeContentObserver.disconnect();
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
+            });
+
+            iframeContentObserver.observe(iframe.contentDocument.body || iframe.contentDocument.documentElement, {
+              childList: true,
+              subtree: true
+            });
+          }
+        } catch (error) {
+          console.warn("设置 iframe 内容观察器时出错:", error);
+        }
+      };
+
+      iframe.addEventListener("load", onIframeLoad);
+      
+      // 如果 iframe 已经加载完成
+      if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') {
+        onIframeLoad();
+      }
+    };
+
+    // 立即检查一次
+    if (checkChatWindow()) {
+      return;
+    }
+
+    // 检查 iframe 是否已经存在
+    const existingIframe = document.getElementById("quick-chat-iframe") as HTMLIFrameElement;
+    if (existingIframe) {
+      console.log("发现已存在的 iframe，设置监听器");
+      setupIframeLoadListener(existingIframe);
+    } else {
+      console.log("iframe 尚未存在，监听页面变化");
+      setupIframeObserver();
+    }
+
+    // 设置超时保护（30秒后强制初始化）
+    timeoutId = setTimeout(() => {
+      if (!isCustomElementsInitialized) {
+        console.log("监听超时，强制初始化自定义元素");
+        cleanup();
+        this.initializeCustomElements();
+      }
+    }, 30000);
+  }
+
+  /**
+   * 初始化自定义元素
+   * 当检测到聊天窗口准备就绪时调用
+   */
+  private initializeCustomElements(): void {
+    console.log("正在初始化自定义区域元素...");
+    
+    if (!this.chatUI) {
+      console.error("ChatUI 未初始化");
+      return;
+    }
+
+    // 初始化头部的在线客服和打开左侧栏图标
+    if (this.chatUI.state.containers.header) {
+      this.chatUI.state.containers.header.innerHTML = this.chatUI.generateHeaderHTML();
+      console.log("头部自定义区域已初始化");
+    }
+
+    // 初始化左侧栏
+    if (this.chatUI.state.containers.leftBar) {
+      this.chatUI.state.containers.leftBar.innerHTML = this.chatUI.generateLeftBarHTML();
+      console.log("左侧自定义区域已初始化");
+    }
+
+    // 初始化底部
+    if (this.chatUI.state.containers.footer) {
+      this.chatUI.state.containers.footer.innerHTML = this.chatUI.generateFooterHTML();
+      console.log("底部自定义区域已初始化");
+    }
+
+    // 更新左侧栏可见性
+    this.updateLeftBarVisibility();
+
+    // 获取客服状态
+    this.fetchAgentStatus();
+
+    console.log("所有自定义区域元素初始化完成");
+  }
+
+  /**
    * 设置调试工具
    */
   private setupDebugTools(): void {
@@ -544,6 +812,108 @@ export class ChatManager {
         }
       },
 
+      // 手动初始化自定义元素
+      initializeCustomElements: () => {
+        this.initializeCustomElements();
+      },
+
+      // 检查聊天窗口状态
+      checkChatWindow: () => {
+        try {
+          const iframe = document.getElementById("quick-chat-iframe") as HTMLIFrameElement;
+          if (!iframe || !iframe.contentDocument) {
+            console.log("iframe 不存在或无法访问");
+            return false;
+          }
+
+          const chatBodyContent = iframe.contentDocument.querySelector("#chat-body-content");
+          const visitorMessage = chatBodyContent?.querySelector(".visitor-message");
+          
+          console.log("聊天窗口检查结果:", {
+            iframe: !!iframe,
+            contentDocument: !!iframe.contentDocument,
+            chatBodyContent: !!chatBodyContent,
+            visitorMessage: !!visitorMessage
+          });
+          
+          return !!visitorMessage;
+        } catch (error) {
+          console.error("检查聊天窗口时出错:", error);
+          return false;
+        }
+      },
+
+      // 重新开始监听
+      restartMonitoring: () => {
+        this.startChatWindowMonitoring();
+      },
+
+      // 测试 MutationObserver 功能
+      testMutationObserver: () => {
+        console.log("测试 MutationObserver 功能...");
+        
+        // 检查浏览器是否支持 MutationObserver
+        if (typeof MutationObserver === 'undefined') {
+          console.error("浏览器不支持 MutationObserver");
+          return false;
+        }
+        
+        console.log("✅ MutationObserver 支持正常");
+        
+        // 测试基本的 MutationObserver 功能
+        const testDiv = document.createElement('div');
+        testDiv.id = 'mutation-test';
+        document.body.appendChild(testDiv);
+        
+        const observer = new MutationObserver((mutations) => {
+          console.log("✅ MutationObserver 触发成功，检测到变化:", mutations.length);
+          observer.disconnect();
+          document.body.removeChild(testDiv);
+        });
+        
+        observer.observe(testDiv, { childList: true });
+        
+        // 触发变化
+        const childDiv = document.createElement('div');
+        childDiv.textContent = 'Test child';
+        testDiv.appendChild(childDiv);
+        
+        return true;
+      },
+
+      // 检查 iframe 访问权限
+      checkIframeAccess: () => {
+        try {
+          const iframe = document.getElementById("quick-chat-iframe") as HTMLIFrameElement;
+          if (!iframe) {
+            console.log("❌ iframe 不存在");
+            return { accessible: false, reason: "iframe 不存在" };
+          }
+          
+          if (!iframe.contentDocument) {
+            console.log("❌ 无法访问 iframe.contentDocument（可能是跨域限制）");
+            return { accessible: false, reason: "跨域限制" };
+          }
+          
+          const chatBodyContent = iframe.contentDocument.querySelector("#chat-body-content");
+          console.log("✅ iframe 访问正常", {
+            contentDocument: !!iframe.contentDocument,
+            chatBodyContent: !!chatBodyContent,
+            readyState: iframe.contentDocument.readyState
+          });
+          
+          return { 
+            accessible: true, 
+            contentDocument: !!iframe.contentDocument,
+            chatBodyContent: !!chatBodyContent,
+            readyState: iframe.contentDocument.readyState
+          };
+        } catch (error) {
+          console.error("❌ 检查 iframe 访问权限时出错:", error);
+          return { accessible: false, reason: error.message };
+        }
+      },
+
       // 查看本地存储的客服选择
       getStoredAgent: () => {
         try {
@@ -601,6 +971,11 @@ export class ChatManager {
     console.log("- debugQuickChat.testRestorePreviousAgent() // 测试恢复之前选择的客服");
     console.log("- debugQuickChat.getStoredAgent() // 查看本地存储的客服选择");
     console.log("- debugQuickChat.clearStoredAgent() // 清除本地存储的客服选择");
+    console.log("- debugQuickChat.initializeCustomElements() // 手动初始化自定义元素");
+    console.log("- debugQuickChat.checkChatWindow() // 检查聊天窗口状态");
+    console.log("- debugQuickChat.restartMonitoring() // 重新开始监听");
+    console.log("- debugQuickChat.testMutationObserver() // 测试 MutationObserver 功能");
+    console.log("- debugQuickChat.checkIframeAccess() // 检查 iframe 访问权限");
     console.log("- debugQuickChat.reinitialize() // 重新初始化系统");
     console.log("- debugQuickChat.getSystemStatus() // 获取系统状态");
   }

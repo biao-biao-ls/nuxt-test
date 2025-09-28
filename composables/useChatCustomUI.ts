@@ -41,13 +41,13 @@ export class ChatCustomUI {
   private eventHandlers: Map<string, Function>;
   private onAgentStatusChangeCallback?: () => void;
 
-  constructor() {
+  constructor(customerServiceData?: CustomerServiceAgent[]) {
     this.state = {
       isLeftBarExpanded: false,
       isLeftBarManuallyHidden: false,
       isLeftBarForceShown: false,
       currentChatAgent: null,
-      customerServiceData: [],
+      customerServiceData: customerServiceData || [],
       containers: {
         header: null,
         leftBar: null,
@@ -63,87 +63,26 @@ export class ChatCustomUI {
     };
 
     this.eventHandlers = new Map();
-    this.init();
+
+    // 如果没有传入客服数据，使用默认数据
+    if (!customerServiceData || customerServiceData.length === 0) {
+      this.initDefaultCustomerServiceData();
+    }
   }
 
   /**
-   * 初始化客服数据
+   * 初始化默认客服数据（当没有传入客服数据时使用）
    */
-  private init(): void {
-    this.state.customerServiceData = [
-      {
-        employeeEnName: "test_01",
-        quickCepId: "1938524999731687426",
-        imageFileIndexId: "8454635530497527808",
-        roleNameEn: "Business Development Representative",
-        isOnline: false,
-        status: 1,
-        businessLine: "3D Printing",
-      },
-      {
-        employeeEnName: "caocao",
-        quickCepId: "1942407035945005058",
-        imageFileIndexId: "8454682774852571136",
-        roleNameEn: "Quality Assurance Agent",
-        isOnline: false,
-        status: 1,
-        businessLine: "3D Printing",
-      },
-      {
-        employeeEnName: "2121",
-        quickCepId: "1938532940512280577",
-        imageFileIndexId: "8455707418908921856",
-        roleNameEn: "Customer Service Representative",
-        isOnline: false,
-        status: 1,
-        businessLine: "PCB Assembly",
-      },
-      {
-        employeeEnName: "xiaozhou",
-        quickCepId: "1938144757068906498",
-        imageFileIndexId: "8593772030083227648",
-        roleNameEn: "Technical Support Specialist",
-        isOnline: false,
-        status: 1,
-        businessLine: "PCB Assembly",
-      },
-      {
-        employeeEnName: "Alex",
-        quickCepId: "1946056607741292545",
-        imageFileIndexId: "8593772229182779392",
-        roleNameEn: "Client Relations Manager",
-        isOnline: false,
-        status: 1,
-        businessLine: "SMT Services",
-      },
-      {
-        employeeEnName: "yxy",
-        quickCepId: "1938475369237098497",
-        imageFileIndexId: "8630496439324213248",
-        roleNameEn: "Account Manager",
-        isOnline: false,
-        status: 1,
-        businessLine: "SMT Services",
-      },
-      {
-        employeeEnName: "Ryan",
-        quickCepId: "1942107108466016257",
-        imageFileIndexId: "8630498147114913792",
-        roleNameEn: "Sales Consultant",
-        isOnline: false,
-        status: 1,
-        businessLine: "Components",
-      },
-      {
-        employeeEnName: "Xie Yulang",
-        quickCepId: "1948591855846862849",
-        imageFileIndexId: "8636932414868172800",
-        roleNameEn: "Account Manager",
-        isOnline: false,
-        status: 1,
-        businessLine: "Components",
-      },
-    ];
+  private initDefaultCustomerServiceData(): void {
+    this.state.customerServiceData = [];
+  }
+
+  /**
+   * 设置客服数据
+   */
+  setCustomerServiceData(customerServiceData: CustomerServiceAgent[]): void {
+    this.state.customerServiceData = customerServiceData;
+    console.log(`已设置客服数据，共 ${customerServiceData.length} 个客服`);
   }
 
   /**
@@ -660,7 +599,22 @@ export class ChatCustomUI {
   }
 
   /**
-   * 生成头部HTML
+   * 生成初始头部HTML（只包含 .current-agent）
+   */
+  generateInitialHeaderHTML(): string {
+    return `
+      ${ChatStyles.generateHeaderStyles()}
+      <div class="chat-header">
+        <div class="chat-header-agents">
+          ${this.renderCurrentAgent()}
+        </div>
+      </div>
+      <div id="agent-tooltip" class="agent-tooltip"></div>
+    `;
+  }
+
+  /**
+   * 生成完整头部HTML
    */
   generateHeaderHTML(): string {
     const onlineAgents = this.state.customerServiceData.filter(
@@ -770,7 +724,11 @@ export class ChatCustomUI {
              onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${
                agent.quickCepId
              }')"
-             onmouseover="try { (window.chatUI || window.parent.chatUI).showTooltip(event, '${agent.employeeEnName}', '${agent.roleNameEn}', '${this.getAvatarUrl(agent.imageFileIndexId)}'); } catch(e) { console.error('Tooltip error:', e); }"
+             onmouseover="try { (window.chatUI || window.parent.chatUI).showTooltip(event, '${
+               agent.employeeEnName
+             }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+          agent.imageFileIndexId
+        )}'); } catch(e) { console.error('Tooltip error:', e); }"
              onmouseout="try { (window.chatUI || window.parent.chatUI).hideTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }"
              title="${agent.employeeEnName} - ${agent.roleNameEn}">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}" 
@@ -880,7 +838,11 @@ export class ChatCustomUI {
                ? `onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId}')"`
                : ""
            }
-           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${agent.employeeEnName}', '${agent.roleNameEn}', '${this.getAvatarUrl(agent.imageFileIndexId)}'); } catch(e) { console.error('Full tooltip error:', e); }"
+           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
+             agent.employeeEnName
+           }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+      agent.imageFileIndexId
+    )}'); } catch(e) { console.error('Full tooltip error:', e); }"
            onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide full tooltip error:', e); }">
         
         <div class="agent-avatar-container">
@@ -951,7 +913,12 @@ export class ChatCustomUI {
   }
 
   // 事件处理方法
-  showTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
+  showTooltip(
+    event: MouseEvent,
+    name: string,
+    role: string,
+    avatarUrl?: string
+  ): void {
     console.log(`showTooltip 被调用: ${name}, ${role}`);
 
     const currentDoc = this.getCurrentDocument();
@@ -970,10 +937,12 @@ export class ChatCustomUI {
 
     if (tooltip) {
       // 创建带头像的 tooltip 内容
-      const avatarHtml = avatarUrl 
-        ? `<img src="${avatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.src='${this.getDefaultAvatar(24)}'">` 
-        : '';
-      
+      const avatarHtml = avatarUrl
+        ? `<img src="${avatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.src='${this.getDefaultAvatar(
+            24
+          )}'">`
+        : "";
+
       tooltip.innerHTML = `
         <div style="display: flex; align-items: center;">
           ${avatarHtml}
@@ -1007,7 +976,12 @@ export class ChatCustomUI {
     if (tooltip) tooltip.style.display = "none";
   }
 
-  showFullTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
+  showFullTooltip(
+    event: MouseEvent,
+    name: string,
+    role: string,
+    avatarUrl?: string
+  ): void {
     const currentDoc = this.getCurrentDocument();
     let tooltip = currentDoc.getElementById("full-agent-tooltip");
 
@@ -1021,10 +995,12 @@ export class ChatCustomUI {
 
     if (tooltip) {
       // 创建带头像的 tooltip 内容
-      const avatarHtml = avatarUrl 
-        ? `<img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.src='${this.getDefaultAvatar(32)}'">` 
-        : '';
-      
+      const avatarHtml = avatarUrl
+        ? `<img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.src='${this.getDefaultAvatar(
+            32
+          )}'">`
+        : "";
+
       tooltip.innerHTML = `
         <div style="display: flex; align-items: center;">
           ${avatarHtml}
