@@ -1,15 +1,5 @@
 import { ChatStyles } from "./useChatStyles";
-
-// 定义类型接口
-interface CustomerServiceAgent {
-  employeeEnName: string;
-  quickCepId: string;
-  imageFileIndexId: string;
-  roleNameEn: string;
-  isOnline: boolean;
-  status: number;
-  businessLine: string;
-}
+import { CustomerServiceDataManager, type CustomerServiceAgent, type GroupedCustomerServiceData } from "./useCustomerServiceData";
 
 interface UIState {
   isLeftBarExpanded: boolean;
@@ -40,6 +30,7 @@ export class ChatCustomUI {
   public config: UIConfig;
   private eventHandlers: Map<string, Function>;
   private onAgentStatusChangeCallback?: () => void;
+  private dataManager: CustomerServiceDataManager;
 
   constructor(customerServiceData?: CustomerServiceAgent[]) {
     this.state = {
@@ -63,9 +54,13 @@ export class ChatCustomUI {
     };
 
     this.eventHandlers = new Map();
+    this.dataManager = new CustomerServiceDataManager();
 
-    // 如果没有传入客服数据，使用默认数据
-    if (!customerServiceData || customerServiceData.length === 0) {
+    // 如果传入了客服数据，设置到数据管理器中
+    if (customerServiceData && customerServiceData.length > 0) {
+      this.dataManager.setDataFromArray(customerServiceData);
+      this.state.customerServiceData = customerServiceData;
+    } else {
       this.initDefaultCustomerServiceData();
     }
   }
@@ -82,7 +77,22 @@ export class ChatCustomUI {
    */
   setCustomerServiceData(customerServiceData: CustomerServiceAgent[]): void {
     this.state.customerServiceData = customerServiceData;
+    this.dataManager.setDataFromArray(customerServiceData);
     console.log(`已设置客服数据，共 ${customerServiceData.length} 个客服`);
+  }
+
+  /**
+   * 获取数据管理器实例
+   */
+  getDataManager(): CustomerServiceDataManager {
+    return this.dataManager;
+  }
+
+  /**
+   * 获取按业务线分组的数据
+   */
+  getGroupedData(): GroupedCustomerServiceData {
+    return this.dataManager.getGroupedData();
   }
 
   /**

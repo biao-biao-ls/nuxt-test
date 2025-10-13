@@ -1,4 +1,5 @@
 import { ChatCustomUI } from "./useChatCustomUI";
+import { CustomerServiceDataManager, type CustomerServiceAgent, type GroupedCustomerServiceData } from "./useCustomerServiceData";
 
 // 声明全局类型
 declare global {
@@ -8,17 +9,6 @@ declare global {
     chatUI?: ChatCustomUI;
     debugQuickChat?: any;
   }
-}
-
-// 定义客服数据接口
-interface CustomerServiceAgent {
-  employeeEnName: string;
-  quickCepId: string;
-  imageFileIndexId: string;
-  roleNameEn: string;
-  isOnline: boolean;
-  status: number;
-  businessLine: string;
 }
 
 /**
@@ -38,8 +28,9 @@ export class ChatManager {
 
   /**
    * 初始化聊天系统
+   * @param customerServiceData 客服数据，可以是数组格式或分组格式
    */
-  async init(customerServiceData?: CustomerServiceAgent[]): Promise<void> {
+  async init(customerServiceData?: CustomerServiceAgent[] | GroupedCustomerServiceData): Promise<void> {
     if (this.isInitialized) {
       console.log("聊天系统已经初始化");
       return;
@@ -51,17 +42,29 @@ export class ChatManager {
       // 等待API准备就绪
       await this.waitForAPI();
 
-      // 使用传入的客服数据或构造函数中的数据
-      const finalCustomerServiceData = customerServiceData || this.customerServiceData;
+      // 处理客服数据格式转换
+      let finalCustomerServiceData: CustomerServiceAgent[] | undefined;
 
-      // 创建UI管理器实例
-      this.chatUI = new ChatCustomUI(finalCustomerServiceData);
-
-      if (finalCustomerServiceData) {
-        console.log(`使用传入的客服数据，共 ${finalCustomerServiceData.length} 个客服`);
+      if (customerServiceData) {
+        if (Array.isArray(customerServiceData)) {
+          // 如果传入的是数组格式，直接使用
+          finalCustomerServiceData = customerServiceData;
+          console.log(`使用传入的数组格式客服数据，共 ${finalCustomerServiceData.length} 个客服`);
+        } else {
+          // 如果传入的是分组格式，转换为数组格式
+          finalCustomerServiceData = CustomerServiceDataManager.convertToArrayFormat(customerServiceData);
+          console.log(`使用传入的分组格式客服数据，转换后共 ${finalCustomerServiceData.length} 个客服`);
+        }
+      } else if (this.customerServiceData) {
+        // 使用构造函数中的数据
+        finalCustomerServiceData = this.customerServiceData;
+        console.log(`使用构造函数中的客服数据，共 ${finalCustomerServiceData.length} 个客服`);
       } else {
         console.log("使用默认客服数据");
       }
+
+      // 创建UI管理器实例
+      this.chatUI = new ChatCustomUI(finalCustomerServiceData);
 
       // 设置客服状态变化回调
       this.chatUI.setOnAgentStatusChangeCallback(() => {
