@@ -1,0 +1,48 @@
+{
+  "conversationType": 1,
+  "receiverId": "88779178993396652329",
+  "senderId": "84506184312807836642",
+  "fromClientType": "632",
+  "fromNick": "",
+  "createTime": 17300882367163,
+  "messageType": 100,
+  "attachment": {
+    "raw": {
+      "bizType": "backgroundCloseConversation",
+      "content": {
+        "time": 15,
+        "closingPhrase": "笑嘻嘻"
+      }
+    }
+  },
+  "messageClientId": "0b031cee-413c-4dd56-9662-d5a699f6df86c",
+  "messageServerId": "9384151125357",
+  "userUpdateTime": 1727589444866,
+  "serverExtension": {
+    "cid": "0A1A27D200095674CD4D8DA27E960CCD"
+  },
+  "antispamConfig": {
+    "antispamEnabled": true
+  },
+  "messageConfig": {
+    "lastMessageUpdateEnabled": true,
+    "historyEnabled": true,
+    "roamingEnabled": false,
+    "onlineSyncEnabled": true,
+    "offlineEnabled": true,
+    "unreadEnabled": true
+  },
+  "routeConfig": {
+    "routeEnabled": false
+  },
+  "pushConfig": {
+    "pushEnabled": true,
+    "pushNickEnabled": true
+  },
+  "conversationId": "8877917899339652329|1|8450618431280783642",
+  "isSelf": false,
+  "sendingState": 1,
+  "messageStatus": {
+    "errorCode": 200
+  }
+}
