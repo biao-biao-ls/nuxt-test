@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服状态修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .log-area {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>客服状态修复测试</h1>
+        
+        <div class="info">
+            <strong>修复说明：</strong>
+            <p>修复了 useChatManager.ts 中客服在线状态判断的问题：</p>
+            <ul>
+                <li>移除了在 handleOperatorListChange 方法中直接使用 currentOperator.onlineStatus 更新状态的逻辑</li>
+                <li>改为依赖 'chat.operator.status' 事件的 data.operatorUserIdStatus 来更新客服状态</li>
+                <li>在座席列表变化后，主动触发获取最新的客服状态</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>1. 模拟客服状态事件</h3>
+            <p>测试 chat.operator.status 事件是否正确处理 operatorUserIdStatus</p>
+            <button onclick="simulateOperatorStatusEvent()">模拟客服状态更新事件</button>
+            <button onclick="simulateOperatorListChange()">模拟座席列表变化事件</button>
+            <div class="status-display" id="statusDisplay">等待事件触发...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 客服状态检查</h3>
+            <p>检查当前客服状态和在线状态</p>
+            <button onclick="checkAgentStatus()">检查客服状态</button>
+            <button onclick="getCurrentAgent()">获取当前客服</button>
+            <button onclick="fetchAgentStatus()">手动获取客服状态</button>
+            <div class="status-display" id="agentStatusDisplay">点击按钮查看状态...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 事件流程测试</h3>
+            <p>测试完整的事件处理流程</p>
+            <button onclick="testCompleteFlow()">测试完整流程</button>
+            <button onclick="clearLogs()">清除日志</button>
+            <div class="log-area" id="logArea"></div>
+        </div>
+
+        <div class="warning">
+            <strong>注意：</strong>
+            <p>此测试需要在集成了 QuickChat SDK 的环境中运行，确保 window.quickEmitter 和 window.quickChatApi 可用。</p>
+        </div>
+    </div>
+
+    <script>
+        let logArea = document.getElementById('logArea');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.innerHTML += `[${timestamp}] ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function simulateOperatorStatusEvent() {
+            if (typeof window.quickEmitter === 'undefined') {
+                log('❌ QuickChat SDK 未加载，无法模拟事件');
+                return;
+            }
+
+            // 模拟客服状态数据
+            const mockStatusData = {
+                operatorUserIdStatus: {
+                    'agent001': 2, // 在线空闲
+                    'agent002': 3, // 在线忙碌
+                    'agent003': 1  // 离线
+                }
+            };
+
+            log('🔄 模拟触发 chat.operator.status 事件');
+            log(`📊 状态数据: ${JSON.stringify(mockStatusData.operatorUserIdStatus)}`);
+            
+            window.quickEmitter.emit('chat.operator.status', mockStatusData);
+            
+            document.getElementById('statusDisplay').innerHTML = 
+                `已触发 chat.operator.status 事件<br>` +
+                `状态数据: ${JSON.stringify(mockStatusData.operatorUserIdStatus, null, 2)}`;
+        }
+
+        function simulateOperatorListChange() {
+            if (typeof window.quickEmitter === 'undefined') {
+                log('❌ QuickChat SDK 未加载，无法模拟事件');
+                return;
+            }
+
+            // 模拟座席列表变化数据
+            const mockListChangeData = [
+                {
+                    operatorId: 'agent001',
+                    onlineStatus: 2, // 注意：这个字段不应该被用来更新客服状态
+                    name: '客服小王'
+                }
+            ];
+
+            log('🔄 模拟触发 chat.operatorList.change 事件');
+            log(`📋 座席数据: ${JSON.stringify(mockListChangeData)}`);
+            
+            window.quickEmitter.emit('chat.operatorList.change', mockListChangeData);
+            
+            document.getElementById('statusDisplay').innerHTML = 
+                `已触发 chat.operatorList.change 事件<br>` +
+                `座席数据: ${JSON.stringify(mockListChangeData, null, 2)}`;
+        }
+
+        function checkAgentStatus() {
+            if (typeof window.debugQuickChat === 'undefined') {
+                log('❌ 调试工具未加载');
+                document.getElementById('agentStatusDisplay').innerHTML = '调试工具未加载';
+                return;
+            }
+
+            log('🔍 检查客服状态');
+            const agentData = window.debugQuickChat.getAgentData();
+            
+            if (agentData && agentData.length > 0) {
+                let statusHtml = '<strong>客服状态列表：</strong><br>';
+                agentData.forEach(agent => {
+                    const statusText = getStatusText(agent.status);
+                    const onlineText = agent.isOnline ? '在线' : '离线';
+                    statusHtml += `${agent.employeeEnName}: ${statusText} (${onlineText})<br>`;
+                    log(`👤 ${agent.employeeEnName}: ${statusText} (${onlineText})`);
+                });
+                
+                document.getElementById('agentStatusDisplay').innerHTML = statusHtml;
+            } else {
+                log('❌ 未找到客服数据');
+                document.getElementById('agentStatusDisplay').innerHTML = '未找到客服数据';
+            }
+        }
+
+        function getCurrentAgent() {
+            if (typeof window.debugQuickChat === 'undefined') {
+                log('❌ 调试工具未加载');
+                return;
+            }
+
+            log('🎯 获取当前客服');
+            const currentAgent = window.debugQuickChat.getCurrentAgent();
+            
+            if (currentAgent) {
+                const statusText = getStatusText(currentAgent.status);
+                const onlineText = currentAgent.isOnline ? '在线' : '离线';
+                const info = `当前客服: ${currentAgent.employeeEnName} (${statusText}, ${onlineText})`;
+                
+                log(`✅ ${info}`);
+                document.getElementById('agentStatusDisplay').innerHTML = info;
+            } else {
+                log('ℹ️ 当前没有选中的客服');
+                document.getElementById('agentStatusDisplay').innerHTML = '当前没有选中的客服';
+            }
+        }
+
+        function fetchAgentStatus() {
+            if (typeof window.quickChatApi === 'undefined') {
+                log('❌ QuickChat API 未加载');
+                return;
+            }
+
+            log('🔄 手动触发获取客服状态');
+            
+            // 模拟获取所有客服ID
+            const allQuickCepIds = ['agent001', 'agent002', 'agent003'];
+            window.quickChatApi.emitGetAllOperatorStatus(allQuickCepIds);
+            
+            log(`📡 已发送状态查询请求: ${JSON.stringify(allQuickCepIds)}`);
+        }
+
+        function testCompleteFlow() {
+            log('🚀 开始完整流程测试');
+            log('='.repeat(50));
+            
+            // 步骤1: 模拟座席列表变化
+            setTimeout(() => {
+                log('📋 步骤1: 模拟座席列表变化');
+                simulateOperatorListChange();
+            }, 500);
+            
+            // 步骤2: 模拟客服状态更新
+            setTimeout(() => {
+                log('📊 步骤2: 模拟客服状态更新');
+                simulateOperatorStatusEvent();
+            }, 1500);
+            
+            // 步骤3: 检查最终状态
+            setTimeout(() => {
+                log('🔍 步骤3: 检查最终状态');
+                checkAgentStatus();
+                getCurrentAgent();
+                log('✅ 完整流程测试完成');
+                log('='.repeat(50));
+            }, 3000);
+        }
+
+        function clearLogs() {
+            logArea.innerHTML = '';
+        }
+
+        function getStatusText(status) {
+            switch(status) {
+                case 1: return '离线';
+                case 2: return '在线空闲';
+                case 3: return '在线忙碌';
+                default: return '未知状态';
+            }
+        }
+
+        // 监听相关事件
+        window.addEventListener('load', () => {
+            log('📄 页面加载完成');
+            
+            // 检查 QuickChat SDK 状态
+            setTimeout(() => {
+                if (typeof window.quickEmitter !== 'undefined' && typeof window.quickChatApi !== 'undefined') {
+                    log('✅ QuickChat SDK 已加载');
+                    
+                    // 监听相关事件
+                    window.quickEmitter.on('chat.operator.status', (data) => {
+                        log('📡 接收到 chat.operator.status 事件');
+                        log(`📊 数据: ${JSON.stringify(data)}`);
+                    });
+                    
+                    window.quickEmitter.on('chat.operatorList.change', (data) => {
+                        log('📡 接收到 chat.operatorList.change 事件');
+                        log(`📋 数据: ${JSON.stringify(data)}`);
+                    });
+                    
+                } else {
+                    log('⚠️ QuickChat SDK 未加载，某些功能可能无法使用');
+                }
+                
+                if (typeof window.debugQuickChat !== 'undefined') {
+                    log('✅ 调试工具已加载');
+                } else {
+                    log('⚠️ 调试工具未加载，某些功能可能无法使用');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

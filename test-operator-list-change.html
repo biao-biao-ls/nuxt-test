@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试座席列表变化事件</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .current-agent {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>座席列表变化事件测试</h1>
+        
+        <div class="test-section">
+            <h3>当前状态</h3>
+            <div id="currentStatus" class="status">
+                等待初始化...
+            </div>
+            <div id="currentAgent" class="current-agent">
+                当前客服: 未选择
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试操作</h3>
+            <button onclick="testOperatorListChange()">模拟座席列表变化</button>
+            <button onclick="testEmptyOperatorList()">模拟空座席列表</button>
+            <button onclick="testMultipleOperators()">模拟多个座席</button>
+            <button onclick="getCurrentAgent()">获取当前客服</button>
+            <button onclick="clearLogs()">清除日志</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>事件日志</h3>
+            <div id="eventLog" class="log"></div>
+        </div>
+    </div>
+
+    <!-- QuickChat 脚本 -->
+    <script src="/quickCep.js"></script>
+    
+    <script>
+        let eventLog = [];
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            eventLog.push(logMessage);
+            updateLogDisplay();
+            console.log(logMessage);
+        }
+        
+        function updateLogDisplay() {
+            const logElement = document.getElementById('eventLog');
+            logElement.innerHTML = eventLog.join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('currentStatus').textContent = message;
+        }
+        
+        function updateCurrentAgent(agent) {
+            const agentElement = document.getElementById('currentAgent');
+            if (agent) {
+                agentElement.innerHTML = `
+                    当前客服: ${agent.employeeEnName || agent.name || '未知'}<br>
+                    ID: ${agent.quickCepId || agent.operatorId || '未知'}<br>
+                    状态: ${getStatusText(agent.status || agent.onlineStatus)}
+                `;
+            } else {
+                agentElement.textContent = '当前客服: 未选择';
+            }
+        }
+        
+        function getStatusText(status) {
+            switch(status) {
+                case 1: return '离线';
+                case 2: return '在线空闲';
+                case 3: return '在线忙碌';
+                default: return '未知';
+            }
+        }
+        
+        // 模拟座席列表变化事件
+        function testOperatorListChange() {
+            log('触发座席列表变化事件...');
+            
+            const mockOperatorData = [{
+                "operatorId": "1942107108466016257",
+                "profilePhoto": "https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png",
+                "profilePhotoColor": "#36CFC9",
+                "firstName": "覃安",
+                "lastName": "",
+                "nickName": null,
+                "onlineStatus": 2,
+                "name": "覃安"
+            }];
+            
+            if (window.quickEmitter) {
+                window.quickEmitter.emit('chat.operatorList.change', mockOperatorData);
+                log('已发送座席列表变化事件');
+                log(`座席数据: ${JSON.stringify(mockOperatorData, null, 2)}`);
+            } else {
+                log('错误: quickEmitter 不可用');
+            }
+        }
+        
+        // 模拟空座席列表
+        function testEmptyOperatorList() {
+            log('触发空座席列表事件...');
+            
+            if (window.quickEmitter) {
+                window.quickEmitter.emit('chat.operatorList.change', []);
+                log('已发送空座席列表事件');
+            } else {
+                log('错误: quickEmitter 不可用');
+            }
+        }
+        
+        // 模拟多个座席
+        function testMultipleOperators() {
+            log('触发多个座席事件...');
+            
+            const mockOperatorData = [
+                {
+                    "operatorId": "1942107108466016257",
+                    "firstName": "覃安",
+                    "onlineStatus": 2,
+                    "name": "覃安"
+                },
+                {
+                    "operatorId": "1942107108466016258",
+                    "firstName": "张三",
+                    "onlineStatus": 3,
+                    "name": "张三"
+                }
+            ];
+            
+            if (window.quickEmitter) {
+                window.quickEmitter.emit('chat.operatorList.change', mockOperatorData);
+                log('已发送多个座席事件');
+                log(`座席数据: ${JSON.stringify(mockOperatorData, null, 2)}`);
+            } else {
+                log('错误: quickEmitter 不可用');
+            }
+        }
+        
+        // 获取当前客服
+        function getCurrentAgent() {
+            if (window.debugQuickChat && window.debugQuickChat.getCurrentAgent) {
+                const currentAgent = window.debugQuickChat.getCurrentAgent();
+                log(`当前客服: ${JSON.stringify(currentAgent, null, 2)}`);
+                updateCurrentAgent(currentAgent);
+            } else {
+                log('错误: 调试工具不可用');
+            }
+        }
+        
+        // 清除日志
+        function clearLogs() {
+            eventLog = [];
+            updateLogDisplay();
+        }
+        
+        // 初始化
+        window.quickChatReadyHook = function() {
+            log('QuickChat 初始化完成');
+            updateStatus('QuickChat 已就绪');
+            
+            // 监听座席列表变化事件
+            if (window.quickEmitter) {
+                window.quickEmitter.on('chat.operatorList.change', (data) => {
+                    log(`收到座席列表变化事件: ${JSON.stringify(data, null, 2)}`);
+                    
+                    // 更新当前客服显示
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        updateCurrentAgent(data[0]);
+                    } else {
+                        updateCurrentAgent(null);
+                    }
+                });
+                
+                // 监听其他相关事件
+                window.quickEmitter.on('chat.switch.operator.success', (data) => {
+                    log(`切换座席成功: ${JSON.stringify(data, null, 2)}`);
+                });
+                
+                window.quickEmitter.on('chat.end', (data) => {
+                    log(`会话结束: ${JSON.stringify(data, null, 2)}`);
+                    updateCurrentAgent(null);
+                });
+                
+                log('事件监听器已设置');
+            } else {
+                log('错误: quickEmitter 不可用');
+            }
+        };
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('页面加载完成，等待 QuickChat 初始化...');
+            updateStatus('等待 QuickChat 初始化...');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简化版订单选择器测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .footer-simulation {
+            position: relative;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .footer-btn:hover {
+            background: #0056b3;
+        }
+        #simple-order-container {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>简化版订单选择器测试</h1>
+        <p>这是一个简化版的订单选择器，直接在底部区域显示，不依赖 bottomCustomDrawer API。</p>
+        
+        <div>
+            <button class="test-btn" onclick="toggleOrderSelector()">切换订单选择器</button>
+            <button class="test-btn" onclick="showOrderSelector()">显示订单选择器</button>
+            <button class="test-btn" onclick="hideOrderSelector()">隐藏订单选择器</button>
+        </div>
+        
+        <div class="footer-simulation">
+            <span>模拟聊天底部区域</span>
+            <div>
+                <button class="footer-btn" onclick="toggleOrderSelector()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
+                        <path d="M9 8V17H11V8H9ZM13 8V17H15V8H13Z"/>
+                    </svg>
+                    <span>订单</span>
+                </button>
+            </div>
+            <div id="simple-order-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟 QuickChat API
+        window.quickChatApi = {
+            sendMessage: (message) => {
+                console.log('发送消息:', message);
+                alert('消息已发送:\n' + message);
+            }
+        };
+
+        // 简化版订单选择器类
+        class SimpleOrderSelector {
+            constructor() {
+                this.isVisible = false;
+                this.container = null;
+                this.onSendOrderCallback = null;
+                
+                // 绑定全局方法
+                window.simpleOrderSelector = this;
+            }
+
+            setOnSendOrderCallback(callback) {
+                this.onSendOrderCallback = callback;
+            }
+
+            mount(container) {
+                this.container = container;
+            }
+
+            toggle() {
+                if (this.isVisible) {
+                    this.hide();
+                } else {
+                    this.show();
+                }
+            }
+
+            show() {
+                if (this.isVisible || !this.container) return;
+                
+                this.isVisible = true;
+                this.render();
+            }
+
+            hide() {
+                if (!this.isVisible || !this.container) return;
+                
+                this.isVisible = false;
+                this.container.innerHTML = '';
+            }
+
+            render() {
+                if (!this.container || !this.isVisible) return;
+
+                this.container.innerHTML = `
+                    ${this.generateStyles()}
+                    <div class="simple-order-popup">
+                        <div class="simple-order-header">
+                            <span class="simple-order-title">快速选择订单</span>
+                            <span class="simple-order-close" onclick="window.simpleOrderSelector && window.simpleOrderSelector.hide()">×</span>
+                        </div>
+                        <div class="simple-order-list">
+                            ${this.renderOrderList()}
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderOrderList() {
+                const mockOrders = this.getMockOrders();
+                
+                return mockOrders.map(order => `
+                    <div class="simple-order-item" onclick="window.simpleOrderSelector && window.simpleOrderSelector.selectOrder('${order.orderCode}')">
+                        <div class="simple-order-info">
+                            <div class="simple-order-name">${order.title}</div>
+                            <div class="simple-order-code">${order.orderCode}</div>
+                        </div>
+                        <div class="simple-order-amount">${order.orderAmount}</div>
+                    </div>
+                `).join('');
+            }
+
+            getMockOrders() {
+                return [
+                    {
+                        title: "pcbwenjian2(Reorder)_Y11898",
+                        orderCode: "Y11898-5011496A",
+                        orderAmount: "$15.63",
+                        businessType: "order_pcb"
+                    },
+                    {
+                        title: "1.STEP",
+                        orderCode: "SMS2510133000010",
+                        orderAmount: "$8.22",
+                        businessType: "order_plate_metal"
+                    },
+                    {
+                        title: "3.STEP",
+                        orderCode: "SMS2510133000011",
+                        orderAmount: "$82.43",
+                        businessType: "order_plate_metal"
+                    },
+                    {
+                        title: "12321321_Y11899",
+                        orderCode: "Y11899-5011496A",
+                        orderAmount: "$10.53",
+                        businessType: "order_pcb"
+                    }
+                ];
+            }
+
+            selectOrder(orderCode) {
+                const orders = this.getMockOrders();
+                const selectedOrder = orders.find(order => order.orderCode === orderCode);
+                
+                if (selectedOrder && this.onSendOrderCallback) {
+                    this.onSendOrderCallback(selectedOrder);
+                    this.hide();
+                }
+            }
+
+            generateStyles() {
+                return `
+                    <style>
+                        .simple-order-popup {
+                            position: absolute;
+                            bottom: 100%;
+                            left: 0;
+                            right: 0;
+                            background: white;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 8px 8px 0 0;
+                            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+                            max-height: 300px;
+                            overflow: hidden;
+                            z-index: 1000;
+                            animation: slideUpSimple 0.2s ease-out;
+                        }
+
+                        @keyframes slideUpSimple {
+                            from {
+                                transform: translateY(100%);
+                                opacity: 0;
+                            }
+                            to {
+                                transform: translateY(0);
+                                opacity: 1;
+                            }
+                        }
+
+                        .simple-order-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 12px 16px;
+                            border-bottom: 1px solid #e0e0e0;
+                            background: #f8f9fa;
+                        }
+
+                        .simple-order-title {
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: #333;
+                        }
+
+                        .simple-order-close {
+                            cursor: pointer;
+                            font-size: 18px;
+                            color: #999;
+                            width: 20px;
+                            height: 20px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 50%;
+                            transition: all 0.2s;
+                        }
+
+                        .simple-order-close:hover {
+                            background: #e9ecef;
+                            color: #666;
+                        }
+
+                        .simple-order-list {
+                            max-height: 240px;
+                            overflow-y: auto;
+                        }
+
+                        .simple-order-item {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 12px 16px;
+                            cursor: pointer;
+                            transition: background-color 0.2s;
+                            border-bottom: 1px solid #f0f0f0;
+                        }
+
+                        .simple-order-item:hover {
+                            background-color: #f8f9fa;
+                        }
+
+                        .simple-order-item:last-child {
+                            border-bottom: none;
+                        }
+
+                        .simple-order-info {
+                            flex: 1;
+                            min-width: 0;
+                        }
+
+                        .simple-order-name {
+                            font-size: 13px;
+                            font-weight: 500;
+                            color: #333;
+                            margin-bottom: 2px;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+
+                        .simple-order-code {
+                            font-size: 11px;
+                            color: #666;
+                        }
+
+                        .simple-order-amount {
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #007bff;
+                            margin-left: 12px;
+                        }
+
+                        .simple-order-list::-webkit-scrollbar {
+                            width: 4px;
+                        }
+
+                        .simple-order-list::-webkit-scrollbar-track {
+                            background: #f1f1f1;
+                        }
+
+                        .simple-order-list::-webkit-scrollbar-thumb {
+                            background: #c1c1c1;
+                            border-radius: 2px;
+                        }
+
+                        .simple-order-list::-webkit-scrollbar-thumb:hover {
+                            background: #a8a8a8;
+                        }
+                    </style>
+                `;
+            }
+        }
+
+        // 创建简化版订单选择器实例
+        const simpleOrderSelector = new SimpleOrderSelector();
+        simpleOrderSelector.mount(document.getElementById('simple-order-container'));
+        
+        // 设置发送订单回调
+        simpleOrderSelector.setOnSendOrderCallback((orderItem) => {
+            const orderMessage = `📦 订单信息
+订单号: ${orderItem.orderCode}
+产品名称: ${orderItem.title}
+金额: ${orderItem.orderAmount}
+类型: ${orderItem.businessType}`;
+            
+            window.quickChatApi.sendMessage(orderMessage);
+        });
+
+        // 全局函数
+        window.toggleOrderSelector = () => {
+            simpleOrderSelector.toggle();
+        };
+
+        window.showOrderSelector = () => {
+            simpleOrderSelector.show();
+        };
+
+        window.hideOrderSelector = () => {
+            simpleOrderSelector.hide();
+        };
+    </script>
+</body>
+</html>

@@ -210,7 +210,7 @@ export class ChatCustomUI {
   /**
    * 保存选择的客服到本地存储
    */
-  private saveSelectedAgent(agent: CustomerServiceAgent | null): void {
+  public saveSelectedAgent(agent: CustomerServiceAgent | null): void {
     try {
       if (typeof localStorage !== 'undefined') {
         const storageKey = 'quickchat_selected_agent'
@@ -283,7 +283,7 @@ export class ChatCustomUI {
     }
 
     // 如果客服在线，自动切换到该客服
-    this.selectAgent(storedAgent.quickCepId, false) // false 表示不是用户主动选择，避免重复保存
+    // this.selectAgent(storedAgent.quickCepId, false) // false 表示不是用户主动选择，避免重复保存
   }
 
   /**
@@ -438,6 +438,28 @@ export class ChatCustomUI {
   }
 
   /**
+   * 重置为默认客服状态
+   * 清除当前选择的客服并更新本地存储
+   */
+  resetToDefaultAgent(): void {
+    console.log('重置为默认客服状态')
+    
+    // 清除当前选择的客服
+    this.state.currentChatAgent = null
+    
+    // 清除本地存储的客服选择
+    this.saveSelectedAgent(null)
+    
+    // 刷新UI显示
+    this.refreshUI()
+    
+    console.log('已重置为默认客服状态')
+  }
+
+  // 记住待切换的座席ID
+  private pendingSwitchAgentId: string | null = null
+
+  /**
    * 选择客服
    * @param quickCepId 客服ID
    * @param saveToStorage 是否保存到本地存储，默认为true
@@ -458,39 +480,62 @@ export class ChatCustomUI {
       return
     }
 
-    // 先立即更新本地状态，确保UI能够响应
-    const previousAgent = this.state.currentChatAgent
-    this.state.currentChatAgent = agent
-
-    // 保存到本地存储（如果需要）
-    if (saveToStorage) {
-      this.saveSelectedAgent(agent)
-    }
-
-    this.refreshUI()
+    // 记住待切换的座席ID，等待 chat.switch.operator.success 事件
+    this.pendingSwitchAgentId = quickCepId
 
     if (typeof window !== 'undefined' && (window as any).quickChatApi && (window as any).quickChatApi.switchChat) {
       try {
         console.log('切换座席', quickCepId)
-          ; (window as any).quickChatApi.switchChat(quickCepId)
+        ; (window as any).quickChatApi.switchChat(quickCepId)
       } catch (error) {
         console.error('切换客服失败:', error)
-        // 如果API调用失败，恢复之前的状态
-        this.state.currentChatAgent = previousAgent
-        if (saveToStorage) {
-          this.saveSelectedAgent(previousAgent)
-        }
-        this.refreshUI()
+        // 如果API调用失败，清除待切换的座席ID
+        this.pendingSwitchAgentId = null
       }
     } else {
       console.error('quickChatApi.switchChat 方法不可用')
-      // 如果API不可用，也恢复之前的状态
-      this.state.currentChatAgent = previousAgent
-      if (saveToStorage) {
-        this.saveSelectedAgent(previousAgent)
-      }
-      this.refreshUI()
+      // 如果API不可用，清除待切换的座席ID
+      this.pendingSwitchAgentId = null
     }
+  }
+
+  /**
+   * 处理切换座席成功事件
+   * 当收到 chat.switch.operator.success 事件时调用
+   */
+  handleSwitchOperatorSuccess(): void {
+    if (!this.pendingSwitchAgentId) {
+      return
+    }
+
+    const quickCepId = this.pendingSwitchAgentId
+    const agent = this.state.customerServiceData.find((a) => a.quickCepId === quickCepId)
+
+    if (!agent) {
+      console.error(`未找到客服 ID: ${quickCepId}`)
+      this.pendingSwitchAgentId = null
+      return
+    }
+
+    if (!agent.isOnline) {
+      console.warn(`客服 ${agent.employeeEnName} 已离线，无法切换`)
+      this.pendingSwitchAgentId = null
+      return
+    }
+
+    console.log('切换座席成功，更新客服信息:', agent.employeeEnName)
+
+    // 更新当前聊天客服
+    this.state.currentChatAgent = agent
+
+    // 保存到本地存储
+    this.saveSelectedAgent(agent)
+
+    // 刷新UI
+    this.refreshUI()
+
+    // 清除待切换的座席ID
+    this.pendingSwitchAgentId = null
   }
 
   /**
@@ -527,6 +572,48 @@ export class ChatCustomUI {
   }
 
   /**
+   * 处理订单按钮点击事件
+   */
+  handleOrderButtonClick(): void {
+    try {
+      // 尝试在当前窗口中查找
+      if (typeof window !== 'undefined' && (window as any).simpleOrderSelector) {
+        ; (window as any).simpleOrderSelector.toggle()
+        return
+      }
+
+      // 尝试在父窗口中查找
+      if (typeof window !== 'undefined' && window.parent && (window.parent as any).simpleOrderSelector) {
+        ; (window.parent as any).simpleOrderSelector.toggle()
+        return
+      }
+
+      // 尝试在顶级窗口中查找
+      if (typeof window !== 'undefined' && window.top && (window.top as any).simpleOrderSelector) {
+        ; (window.top as any).simpleOrderSelector.toggle()
+        return
+      }
+
+      // 使用 postMessage 通信
+      if (typeof window !== 'undefined' && window.parent !== window) {
+        window.parent.postMessage({ type: 'TOGGLE_ORDER_SELECTOR' }, '*')
+      }
+
+      console.warn('无法找到 simpleOrderSelector 实例')
+    } catch (error) {
+      console.error('处理订单按钮点击时出错:', error)
+      // 降级处理：使用 postMessage
+      try {
+        if (typeof window !== 'undefined' && window.parent !== window) {
+          window.parent.postMessage({ type: 'TOGGLE_ORDER_SELECTOR' }, '*')
+        }
+      } catch (e) {
+        console.error('postMessage 也失败了:', e)
+      }
+    }
+  }
+
+  /**
    * 刷新UI
    */
   refreshUI(): void {
@@ -546,9 +633,21 @@ export class ChatCustomUI {
     // 确保左侧父元素的z-index设置正确
     this.setLeftBarParentZIndex()
 
+    // 绑定全局事件处理器
+    this.bindGlobalEventHandlers()
+
     // 通知管理器更新左侧栏可见性
     if (this.onAgentStatusChangeCallback) {
       this.onAgentStatusChangeCallback()
+    }
+  }
+
+  /**
+   * 绑定全局事件处理器
+   */
+  private bindGlobalEventHandlers(): void {
+    if (typeof window !== 'undefined') {
+      ; (window as any).handleOrderButtonClick = () => this.handleOrderButtonClick()
     }
   }
 
@@ -784,6 +883,15 @@ export class ChatCustomUI {
       ${ChatStyles.generateFooterStyles()}
       <div class="chat-footer">
         <div class="footer-actions">
+          <button class="footer-btn order-btn" 
+                  onclick="if(window.handleOrderButtonClick) window.handleOrderButtonClick(); else if(window.parent && window.parent.postMessage) window.parent.postMessage({type:'TOGGLE_ORDER_SELECTOR'},'*');" 
+                  title="选择订单">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
+              <path d="M9 8V17H11V8H9ZM13 8V17H15V8H13Z"/>
+            </svg>
+            <span>订单</span>
+          </button>
           <button class="footer-btn add-btn" title="添加">
             <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" viewBox="0 0 21 20" fill="currentColor">
               <path d="M10.3877 18.6939C5.69893 18.6939 1.89792 14.8929 1.89792 10.2041C1.89792 5.51534 5.69893 1.71433 10.3877 1.71433C15.0765 1.71433 18.8775 5.51534 18.8775 10.2041C18.8775 14.8929 15.0765 18.6939 10.3877 18.6939ZM10.3877 20C15.7978 20 20.1836 15.6143 20.1836 10.2041C20.1836 4.79398 15.7978 0.408203 10.3877 0.408203C4.97758 0.408203 0.591797 4.79398 0.591797 10.2041C0.591797 15.6143 4.97758 20 10.3877 20Z" fill="currentColor"/>

@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索清空功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .test-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .test-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        .status {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .feature-card h3 {
+            margin-top: 0;
+            color: #fff;
+            font-size: 18px;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            padding-left: 24px;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list li::before {
+            content: "🔍";
+            position: absolute;
+            left: 0;
+            top: 8px;
+        }
+        #simple-order-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            pointer-events: none;
+            display: none;
+        }
+        #simple-order-container.active {
+            pointer-events: auto;
+            display: block;
+        }
+        .demo-content {
+            margin: 40px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .demo-content h4 {
+            margin-top: 0;
+            color: #fff;
+        }
+        .demo-content p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        .demo-steps {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .demo-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .demo-steps li {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 搜索清空功能测试</h1>
+        <p>测试搜索输入框的清空按钮功能，支持一键清空搜索内容。</p>
+        
+        <div class="status" id="status">
+            <strong>🎯 清空功能特性：</strong><br>
+            🔍 搜索输入框支持清空<br>
+            ❌ 清空按钮动态显示/隐藏<br>
+            🎯 点击清空按钮一键清空<br>
+            🔄 清空后自动刷新结果<br>
+            ✨ 流畅的动画过渡效果<br>
+            📱 响应式交互设计
+        </div>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🔍 清空按钮设计</h3>
+                <ul class="feature-list">
+                    <li>有内容时显示清空按钮</li>
+                    <li>无内容时自动隐藏</li>
+                    <li>圆形按钮悬停效果</li>
+                    <li>X 图标清晰易识别</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>⚡ 交互体验</h3>
+                <ul class="feature-list">
+                    <li>点击清空按钮一键清空</li>
+                    <li>清空后自动执行搜索</li>
+                    <li>显示所有订单结果</li>
+                    <li>流畅的状态切换</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎨 视觉反馈</h3>
+                <ul class="feature-list">
+                    <li>按钮淡入淡出动画</li>
+                    <li>悬停时背景高亮</li>
+                    <li>点击时按下效果</li>
+                    <li>与搜索框完美融合</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🔧 技术实现</h3>
+                <ul class="feature-list">
+                    <li>CSS 动画过渡效果</li>
+                    <li>动态类名控制显示</li>
+                    <li>事件处理优化</li>
+                    <li>状态同步更新</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="demo-content">
+            <h4>🎯 测试步骤</h4>
+            <div class="demo-steps">
+                <ol>
+                    <li><strong>显示订单选择器</strong> - 点击"显示订单选择器"按钮</li>
+                    <li><strong>输入搜索内容</strong> - 在搜索框中输入任意文字（如"Y11898"）</li>
+                    <li><strong>观察清空按钮</strong> - 清空按钮应该出现在搜索框右侧</li>
+                    <li><strong>点击清空按钮</strong> - 搜索内容应该被清空，显示所有结果</li>
+                    <li><strong>验证状态同步</strong> - 清空按钮应该自动隐藏</li>
+                </ol>
+            </div>
+            
+            <p><strong>预期效果：</strong></p>
+            <ul>
+                <li>✅ 输入内容时清空按钮显示</li>
+                <li>✅ 清空内容时按钮隐藏</li>
+                <li>✅ 点击清空后搜索框为空</li>
+                <li>✅ 清空后显示所有订单</li>
+                <li>✅ 动画效果流畅自然</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-btn" onclick="showOrderSelector()">🚀 显示订单选择器</button>
+            <button class="test-btn" onclick="testSearchInput()">🔍 测试搜索输入</button>
+            <button class="test-btn" onclick="testClearButton()">❌ 测试清空按钮</button>
+            <button class="test-btn" onclick="testSearchFlow()">🔄 测试完整流程</button>
+        </div>
+        
+        <div id="simple-order-container"></div>
+    </div>
+
+    <script>
+        // 动态加载 SimpleOrderSelector 类（包含清空功能）
+        class SimpleOrderSelector {
+            constructor() {
+                this.state = {
+                    isVisible: false,
+                    activeName: 'Orders',
+                    keyword: '',
+                    cartList: [],
+                    orderList: [],
+                    loading: false
+                }
+                this.container = null
+                this.onSendOrderCallback = null
+            }
+
+            setOnSendOrderCallback(callback) {
+                this.onSendOrderCallback = callback
+            }
+
+            mount(container) {
+                this.container = container
+            }
+
+            show() {
+                if (this.state.isVisible || !this.container) return
+                
+                this.state.isVisible = true
+                
+                if (this.container) {
+                    this.container.style.display = 'block'
+                    this.container.style.pointerEvents = 'auto'
+                    this.container.classList.add('active')
+                }
+                
+                this.initData()
+                this.render()
+            }
+
+            hide() {
+                if (!this.state.isVisible || !this.container) return
+                
+                this.state.isVisible = false
+                
+                if (this.container) {
+                    this.container.style.display = 'none'
+                    this.container.style.pointerEvents = 'none'
+                    this.container.classList.remove('active')
+                    this.container.innerHTML = ''
+                }
+            }
+
+            render() {
+                if (!this.container || !this.state.isVisible) return
+
+                if (!this.container.querySelector('.simple-order-backdrop')) {
+                    this.container.innerHTML = `
+                        ${this.generateStyles()}
+                        <div class="simple-order-backdrop" onclick="window.simpleOrderSelector && window.simpleOrderSelector.hide()">
+                            <div class="simple-order-popup" onclick="event.stopPropagation()">
+                                <div class="simple-order-header">
+                                    <span class="simple-order-title">Please Select an Order</span>
+                                    <span class="simple-order-close" onclick="window.simpleOrderSelector && window.simpleOrderSelector.hide()">×</span>
+                                </div>
+                                
+                                <div class="simple-order-search">
+                                    <div class="search-wrapper">
+                                        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                            <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        <input type="text" 
+                                               class="search-input" 
+                                               placeholder="Search order # or filename" 
+                                               value="${this.state.keyword}"
+                                               onkeydown="if(event.key==='Enter') window.simpleOrderSelector.handleSearch()"
+                                               oninput="window.simpleOrderSelector.updateKeyword(this.value)">
+                                        <button class="search-clear-btn ${this.state.keyword ? 'visible' : ''}" 
+                                                onclick="window.simpleOrderSelector.clearSearch()"
+                                                title="Clear search">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                <path d="M18 6L6 18M6 6L18 18" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                        <button class="search-btn" onclick="window.simpleOrderSelector.handleSearch()">Search</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="simple-order-tabs">
+                                    <div class="tab-item" data-tab="Orders" 
+                                         onclick="window.simpleOrderSelector.switchTab('Orders')">Orders</div>
+                                    <div class="tab-item" data-tab="Cart" 
+                                         onclick="window.simpleOrderSelector.switchTab('Cart')">Cart</div>
+                                </div>
+                                
+                                <div class="simple-order-list">
+                                    ${this.renderOrderList()}
+                                </div>
+                            </div>
+                        </div>
+                    `
+                }
+
+                this.updateSearchInput()
+                this.updateTabs()
+                this.updateOrderList()
+            }
+
+            updateKeyword(keyword) {
+                this.state.keyword = keyword
+                this.updateClearButton()
+            }
+
+            clearSearch() {
+                this.state.keyword = ''
+                this.updateSearchInput()
+                this.updateClearButton()
+                this.handleSearch()
+            }
+
+            updateSearchInput() {
+                const searchInput = this.container?.querySelector('.search-input')
+                if (searchInput && searchInput.value !== this.state.keyword) {
+                    searchInput.value = this.state.keyword
+                }
+            }
+
+            updateClearButton() {
+                const clearBtn = this.container?.querySelector('.search-clear-btn')
+                if (clearBtn) {
+                    if (this.state.keyword) {
+                        clearBtn.classList.add('visible')
+                    } else {
+                        clearBtn.classList.remove('visible')
+                    }
+                }
+            }
+
+            handleSearch() {
+                this.state.loading = true
+                this.updateOrderList()
+                
+                setTimeout(() => {
+                    this.loadData()
+                }, 300)
+            }
+
+            switchTab(tabName) {
+                this.state.activeName = tabName
+                this.updateTabs()
+                this.loadData()
+            }
+
+            updateTabs() {
+                const tabs = this.container?.querySelectorAll('.tab-item')
+                tabs?.forEach(tab => {
+                    const tabName = tab.getAttribute('data-tab')
+                    if (tabName === this.state.activeName) {
+                        tab.classList.add('active')
+                    } else {
+                        tab.classList.remove('active')
+                    }
+                })
+            }
+
+            updateOrderList() {
+                const orderListContainer = this.container?.querySelector('.simple-order-list')
+                if (orderListContainer) {
+                    if (this.state.loading) {
+                        orderListContainer.innerHTML = '<div class="loading">Loading...</div>'
+                    } else {
+                        orderListContainer.innerHTML = this.renderOrderList()
+                    }
+                }
+            }
+
+            loadData() {
+                this.state.loading = true
+                this.updateOrderList()
+                
+                setTimeout(() => {
+                    this.state.orderList = this.getMockOrderBatches()
+                    this.state.cartList = this.getMockCartItems()
+                    this.state.loading = false
+                    this.updateOrderList()
+                }, 500)
+            }
+
+            renderOrderList() {
+                const mockData = [
+                    {
+                        title: "pcbwenjian2(Reorder)_Y11898",
+                        orderCode: "Y11898-5011496A",
+                        orderAmount: "$15.63",
+                        businessType: "order_pcb"
+                    },
+                    {
+                        title: "1.STEP Metal Plate",
+                        orderCode: "SMS2510133000010",
+                        orderAmount: "$8.22",
+                        businessType: "order_plate_metal"
+                    },
+                    {
+                        title: "DEFdemo1-SO12510116003",
+                        orderCode: "SO12510116003",
+                        orderAmount: "$12.44",
+                        businessType: "order_steel"
+                    }
+                ]
+
+                // 根据关键词过滤
+                const filteredData = this.state.keyword ? 
+                    mockData.filter(item => 
+                        item.title.toLowerCase().includes(this.state.keyword.toLowerCase()) ||
+                        item.orderCode.toLowerCase().includes(this.state.keyword.toLowerCase())
+                    ) : mockData
+
+                if (filteredData.length === 0) {
+                    return '<div class="no-data">No matching orders found</div>'
+                }
+
+                return filteredData.map(item => `
+                    <div class="simple-order-item" onclick="window.simpleOrderSelector.selectOrder('${item.orderCode}')">
+                        <div class="order-image">
+                            <img src="${this.getOrderImageUrl(item)}" alt="${item.title}">
+                        </div>
+                        <div class="simple-order-info">
+                            <div class="simple-order-name">${item.title}</div>
+                            <div class="simple-order-code">Order #: ${item.orderCode}</div>
+                            <div class="simple-order-amount">${item.orderAmount}</div>
+                        </div>
+                        <button class="send-btn" onclick="event.stopPropagation(); window.simpleOrderSelector.selectOrder('${item.orderCode}')">Send</button>
+                    </div>
+                `).join('')
+            }
+
+            getMockOrderBatches() {
+                return []
+            }
+
+            getMockCartItems() {
+                return []
+            }
+
+            getOrderImageUrl(item) {
+                switch (item.businessType) {
+                    case 'order_pcb':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNGNhZjUwIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+UENCPC90ZXh0Pjwvc3ZnPg=='
+                    case 'order_steel':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNjA3ZDhiIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+U1RFUEM8L3RleHQ+PC9zdmc+'
+                    default:
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5Ij5JTUc8L3RleHQ+PC9zdmc+'
+                }
+            }
+
+            selectOrder(orderCode) {
+                console.log('选择订单:', orderCode)
+                if (this.onSendOrderCallback) {
+                    this.onSendOrderCallback({ orderCode })
+                }
+                this.hide()
+            }
+
+            initData() {
+                this.loadData()
+            }
+
+            generateStyles() {
+                return `
+                    <style>
+                        .simple-order-backdrop {
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: linear-gradient(
+                                180deg,
+                                rgba(0, 0, 0, 0.3) 0%,
+                                rgba(0, 0, 0, 0.5) 50%,
+                                rgba(0, 0, 0, 0.7) 100%
+                            );
+                            backdrop-filter: blur(2px);
+                            -webkit-backdrop-filter: blur(2px);
+                            z-index: 1000;
+                            animation: fadeInBackdrop 0.3s ease-out;
+                            display: flex;
+                            align-items: flex-end;
+                            border-radius: 16px;
+                        }
+
+                        @keyframes fadeInBackdrop {
+                            from {
+                                opacity: 0;
+                                backdrop-filter: blur(0px);
+                                -webkit-backdrop-filter: blur(0px);
+                            }
+                            to {
+                                opacity: 1;
+                                backdrop-filter: blur(2px);
+                                -webkit-backdrop-filter: blur(2px);
+                            }
+                        }
+
+                        .simple-order-popup {
+                            width: 100%;
+                            background: white;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 16px 16px 0 0;
+                            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2);
+                            height: 75%;
+                            overflow: hidden;
+                            z-index: 1001;
+                            animation: slideUpSimple 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                            pointer-events: auto;
+                            display: flex;
+                            flex-direction: column;
+                            position: relative;
+                        }
+
+                        .simple-order-popup::before {
+                            content: '';
+                            position: absolute;
+                            top: 8px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 36px;
+                            height: 4px;
+                            background: #e0e0e0;
+                            border-radius: 2px;
+                            z-index: 1;
+                        }
+
+                        @keyframes slideUpSimple {
+                            from {
+                                transform: translateY(100%);
+                                opacity: 0;
+                            }
+                            to {
+                                transform: translateY(0);
+                                opacity: 1;
+                            }
+                        }
+
+                        .simple-order-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 20px 16px 12px 16px;
+                            border-bottom: 1px solid #f0f0f0;
+                            background: #fff;
+                            position: relative;
+                        }
+
+                        .simple-order-title {
+                            font-size: 16px;
+                            font-weight: 600;
+                            color: #333;
+                        }
+
+                        .simple-order-close {
+                            cursor: pointer;
+                            font-size: 18px;
+                            color: #999;
+                            width: 20px;
+                            height: 20px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 50%;
+                            transition: all 0.2s;
+                        }
+
+                        .simple-order-close:hover {
+                            background: #e9ecef;
+                            color: #666;
+                        }
+
+                        .simple-order-search {
+                            padding: 12px 16px;
+                            border-bottom: 1px solid #e0e0e0;
+                        }
+
+                        .search-wrapper {
+                            position: relative;
+                            display: flex;
+                            align-items: center;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            overflow: hidden;
+                            transition: border-color 0.2s ease;
+                        }
+
+                        .search-wrapper:focus-within {
+                            border-color: #007bff;
+                            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+                        }
+
+                        .search-icon {
+                            position: absolute;
+                            left: 8px;
+                            z-index: 1;
+                            pointer-events: none;
+                        }
+
+                        .search-input {
+                            flex: 1;
+                            padding: 8px 40px 8px 32px;
+                            border: none;
+                            outline: none;
+                            font-size: 14px;
+                            color: #333;
+                        }
+
+                        .search-input::placeholder {
+                            color: #999;
+                        }
+
+                        .search-clear-btn {
+                            position: absolute;
+                            right: 80px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                            width: 24px;
+                            height: 24px;
+                            border: none;
+                            background: none;
+                            cursor: pointer;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            opacity: 0;
+                            visibility: hidden;
+                            transition: all 0.2s ease;
+                            z-index: 2;
+                        }
+
+                        .search-clear-btn:hover {
+                            background: #f0f0f0;
+                        }
+
+                        .search-clear-btn:active {
+                            background: #e0e0e0;
+                        }
+
+                        .search-clear-btn.visible {
+                            opacity: 1;
+                            visibility: visible;
+                        }
+
+                        .search-clear-btn svg {
+                            pointer-events: none;
+                        }
+
+                        .search-btn {
+                            padding: 8px 12px;
+                            background: #444;
+                            color: white;
+                            border: none;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 500;
+                            transition: background-color 0.2s ease;
+                        }
+
+                        .search-btn:hover {
+                            background: #333;
+                        }
+
+                        .search-btn:active {
+                            background: #222;
+                        }
+
+                        .simple-order-tabs {
+                            display: flex;
+                            border-bottom: 1px solid #e0e0e0;
+                        }
+
+                        .tab-item {
+                            flex: 1;
+                            padding: 12px 16px;
+                            text-align: center;
+                            cursor: pointer;
+                            border-bottom: 2px solid transparent;
+                            color: #666;
+                            font-size: 14px;
+                            font-weight: 500;
+                            transition: all 0.2s;
+                        }
+
+                        .tab-item.active {
+                            color: #007bff;
+                            border-bottom-color: #007bff;
+                        }
+
+                        .tab-item:hover:not(.active) {
+                            color: #333;
+                            background: #f8f9fa;
+                        }
+
+                        .simple-order-list {
+                            overflow-y: auto;
+                            flex: 1;
+                        }
+
+                        .simple-order-item {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 12px 16px;
+                            cursor: pointer;
+                            transition: background-color 0.2s;
+                            border-bottom: 1px solid #f0f0f0;
+                        }
+
+                        .simple-order-item:hover {
+                            background-color: #f8f9fa;
+                        }
+
+                        .simple-order-info {
+                            flex: 1;
+                            min-width: 0;
+                        }
+
+                        .simple-order-name {
+                            font-size: 13px;
+                            font-weight: 500;
+                            color: #333;
+                            margin-bottom: 2px;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+
+                        .simple-order-code {
+                            font-size: 11px;
+                            color: #666;
+                        }
+
+                        .simple-order-amount {
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #007bff;
+                        }
+
+                        .order-image {
+                            flex-shrink: 0;
+                            margin-right: 12px;
+                        }
+
+                        .order-image img {
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 4px;
+                            object-fit: cover;
+                        }
+
+                        .send-btn {
+                            background: #007bff;
+                            color: white;
+                            border: none;
+                            padding: 6px 12px;
+                            border-radius: 16px;
+                            cursor: pointer;
+                            font-size: 12px;
+                            font-weight: 500;
+                            transition: background-color 0.2s;
+                            margin-left: 12px;
+                        }
+
+                        .send-btn:hover {
+                            background: #0056b3;
+                        }
+
+                        .loading {
+                            text-align: center;
+                            padding: 40px 20px;
+                            color: #666;
+                            font-size: 14px;
+                        }
+
+                        .no-data {
+                            text-align: center;
+                            padding: 40px 20px;
+                            color: #999;
+                            font-size: 14px;
+                        }
+                    </style>
+                `
+            }
+        }
+
+        // 创建简单订单选择器实例
+        const simpleOrderSelector = new SimpleOrderSelector()
+        simpleOrderSelector.mount(document.getElementById('simple-order-container'))
+        
+        // 设置发送订单回调
+        simpleOrderSelector.setOnSendOrderCallback((orderItem) => {
+            document.getElementById('status').innerHTML = `
+                <strong>🎉 订单发送成功：</strong><br>
+                📦 订单代码: ${orderItem.orderCode}<br>
+                🔍 搜索功能: 正常工作<br>
+                ❌ 清空功能: 完美运行<br>
+                ✨ 交互体验: 流畅自然
+            `
+        })
+
+        // 全局函数
+        window.simpleOrderSelector = simpleOrderSelector
+
+        window.showOrderSelector = () => {
+            simpleOrderSelector.show()
+            updateStatus('🚀 订单选择器已显示，请测试搜索清空功能')
+        }
+
+        window.testSearchInput = () => {
+            simpleOrderSelector.show()
+            setTimeout(() => {
+                const searchInput = document.querySelector('.search-input')
+                if (searchInput) {
+                    searchInput.value = 'Y11898'
+                    searchInput.dispatchEvent(new Event('input'))
+                    simpleOrderSelector.updateKeyword('Y11898')
+                }
+                updateStatus('🔍 已自动输入搜索内容"Y11898"，观察清空按钮是否出现')
+            }, 500)
+        }
+
+        window.testClearButton = () => {
+            simpleOrderSelector.show()
+            setTimeout(() => {
+                const searchInput = document.querySelector('.search-input')
+                if (searchInput) {
+                    searchInput.value = 'test'
+                    searchInput.dispatchEvent(new Event('input'))
+                    simpleOrderSelector.updateKeyword('test')
+                }
+                updateStatus('❌ 已输入测试内容，请点击清空按钮测试清空功能')
+            }, 500)
+        }
+
+        window.testSearchFlow = () => {
+            simpleOrderSelector.show()
+            setTimeout(() => {
+                const searchInput = document.querySelector('.search-input')
+                if (searchInput) {
+                    searchInput.value = 'Y11898'
+                    searchInput.dispatchEvent(new Event('input'))
+                    simpleOrderSelector.updateKeyword('Y11898')
+                    simpleOrderSelector.handleSearch()
+                }
+                updateStatus('🔄 完整流程测试：输入 → 搜索 → 清空 → 显示所有结果')
+            }, 500)
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = `
+                <strong>🎯 测试状态：</strong><br>
+                ${message}<br>
+                <small>⏰ ${new Date().toLocaleTimeString()}</small>
+            `
+        }
+
+        // 初始化状态
+        updateStatus('✅ 搜索清空功能已就绪，点击按钮开始测试')
+    </script>
+</body>
+</html>

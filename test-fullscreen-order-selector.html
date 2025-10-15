@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全屏订单选择器测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .test-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .test-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        .status {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .feature-card h3 {
+            margin-top: 0;
+            color: #fff;
+            font-size: 18px;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            padding-left: 24px;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list li::before {
+            content: "📱";
+            position: absolute;
+            left: 0;
+            top: 8px;
+        }
+        .viewport-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 10000;
+        }
+        #simple-order-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        #simple-order-container.active {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewport-info" id="viewport-info">
+        视口尺寸: <span id="viewport-size"></span><br>
+        设备类型: <span id="device-type"></span>
+    </div>
+
+    <div class="test-container">
+        <h1>📱 全屏订单选择器测试</h1>
+        <p>测试订单选择器的全屏高度效果（height: 100%, bottom: 0）。</p>
+        
+        <div class="status" id="status">
+            <strong>🎯 全屏配置：</strong><br>
+            📏 高度设置: height: 100%<br>
+            📍 位置设置: bottom: 0<br>
+            🎭 背景遮罩: 渐变 + 模糊效果<br>
+            📱 响应式: 所有断点都支持全屏<br>
+            🎪 动画效果: 从底部滑入全屏显示
+        </div>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>📏 全屏布局</h3>
+                <ul class="feature-list">
+                    <li>高度占满整个视口</li>
+                    <li>底部对齐显示</li>
+                    <li>左右边缘对齐</li>
+                    <li>内容区域自适应</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>📱 响应式适配</h3>
+                <ul class="feature-list">
+                    <li>移动端全屏显示</li>
+                    <li>平板端全屏显示</li>
+                    <li>桌面端全屏显示</li>
+                    <li>超小屏幕优化</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎭 视觉效果</h3>
+                <ul class="feature-list">
+                    <li>渐变背景遮罩</li>
+                    <li>背景模糊滤镜</li>
+                    <li>顶部拖拽指示器</li>
+                    <li>流畅滑入动画</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎪 交互体验</h3>
+                <ul class="feature-list">
+                    <li>全屏沉浸式体验</li>
+                    <li>更大的操作区域</li>
+                    <li>更好的内容展示</li>
+                    <li>一致的视觉层次</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-btn" onclick="showFullscreenSelector()">🚀 显示全屏订单选择器</button>
+            <button class="test-btn" onclick="testMobileView()">📱 测试移动端视图</button>
+            <button class="test-btn" onclick="testTabletView()">📟 测试平板端视图</button>
+            <button class="test-btn" onclick="testDesktopView()">🖥️ 测试桌面端视图</button>
+        </div>
+        
+        <div id="simple-order-container"></div>
+    </div>
+
+    <script>
+        // 动态加载 OrderSelector 类
+        class OrderSelector {
+            constructor() {
+                this.state = {
+                    isVisible: false,
+                    isClosing: false,
+                    activeName: 'Orders',
+                    keyword: '',
+                    cartList: [],
+                    orderList: [],
+                    cartPageNum: 1,
+                    orderPageNum: 1,
+                    cartListTotal: 0,
+                    orderListTotal: 0,
+                    orderListLoading: false,
+                    pageSize: 12
+                }
+                this.container = null
+                this.onSendOrderCallback = null
+            }
+
+            setOnSendOrderCallback(callback) {
+                this.onSendOrderCallback = callback
+            }
+
+            show() {
+                if (this.state.isVisible) return
+                
+                this.state.isVisible = true
+                this.state.isClosing = false
+                
+                if (this.container) {
+                    this.container.style.display = 'block'
+                    this.container.classList.add('active')
+                }
+                
+                this.render()
+                this.initList()
+            }
+
+            hide() {
+                if (!this.state.isVisible) return
+                
+                this.state.isClosing = true
+                this.render()
+                
+                setTimeout(() => {
+                    this.state.isVisible = false
+                    this.state.isClosing = false
+                    
+                    if (this.container) {
+                        this.container.style.display = 'none'
+                        this.container.classList.remove('active')
+                        this.container.innerHTML = ''
+                    }
+                }, 300)
+            }
+
+            mount(container) {
+                this.container = container
+            }
+
+            render() {
+                if (!this.container) return
+
+                if (!this.state.isVisible) {
+                    this.container.innerHTML = ''
+                    return
+                }
+
+                this.container.innerHTML = `
+                    ${this.generateStyles()}
+                    <div class="chat-popup" onclick="this.handleBackdropClick(event)">
+                        <div class="chat-popup-container ${this.state.isClosing ? 'slide-down' : ''}">
+                            <div class="chat-popup-cate">
+                                <div class="chat-popup-header">
+                                    <strong class="chat-popup-title">Please Select an Order</strong>
+                                    <img class="chat-popup-close" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDRMNCA4TDEyIDEyIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=" onclick="window.orderSelector && window.orderSelector.hide()" />
+                                </div>
+                                <div class="chat-search-wrapper">
+                                    <div class="chat-search-input">
+                                        <input type="text" 
+                                               placeholder="Search order # or filename" 
+                                               value="${this.state.keyword}"
+                                               onkeydown="if(event.key==='Enter') window.orderSelector && window.orderSelector.handleSearch()"
+                                               oninput="window.orderSelector && window.orderSelector.updateKeyword(this.value)">
+                                        <div class="chat-search-btn" onclick="window.orderSelector && window.orderSelector.handleSearch()">Search</div>
+                                    </div>
+                                    <svg class="chat-search-icon" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                        <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="chat-tabs">
+                                    <div class="tab-item ${this.state.activeName === 'Orders' ? 'active' : ''}" 
+                                         onclick="window.orderSelector && window.orderSelector.switchTab('Orders')">Orders</div>
+                                    <div class="tab-item ${this.state.activeName === 'Cart' ? 'active' : ''}" 
+                                         onclick="window.orderSelector && window.orderSelector.switchTab('Cart')">Cart</div>
+                                </div>
+                            </div>
+                            <div class="chat-order-list">
+                                ${this.renderOrderList()}
+                            </div>
+                            ${this.state.orderListLoading ? '<div class="chat-loading">Loading...</div>' : ''}
+                        </div>
+                    </div>
+                `
+
+                this.bindEvents()
+            }
+
+            renderOrderList() {
+                const mockData = [
+                    {
+                        title: "pcbwenjian2(Reorder)_Y11898",
+                        _orderCode: "Y11898-5011496A",
+                        orderAmount: "$15.63",
+                        businessType: "order_pcb"
+                    },
+                    {
+                        title: "1.STEP Metal Plate",
+                        _orderCode: "SMS2510133000010",
+                        orderAmount: "$8.22",
+                        businessType: "order_plate_metal"
+                    },
+                    {
+                        title: "DEFdemo1-SO12510116003",
+                        _orderCode: "SO12510116003",
+                        orderAmount: "$12.44",
+                        businessType: "order_steel"
+                    },
+                    {
+                        title: "SMT Assembly Order",
+                        _orderCode: "SMT025101360000",
+                        orderAmount: "$10071.05",
+                        businessType: "order_smt"
+                    },
+                    {
+                        title: "Flex Heater PCB",
+                        _orderCode: "FH2025101049500006",
+                        orderAmount: "$5.55",
+                        businessType: "order_flexheater"
+                    }
+                ]
+
+                return mockData.map(item => `
+                    <div class="chat-order-list-item">
+                        <div class="chat-order-list-info">
+                            <div class="order-item">
+                                <div class="order-image">
+                                    <img src="${this.getOrderImageUrl(item)}" alt="${item.title}">
+                                </div>
+                                <div class="order-details">
+                                    <div class="order-title">${item.title}</div>
+                                    <div class="order-code">Order #: ${item._orderCode}</div>
+                                    <div class="order-amount">${item.orderAmount}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-order-send">
+                            <button class="send-btn" onclick="window.orderSelector && window.orderSelector.sendOrder('${item._orderCode}')">Send</button>
+                        </div>
+                    </div>
+                `).join('')
+            }
+
+            getOrderImageUrl(item) {
+                switch (item.businessType) {
+                    case 'order_pcb':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNGNhZjUwIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+UENCPC90ZXh0Pjwvc3ZnPg=='
+                    case 'order_steel':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNjA3ZDhiIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+U1RFUEM8L3RleHQ+PC9zdmc+'
+                    case 'order_smt':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZmY5ODAwIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+U01UPC90ZXh0Pjwvc3ZnPg=='
+                    default:
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5Ij5JTUc8L3RleHQ+PC9zdmc+'
+                }
+            }
+
+            bindEvents() {
+                const container = this.container?.querySelector('.chat-popup-container')
+                if (container) {
+                    container.addEventListener('click', (e) => {
+                        e.stopPropagation()
+                    })
+                }
+
+                const popup = this.container?.querySelector('.chat-popup')
+                if (popup) {
+                    popup.addEventListener('click', (e) => {
+                        if (e.target === popup) {
+                            this.hide()
+                        }
+                    })
+                }
+            }
+
+            updateKeyword(keyword) {
+                this.state.keyword = keyword
+            }
+
+            handleSearch() {
+                console.log('搜索关键词:', this.state.keyword)
+            }
+
+            switchTab(tabName) {
+                this.state.activeName = tabName
+                this.render()
+            }
+
+            sendOrder(orderCode) {
+                console.log('发送订单:', orderCode)
+                if (this.onSendOrderCallback) {
+                    this.onSendOrderCallback({ orderCode })
+                }
+                this.hide()
+            }
+
+            initList() {
+                // 模拟初始化
+            }
+
+            generateStyles() {
+                return `
+                    <style>
+                        .chat-popup {
+                            position: fixed;
+                            left: 0;
+                            right: 0;
+                            top: 0;
+                            bottom: 0;
+                            z-index: 9999;
+                            background: linear-gradient(
+                                180deg,
+                                rgba(0, 0, 0, 0.4) 0%,
+                                rgba(0, 0, 0, 0.6) 50%,
+                                rgba(0, 0, 0, 0.75) 100%
+                            );
+                            backdrop-filter: blur(2px);
+                            -webkit-backdrop-filter: blur(2px);
+                            display: flex;
+                            align-items: flex-end;
+                            animation: fadeInBackdrop 0.3s ease-out;
+                        }
+
+                        @keyframes fadeInBackdrop {
+                            from {
+                                opacity: 0;
+                                backdrop-filter: blur(0px);
+                                -webkit-backdrop-filter: blur(0px);
+                            }
+                            to {
+                                opacity: 1;
+                                backdrop-filter: blur(2px);
+                                -webkit-backdrop-filter: blur(2px);
+                            }
+                        }
+
+                        .chat-popup-container {
+                            height: 100%;
+                            width: 100%;
+                            background-color: #fff;
+                            border-top-left-radius: 16px;
+                            border-top-right-radius: 16px;
+                            display: flex;
+                            flex-direction: column;
+                            animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2);
+                            position: absolute;
+                            bottom: 0;
+                            left: 0;
+                            right: 0;
+                        }
+
+                        .chat-popup-container::before {
+                            content: '';
+                            position: absolute;
+                            top: 8px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 36px;
+                            height: 4px;
+                            background: #e0e0e0;
+                            border-radius: 2px;
+                            z-index: 1;
+                        }
+
+                        .chat-popup-container.slide-down {
+                            animation: slideDown 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+                        }
+
+                        @keyframes slideUp {
+                            from { 
+                                transform: translateY(100%);
+                                opacity: 0;
+                            }
+                            to { 
+                                transform: translateY(0);
+                                opacity: 1;
+                            }
+                        }
+
+                        @keyframes slideDown {
+                            from { 
+                                transform: translateY(0);
+                                opacity: 1;
+                            }
+                            to { 
+                                transform: translateY(100%);
+                                opacity: 0;
+                            }
+                        }
+
+                        .chat-popup-cate {
+                            padding: 20px 16px 0 16px;
+                            flex-shrink: 0;
+                        }
+
+                        .chat-popup-header {
+                            line-height: 20px;
+                            padding: 12px 0;
+                            position: relative;
+                            border-bottom: 1px solid #f0f0f0;
+                            margin-bottom: 16px;
+                        }
+
+                        .chat-popup-title {
+                            font-size: 16px;
+                            font-weight: bold;
+                        }
+
+                        .chat-popup-close {
+                            position: absolute;
+                            top: 10px;
+                            right: 10px;
+                            cursor: pointer;
+                            width: 16px;
+                            height: 16px;
+                        }
+
+                        .chat-search-wrapper {
+                            position: relative;
+                            margin-bottom: 12px;
+                        }
+
+                        .chat-search-input {
+                            display: flex;
+                            height: 34px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            overflow: hidden;
+                            transition: border-color 0.2s ease;
+                        }
+
+                        .chat-search-input:focus-within {
+                            border-color: #007bff;
+                            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+                        }
+
+                        .chat-search-input input {
+                            flex: 1;
+                            height: 32px;
+                            padding: 0 8px 0 36px;
+                            border: none;
+                            outline: none;
+                            font-size: 14px;
+                            color: #333;
+                            background: transparent;
+                        }
+
+                        .chat-search-btn {
+                            height: 32px;
+                            line-height: 32px;
+                            padding: 0 12px;
+                            background-color: #444444;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 500;
+                            transition: background-color 0.2s ease;
+                        }
+
+                        .chat-search-icon {
+                            position: absolute;
+                            top: 6px;
+                            left: 8px;
+                            color: #999;
+                            pointer-events: none;
+                            z-index: 1;
+                        }
+
+                        .chat-tabs {
+                            display: flex;
+                            border-bottom: 1px solid #e6eaf1;
+                            background: #f8f9fa;
+                        }
+
+                        .tab-item {
+                            flex: 1;
+                            padding: 12px 16px;
+                            cursor: pointer;
+                            border-bottom: 2px solid transparent;
+                            color: #666;
+                            font-size: 14px;
+                            font-weight: 500;
+                            text-align: center;
+                            transition: all 0.2s ease;
+                            position: relative;
+                        }
+
+                        .tab-item.active {
+                            color: #007bff;
+                            border-bottom-color: #007bff;
+                            background: white;
+                        }
+
+                        .chat-order-list {
+                            flex: 1;
+                            overflow: auto;
+                            padding: 0 16px 20px 16px;
+                            font-size: 14px;
+                            background: #fff;
+                        }
+
+                        .chat-order-list-item {
+                            display: flex;
+                            align-items: center;
+                            margin-bottom: 12px;
+                            padding: 12px;
+                            border: 1px solid #f0f0f0;
+                            border-radius: 8px;
+                            background: #fff;
+                            transition: all 0.2s ease;
+                        }
+
+                        .chat-order-list-item:hover {
+                            border-color: #e0e0e0;
+                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                            transform: translateY(-1px);
+                        }
+
+                        .chat-order-list-info {
+                            flex: 1;
+                            min-width: 0;
+                        }
+
+                        .order-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                            width: 100%;
+                        }
+
+                        .order-image img {
+                            width: 40px;
+                            height: 40px;
+                            object-fit: cover;
+                            border-radius: 4px;
+                            border: 1px solid #f0f0f0;
+                        }
+
+                        .order-details {
+                            flex: 1;
+                            min-width: 0;
+                        }
+
+                        .order-title {
+                            font-weight: 500;
+                            margin-bottom: 4px;
+                            color: #333;
+                            font-size: 14px;
+                            line-height: 1.3;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+
+                        .order-code {
+                            font-size: 12px;
+                            color: #666;
+                            margin-bottom: 2px;
+                            line-height: 1.2;
+                        }
+
+                        .order-amount {
+                            font-size: 14px;
+                            color: #007bff;
+                            font-weight: 600;
+                            line-height: 1.2;
+                        }
+
+                        .send-btn {
+                            background-color: #007bff;
+                            color: white;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 500;
+                            transition: all 0.2s ease;
+                            flex-shrink: 0;
+                            margin-left: 12px;
+                        }
+
+                        .send-btn:hover {
+                            background-color: #0056b3;
+                            transform: translateY(-1px);
+                            box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+                        }
+
+                        /* 响应式优化 */
+                        @media (max-width: 480px) {
+                            .chat-popup-container {
+                                height: 100%;
+                                border-top-left-radius: 12px;
+                                border-top-right-radius: 12px;
+                            }
+                            
+                            .chat-popup-cate {
+                                padding: 16px 12px 0 12px;
+                            }
+                            
+                            .chat-order-list {
+                                padding: 0 12px 16px 12px;
+                            }
+                        }
+
+                        @media (max-width: 360px) {
+                            .chat-popup-container {
+                                height: 100%;
+                            }
+                        }
+
+                        @media (min-width: 768px) {
+                            .chat-popup-container {
+                                height: 100%;
+                                border-radius: 16px;
+                                margin: 0 20px 20px 20px;
+                                width: calc(100% - 40px);
+                                bottom: 20px;
+                            }
+                        }
+                    </style>
+                `
+            }
+        }
+
+        // 创建订单选择器实例
+        const orderSelector = new OrderSelector()
+        orderSelector.mount(document.getElementById('simple-order-container'))
+        
+        // 设置发送订单回调
+        orderSelector.setOnSendOrderCallback((orderItem) => {
+            document.getElementById('status').innerHTML = `
+                <strong>🎉 订单发送成功：</strong><br>
+                📦 订单代码: ${orderItem.orderCode}<br>
+                📏 全屏高度: height: 100%<br>
+                📍 底部对齐: bottom: 0<br>
+                🎭 视觉效果: 完美呈现
+            `
+        })
+
+        // 全局函数
+        window.orderSelector = orderSelector
+
+        window.showFullscreenSelector = () => {
+            orderSelector.show()
+            updateStatus('🚀 全屏订单选择器已显示，占满整个视口高度')
+        }
+
+        window.testMobileView = () => {
+            // 模拟移动端视口
+            document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=375, initial-scale=1.0')
+            orderSelector.show()
+            updateStatus('📱 移动端视图测试：375px 宽度，全屏高度显示')
+        }
+
+        window.testTabletView = () => {
+            // 模拟平板端视口
+            document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=768, initial-scale=1.0')
+            orderSelector.show()
+            updateStatus('📟 平板端视图测试：768px 宽度，全屏高度显示')
+        }
+
+        window.testDesktopView = () => {
+            // 恢复桌面端视口
+            document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0')
+            orderSelector.show()
+            updateStatus('🖥️ 桌面端视图测试：全宽度，全屏高度显示')
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = `
+                <strong>🎯 测试状态：</strong><br>
+                ${message}<br>
+                <small>⏰ ${new Date().toLocaleTimeString()}</small>
+            `
+        }
+
+        // 更新视口信息
+        function updateViewportInfo() {
+            const width = window.innerWidth
+            const height = window.innerHeight
+            let deviceType = '🖥️ 桌面端'
+            
+            if (width <= 360) {
+                deviceType = '📱 超小屏'
+            } else if (width <= 480) {
+                deviceType = '📱 移动端'
+            } else if (width <= 768) {
+                deviceType = '📟 平板端'
+            }
+            
+            document.getElementById('viewport-size').textContent = `${width} × ${height}`
+            document.getElementById('device-type').textContent = deviceType
+        }
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', updateViewportInfo)
+        updateViewportInfo()
+
+        // 初始化状态
+        updateStatus('✅ 全屏订单选择器已就绪，点击按钮开始测试')
+    </script>
+</body>
+</html>

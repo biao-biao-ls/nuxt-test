@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>平滑过渡效果测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .status {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        #simple-order-container {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            z-index: 10000;
+            width: 400px;
+            max-height: 500px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>平滑过渡效果测试</h1>
+        <p>测试优化后的订单选择器，验证切换标签页和搜索时不会出现抖动。</p>
+        
+        <div class="status" id="status">等待初始化...</div>
+        
+        <div class="test-section">
+            <h3>基础操作</h3>
+            <button class="test-btn" onclick="toggleOrderSelector()">显示/隐藏订单选择器</button>
+            <button class="test-btn" onclick="showOrderSelector()">显示订单选择器</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>标签页切换测试</h3>
+            <button class="test-btn" onclick="testTabSwitch('Orders')">切换到 Orders</button>
+            <button class="test-btn" onclick="testTabSwitch('Cart')">切换到 Cart</button>
+            <button class="test-btn" onclick="testRapidTabSwitch()">快速切换测试</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>搜索功能测试</h3>
+            <button class="test-btn" onclick="testSearch('Y11898')">搜索 Y11898</button>
+            <button class="test-btn" onclick="testSearch('STEP')">搜索 STEP</button>
+            <button class="test-btn" onclick="testSearch('')">清空搜索</button>
+            <button class="test-btn" onclick="testRapidSearch()">快速搜索测试</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>综合测试</h3>
+            <button class="test-btn" onclick="testCombinedOperations()">综合操作测试</button>
+        </div>
+        
+        <div id="simple-order-container"></div>
+    </div>
+
+    <script>
+        // 模拟 QuickChat API
+        window.quickChatApi = {
+            sendMessage: (message) => {
+                console.log('发送消息:', message);
+                updateStatus('✅ 消息已发送: ' + message.substring(0, 30) + '...');
+            }
+        };
+
+        // 简化版订单选择器类（内嵌实现用于测试）
+        class SimpleOrderSelector {
+            constructor() {
+                this.state = {
+                    isVisible: false,
+                    activeName: 'Orders',
+                    keyword: '',
+                    cartList: [],
+                    orderList: [],
+                    loading: false
+                };
+                this.container = null;
+                this.onSendOrderCallback = null;
+                window.simpleOrderSelector = this;
+            }
+
+            setOnSendOrderCallback(callback) {
+                this.onSendOrderCallback = callback;
+            }
+
+            mount(container) {
+                this.container = container;
+                updateStatus('✅ 订单选择器已挂载');
+            }
+
+            toggle() {
+                if (this.state.isVisible) {
+                    this.hide();
+                } else {
+                    this.show();
+                }
+            }
+
+            show() {
+                if (this.state.isVisible || !this.container) return;
+                
+                this.state.isVisible = true;
+                
+                if (this.container) {
+                    this.container.style.display = 'block';
+                    this.container.style.pointerEvents = 'auto';
+                }
+                
+                this.initData();
+                this.render();
+                updateStatus('✅ 订单选择器已显示');
+            }
+
+            hide() {
+                if (!this.state.isVisible || !this.container) return;
+                
+                this.state.isVisible = false;
+                
+                if (this.container) {
+                    this.container.style.display = 'none';
+                    this.container.style.pointerEvents = 'none';
+                    this.container.innerHTML = '';
+                }
+                updateStatus('✅ 订单选择器已隐藏');
+            }
+
+            updateKeyword(keyword) {
+                this.state.keyword = keyword;
+                updateStatus('🔍 搜索关键词更新: ' + keyword);
+            }
+
+            handleSearch() {
+                this.state.loading = true;
+                this.updateOrderList();
+                updateStatus('🔍 开始搜索: ' + this.state.keyword);
+                
+                setTimeout(() => {
+                    this.loadData();
+                }, 300);
+            }
+
+            switchTab(tabName) {
+                if (this.state.activeName === tabName) return;
+                
+                this.state.activeName = tabName;
+                this.updateTabs();
+                this.loadData();
+                updateStatus('🔄 切换到标签页: ' + tabName);
+            }
+
+            render() {
+                if (!this.container || !this.state.isVisible) return;
+
+                if (!this.container.querySelector('.simple-order-popup')) {
+                    this.container.innerHTML = `
+                        <style>
+                            .simple-order-popup {
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                right: 0;
+                                background: white;
+                                border: 1px solid #e0e0e0;
+                                border-radius: 8px 8px 0 0;
+                                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+                                max-height: 400px;
+                                overflow: hidden;
+                                z-index: 1001;
+                                animation: slideUpSimple 0.2s ease-out;
+                                pointer-events: auto;
+                            }
+                            @keyframes slideUpSimple {
+                                from { transform: translateY(100%); opacity: 0; }
+                                to { transform: translateY(0); opacity: 1; }
+                            }
+                            .simple-order-header {
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                padding: 12px 16px;
+                                border-bottom: 1px solid #e0e0e0;
+                                background: #f8f9fa;
+                            }
+                            .simple-order-title { font-size: 16px; font-weight: 600; color: #333; }
+                            .simple-order-close {
+                                cursor: pointer; font-size: 18px; color: #999;
+                                width: 20px; height: 20px; display: flex;
+                                align-items: center; justify-content: center;
+                                border-radius: 50%; transition: all 0.2s;
+                            }
+                            .simple-order-close:hover { background: #e9ecef; color: #666; }
+                            .simple-order-tabs {
+                                display: flex; border-bottom: 1px solid #e0e0e0;
+                            }
+                            .tab-item {
+                                flex: 1; padding: 12px 16px; text-align: center;
+                                cursor: pointer; border-bottom: 2px solid transparent;
+                                color: #666; font-size: 14px; font-weight: 500;
+                                transition: all 0.2s;
+                            }
+                            .tab-item.active { color: #007bff; border-bottom-color: #007bff; }
+                            .tab-item:hover:not(.active) { color: #333; background: #f8f9fa; }
+                            .tab-item.switching { opacity: 0.6; }
+                            .simple-order-list {
+                                max-height: 240px; overflow-y: auto;
+                                transition: opacity 0.2s ease;
+                            }
+                            .simple-order-list.updating { opacity: 0.6; }
+                            .loading { text-align: center; padding: 40px 20px; color: #666; font-size: 14px; }
+                            .no-data { text-align: center; padding: 40px 20px; color: #999; font-size: 14px; }
+                            .simple-order-item {
+                                display: flex; align-items: center; padding: 12px 16px;
+                                cursor: pointer; transition: background-color 0.2s;
+                                border-bottom: 1px solid #f0f0f0; gap: 12px;
+                            }
+                            .simple-order-item:hover { background-color: #f8f9fa; }
+                            .order-image img { width: 40px; height: 40px; border-radius: 4px; }
+                            .simple-order-info { flex: 1; min-width: 0; }
+                            .simple-order-name {
+                                font-size: 13px; font-weight: 500; color: #333;
+                                margin-bottom: 4px; white-space: nowrap;
+                                overflow: hidden; text-overflow: ellipsis;
+                            }
+                            .simple-order-code { font-size: 11px; color: #666; margin-bottom: 2px; }
+                            .simple-order-amount { font-size: 13px; font-weight: 600; color: #007bff; }
+                            .send-btn {
+                                background: #007bff; color: white; border: none;
+                                padding: 6px 12px; border-radius: 16px; cursor: pointer;
+                                font-size: 12px; font-weight: 500; transition: background-color 0.2s;
+                            }
+                            .send-btn:hover { background: #0056b3; }
+                        </style>
+                        <div class="simple-order-popup">
+                            <div class="simple-order-header">
+                                <span class="simple-order-title">Please Select an Order</span>
+                                <span class="simple-order-close" onclick="window.simpleOrderSelector.hide()">×</span>
+                            </div>
+                            <div class="simple-order-tabs">
+                                <div class="tab-item" data-tab="Orders" onclick="window.simpleOrderSelector.switchTab('Orders')">Orders</div>
+                                <div class="tab-item" data-tab="Cart" onclick="window.simpleOrderSelector.switchTab('Cart')">Cart</div>
+                            </div>
+                            <div class="simple-order-list">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                this.updateTabs();
+                this.updateOrderList();
+            }
+
+            updateTabs() {
+                const tabs = this.container?.querySelectorAll('.tab-item');
+                tabs?.forEach(tab => {
+                    const tabElement = tab;
+                    const tabName = tabElement.getAttribute('data-tab');
+                    
+                    tabElement.classList.add('switching');
+                    
+                    setTimeout(() => {
+                        if (tabName === this.state.activeName) {
+                            tabElement.classList.add('active');
+                        } else {
+                            tabElement.classList.remove('active');
+                        }
+                        tabElement.classList.remove('switching');
+                    }, 50);
+                });
+            }
+
+            updateOrderList() {
+                const orderListContainer = this.container?.querySelector('.simple-order-list');
+                if (orderListContainer) {
+                    if (this.state.loading) {
+                        orderListContainer.classList.add('updating');
+                        orderListContainer.innerHTML = '<div class="loading">Loading...</div>';
+                    } else {
+                        orderListContainer.classList.add('updating');
+                        
+                        setTimeout(() => {
+                            orderListContainer.innerHTML = this.renderOrderList();
+                            orderListContainer.classList.remove('updating');
+                        }, 100);
+                    }
+                }
+            }
+
+            renderOrderList() {
+                const mockData = this.state.activeName === 'Orders' ? [
+                    { title: 'pcbwenjian2(Reorder)_Y11898', orderCode: 'Y11898-5011496A', orderAmount: '$15.63' },
+                    { title: '1.STEP', orderCode: 'SMS2510133000010', orderAmount: '$8.22' }
+                ] : [
+                    { title: '12321321_Y11899', orderCode: 'Y11899-5011496A', orderAmount: '$10.53' }
+                ];
+
+                const filteredData = this.state.keyword ? 
+                    mockData.filter(item => 
+                        item.title.toLowerCase().includes(this.state.keyword.toLowerCase()) ||
+                        item.orderCode.toLowerCase().includes(this.state.keyword.toLowerCase())
+                    ) : mockData;
+
+                if (filteredData.length === 0) {
+                    return '<div class="no-data">No data found</div>';
+                }
+
+                return filteredData.map(item => `
+                    <div class="simple-order-item" onclick="window.simpleOrderSelector.selectOrder('${item.orderCode}')">
+                        <div class="order-image">
+                            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNGNhZjUwIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+UENCPC90ZXh0Pjwvc3ZnPg==" alt="Order">
+                        </div>
+                        <div class="simple-order-info">
+                            <div class="simple-order-name">${item.title}</div>
+                            <div class="simple-order-code">Order #: ${item.orderCode}</div>
+                            <div class="simple-order-amount">${item.orderAmount}</div>
+                        </div>
+                        <button class="send-btn" onclick="event.stopPropagation(); window.simpleOrderSelector.selectOrder('${item.orderCode}')">Send</button>
+                    </div>
+                `).join('');
+            }
+
+            initData() {
+                this.loadData();
+            }
+
+            loadData() {
+                this.state.loading = true;
+                this.updateOrderList();
+                
+                setTimeout(() => {
+                    this.state.loading = false;
+                    this.updateOrderList();
+                }, 500);
+            }
+
+            selectOrder(orderCode) {
+                updateStatus('📦 选择订单: ' + orderCode);
+                if (this.onSendOrderCallback) {
+                    this.onSendOrderCallback({ orderCode, title: 'Test Order', orderAmount: '$10.00', businessType: 'test' });
+                }
+                this.hide();
+            }
+        }
+
+        // 创建订单选择器实例
+        const simpleOrderSelector = new SimpleOrderSelector();
+        simpleOrderSelector.mount(document.getElementById('simple-order-container'));
+        
+        simpleOrderSelector.setOnSendOrderCallback((orderItem) => {
+            const orderMessage = `📦 订单信息: ${orderItem.orderCode} - ${orderItem.orderAmount}`;
+            window.quickChatApi.sendMessage(orderMessage);
+        });
+
+        // 工具函数
+        function updateStatus(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            document.getElementById('status').innerHTML = `[${timestamp}] ${message}`;
+        }
+
+        // 测试函数
+        function toggleOrderSelector() {
+            simpleOrderSelector.toggle();
+        }
+
+        function showOrderSelector() {
+            simpleOrderSelector.show();
+        }
+
+        function testTabSwitch(tabName) {
+            simpleOrderSelector.show();
+            setTimeout(() => {
+                simpleOrderSelector.switchTab(tabName);
+            }, 200);
+        }
+
+        function testRapidTabSwitch() {
+            simpleOrderSelector.show();
+            let currentTab = 'Orders';
+            let count = 0;
+            const interval = setInterval(() => {
+                currentTab = currentTab === 'Orders' ? 'Cart' : 'Orders';
+                simpleOrderSelector.switchTab(currentTab);
+                count++;
+                if (count >= 6) {
+                    clearInterval(interval);
+                    updateStatus('🔄 快速切换测试完成');
+                }
+            }, 800);
+        }
+
+        function testSearch(keyword) {
+            simpleOrderSelector.show();
+            setTimeout(() => {
+                simpleOrderSelector.updateKeyword(keyword);
+                simpleOrderSelector.handleSearch();
+            }, 200);
+        }
+
+        function testRapidSearch() {
+            simpleOrderSelector.show();
+            const keywords = ['Y11898', 'STEP', 'SMS', ''];
+            let index = 0;
+            const interval = setInterval(() => {
+                simpleOrderSelector.updateKeyword(keywords[index]);
+                simpleOrderSelector.handleSearch();
+                index++;
+                if (index >= keywords.length) {
+                    clearInterval(interval);
+                    updateStatus('🔍 快速搜索测试完成');
+                }
+            }, 1000);
+        }
+
+        function testCombinedOperations() {
+            simpleOrderSelector.show();
+            updateStatus('🧪 开始综合操作测试...');
+            
+            setTimeout(() => simpleOrderSelector.switchTab('Cart'), 500);
+            setTimeout(() => simpleOrderSelector.updateKeyword('Y11'), 1000);
+            setTimeout(() => simpleOrderSelector.handleSearch(), 1200);
+            setTimeout(() => simpleOrderSelector.switchTab('Orders'), 2000);
+            setTimeout(() => simpleOrderSelector.updateKeyword('STEP'), 2500);
+            setTimeout(() => simpleOrderSelector.handleSearch(), 2700);
+            setTimeout(() => {
+                simpleOrderSelector.updateKeyword('');
+                simpleOrderSelector.handleSearch();
+                updateStatus('🧪 综合操作测试完成');
+            }, 3500);
+        }
+
+        // 初始化
+        updateStatus('✅ 平滑过渡效果测试页面已初始化');
+    </script>
+</body>
+</html>

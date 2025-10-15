@@ -475,6 +475,37 @@ export class ChatStyles {
           height: 18px;
           color: rgba(0, 0, 0, 0.45);
         }
+
+        .footer-btn.order-btn {
+          background: #007bff;
+          color: white;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+
+        .footer-btn.order-btn:hover {
+          background: #0056b3;
+          transform: translateY(-1px);
+        }
+
+        .footer-btn.order-btn svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        .footer-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
       </style>
     `
   }

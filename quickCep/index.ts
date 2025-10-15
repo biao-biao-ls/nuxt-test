@@ -1,6 +1,7 @@
 import { ChatManager } from "./useChatManager";
 import { ChatCustomUI } from "./useChatCustomUI";
 import { ChatStyles } from "./useChatStyles";
+import { SimpleOrderSelector } from "./useSimpleOrderSelector";
 
 export const initQuickCep = (rawCustomerServiceData = {}) => {
   // 将类挂载到全局对象，以便在HTML事件处理中使用
@@ -8,6 +9,7 @@ export const initQuickCep = (rawCustomerServiceData = {}) => {
     window.ChatStyles = ChatStyles;
     window.ChatCustomUI = ChatCustomUI;
     window.ChatManager = ChatManager;
+    window.SimpleOrderSelector = SimpleOrderSelector;
   }
   const initFn = async () => {
     try {

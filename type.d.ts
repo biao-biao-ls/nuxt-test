@@ -1,8 +1,13 @@
+import { ChatCustomUI } from './quickCep/useChatCustomUI'
+import { SimpleOrderSelector } from './quickCep/useSimpleOrderSelector'
+
 declare global {
   interface Window {
     quickChatReadyHook?: () => void;
     quickEmitter?: {
       on: (event: string, callback: (config: any) => void) => void;
+      emit: (event: string, data?: any) => void;
+      off: (event: string, callback?: (config: any) => void) => void;
     };
     quickChatApi?: {
        // 设置值到输入框
@@ -37,5 +42,8 @@ declare global {
       // 切换座席
       switchChat: (userId: string) => void
     };
+    chatUI?: ChatCustomUI;
+    simpleOrderSelector?: SimpleOrderSelector;
+    debugQuickChat?: any;
   }
 }

@@ -1,19 +1,12 @@
 import { ChatCustomUI } from './useChatCustomUI'
+import { SimpleOrderSelector } from './useSimpleOrderSelector'
 import {
   CustomerServiceDataManager,
   type CustomerServiceAgent,
   type GroupedCustomerServiceData
 } from './useCustomerServiceData'
 
-// 声明全局类型
-declare global {
-  interface Window {
-    quickChatApi?: any
-    quickEmitter?: any
-    chatUI?: ChatCustomUI
-    debugQuickChat?: any
-  }
-}
+// 全局类型声明在 type.d.ts 中
 
 /**
  * 聊天管理器
@@ -21,11 +14,14 @@ declare global {
  */
 export class ChatManager {
   private chatUI: ChatCustomUI | null = null
+  private simpleOrderSelector: SimpleOrderSelector | null = null
   private isInitialized = false
   private retryCount = 0
   private readonly maxRetries: number = 20
   private customerServiceData?: CustomerServiceAgent[]
   private iframeResizeObserver: ResizeObserver | null = null
+  private operatorStatusReceived = false
+  private pendingOperatorListChange: any = null
 
   constructor(customerServiceData?: CustomerServiceAgent[]) {
     this.customerServiceData = customerServiceData
@@ -63,6 +59,14 @@ export class ChatManager {
       // 创建UI管理器实例
       this.chatUI = new ChatCustomUI(finalCustomerServiceData)
 
+      // 创建简化版订单选择器实例
+      this.simpleOrderSelector = new SimpleOrderSelector()
+
+      // 设置订单发送回调
+      this.simpleOrderSelector.setOnSendOrderCallback((orderItem) => {
+        this.sendSimpleOrderMessage(orderItem)
+      })
+
       // 设置客服状态变化回调
       this.chatUI.setOnAgentStatusChangeCallback(() => {
         this.updateLeftBarVisibility()
@@ -70,7 +74,8 @@ export class ChatManager {
 
       // 设置全局引用
       if (typeof window !== 'undefined') {
-        window.chatUI = this.chatUI
+        ; (window as any).chatUI = this.chatUI
+          ; (window as any).simpleOrderSelector = this.simpleOrderSelector
       }
 
       // 挂载自定义组件
@@ -157,8 +162,16 @@ export class ChatManager {
           this.chatUI.state.containers.footer = container
           // 立即渲染底部内容，不等待特定时机
           container.innerHTML = this.chatUI.generateFooterHTML()
+          // 绑定全局事件处理器
+          this.bindGlobalEventHandlers()
         }
       })
+    }
+
+    // 在主窗口中创建订单选择器容器
+    if (this.simpleOrderSelector) {
+      // 尝试在 iframe 外部创建容器
+      this.createOrderSelectorContainer()
     }
 
     // 开始监听聊天窗口状态
@@ -175,6 +188,9 @@ export class ChatManager {
     window.quickEmitter.on('chat.operator.status', (data: any) => {
       console.log('chat.operator.status', data)
       if (data && data.operatorUserIdStatus && this.chatUI) {
+        // 标记已接收到客服状态数据
+        this.operatorStatusReceived = true
+
         // 状态对比和UI更新逻辑已在updateAgentStatus方法中处理
         this.chatUI.updateAgentStatus(data.operatorUserIdStatus)
         // 更新左侧栏可见性
@@ -188,46 +204,56 @@ export class ChatManager {
             }
           }, 500)
         }
+
+        // 如果有待处理的座席列表变化，现在处理它
+        if (this.pendingOperatorListChange) {
+          console.log('处理待处理的座席列表变化')
+          this.handleOperatorListChange(this.pendingOperatorListChange)
+          this.pendingOperatorListChange = null
+        }
       }
     })
 
     // 监听切换客服成功事件
     window.quickEmitter.on('chat.switch.operator.success', (data: any) => {
       console.log('监听切换座席成功: chat.switch.operator.success', data)
-      if (data && this.chatUI) {
-        // 尝试多种可能的属性名
-        const operatorId = data.operatorId || data.userId || data.quickCepId || data.id
-
-        if (operatorId) {
-          const switchedAgent = this.chatUI.state.customerServiceData.find((agent) => agent.quickCepId === operatorId)
-
-          if (switchedAgent) {
-            this.chatUI.state.currentChatAgent = switchedAgent
-            this.chatUI.refreshUI()
-          }
-        }
+      if (this.chatUI) {
+        // 调用 ChatCustomUI 的处理方法
+        this.chatUI.handleSwitchOperatorSuccess()
       }
     })
 
     // 监听点击聊天icon:
-    window.quickEmitter.on('chat.model.toggleChat', (data: { isOpen: boolean }) => {
+    window.quickEmitter.on('chat.model.toggleChat', (data: any) => {
       console.log('点击聊天探头')
       this.fetchAgentStatus()
     })
 
     // 监听成功获取消息列表 (用于自定义渲染组件时机):
-    window.quickEmitter.on('chat.getMessageList.success', (data) => {
+    window.quickEmitter.on('chat.getMessageList.success', (data: any) => {
       console.log('拉取消息列表成功')
     })
 
     // 监听会话关闭:
-    window.quickEmitter.on('chat.end', (data) => {
+    window.quickEmitter.on('chat.end', (data: any) => {
       console.log('chat.end', data)
+      // 会话关闭时，恢复客服信息为默认状态
+      this.resetToDefaultAgent()
     })
 
     // 监听当前会话座席变化:
-    window.quickEmitter.on('chat.operatorList.change', (data) => {
+    window.quickEmitter.on('chat.operatorList.change', (data: any) => {
       console.log('chat.operatorList.change', data)
+
+      // 检查是否已接收到客服状态数据
+      if (this.operatorStatusReceived) {
+        // 如果已接收到状态数据，立即处理
+        this.handleOperatorListChange(data)
+      } else {
+        // 如果还没有接收到状态数据，暂存待处理
+        console.log('等待 chat.operator.status 事件触发后再处理座席列表变化')
+        this.pendingOperatorListChange = data
+      }
     })
 
     // 监听其他可能的切换客服事件
@@ -239,7 +265,7 @@ export class ChatManager {
     ]
 
     possibleEvents.forEach((eventName) => {
-      window.quickEmitter.on(eventName, (data: any) => {
+      window.quickEmitter?.on(eventName, (data: any) => {
         // 这里可以添加相同的处理逻辑
         console.log(eventName, data)
       })
@@ -248,6 +274,15 @@ export class ChatManager {
     // 监听页面焦点事件
     window.addEventListener('focus', () => {
       setTimeout(() => this.fetchAgentStatus(), 500)
+    })
+
+    // 监听来自 iframe 的消息
+    window.addEventListener('message', (event: MessageEvent) => {
+      if (event.data && event.data.type === 'TOGGLE_ORDER_SELECTOR') {
+        if (this.simpleOrderSelector) {
+          this.simpleOrderSelector.toggle()
+        }
+      }
     })
   }
 
@@ -355,6 +390,62 @@ export class ChatManager {
   }
 
   /**
+   * 处理座席列表变化
+   */
+  private handleOperatorListChange(data: any): void {
+    if (!this.chatUI) return
+
+    // 处理座席列表变化
+    if (data && Array.isArray(data) && data.length > 0) {
+      // 获取第一个座席信息（通常当前会话只有一个座席）
+      const currentOperator = data[0]
+      const operatorId = currentOperator.operatorId
+
+      if (operatorId) {
+        // 根据 operatorId 查找对应的客服信息
+        const matchedAgent = this.chatUI.state.customerServiceData.find(
+          (agent) => agent.quickCepId === operatorId
+        )
+
+        if (matchedAgent) {
+          console.log('找到匹配的客服:', matchedAgent.employeeEnName)
+
+          // 更新当前聊天客服
+          this.chatUI.state.currentChatAgent = matchedAgent
+
+          // 注意：客服的在线状态应该通过 'chat.operator.status' 事件的 data.operatorUserIdStatus 来更新
+          // 这里不直接更新状态，而是依赖 chat.operator.status 事件来更新客服状态
+          console.log('座席列表变化，当前操作员信息:', currentOperator)
+
+          // 刷新UI显示
+          this.chatUI.refreshUI()
+
+          // 保存当前选择的客服到本地存储
+          this.chatUI.saveSelectedAgent(matchedAgent)
+
+          // 触发获取最新的客服状态，确保状态是最新的
+          setTimeout(() => {
+            this.fetchAgentStatus()
+          }, 100)
+
+          console.log('已更新当前会话客服为:', {
+            name: matchedAgent.employeeEnName,
+            quickCepId: matchedAgent.quickCepId,
+            status: matchedAgent.status,
+            isOnline: matchedAgent.isOnline
+          })
+        } else {
+          console.warn('未找到匹配的客服，operatorId:', operatorId)
+        }
+      }
+    } else if (data && Array.isArray(data) && data.length === 0) {
+      // 如果座席列表为空，可能是会话结束或没有分配座席
+      console.log('当前会话没有分配座席')
+      this.resetToDefaultAgent()
+    }
+  }
+
+  /**
    * 更新左侧栏可见性
    * 根据在线客服人数和当前选择状态来决定是否显示左侧栏
    */
@@ -388,7 +479,7 @@ export class ChatManager {
     let isCustomElementsInitialized = false
     let iframeObserver: MutationObserver | null = null
     let chatBodyObserver: MutationObserver | null = null
-    let timeoutId: NodeJS.Timeout | null = null
+    let timeoutId: any = null
 
     const checkChatWindow = (): boolean => {
       try {
@@ -588,6 +679,9 @@ export class ChatManager {
     if (this.chatUI.state.containers.footer) {
       this.chatUI.state.containers.footer.innerHTML = this.chatUI.generateFooterHTML()
     }
+
+    // 绑定全局事件处理器
+    this.bindGlobalEventHandlers()
 
     // 更新左侧栏可见性
     this.updateLeftBarVisibility()
@@ -863,7 +957,7 @@ export class ChatManager {
             chatBodyContent: !!chatBodyContent,
             readyState: iframe.contentDocument.readyState
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('❌ 检查 iframe 访问权限时出错:', error)
           return { accessible: false, reason: error.message }
         }
@@ -903,6 +997,206 @@ export class ChatManager {
   }
 
   /**
+   * 绑定全局事件处理器
+   */
+  private bindGlobalEventHandlers(): void {
+    if (typeof window !== 'undefined' && this.chatUI) {
+      // 绑定到当前窗口
+      ; (window as any).handleOrderButtonClick = () => this.chatUI?.handleOrderButtonClick()
+
+      // 延迟绑定到 iframe 窗口，确保 iframe 内容已加载
+      setTimeout(() => {
+        this.bindToIframe()
+      }, 1000)
+    }
+  }
+
+  /**
+   * 绑定函数到 iframe 窗口
+   */
+  private bindToIframe(): void {
+    try {
+      const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+      if (iframe && iframe.contentWindow && iframe.contentDocument) {
+        // 绑定函数到 iframe 的全局作用域
+        ; (iframe.contentWindow as any).handleOrderButtonClick = () => this.chatUI?.handleOrderButtonClick()
+
+        // 创建一个脚本元素来确保函数在 iframe 内部可用
+        const script = iframe.contentDocument.createElement('script')
+        script.textContent = `
+          window.handleOrderButtonClick = function() {
+            try {
+              if (window.parent && window.parent.handleOrderButtonClick) {
+                window.parent.handleOrderButtonClick();
+              } else if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage({type: 'TOGGLE_ORDER_SELECTOR'}, '*');
+              }
+            } catch (error) {
+              console.error('iframe 内处理订单按钮点击时出错:', error);
+              if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage({type: 'TOGGLE_ORDER_SELECTOR'}, '*');
+              }
+            }
+          };
+        `
+        iframe.contentDocument.head.appendChild(script)
+
+        console.log('✅ 已成功绑定函数到 iframe')
+      }
+    } catch (error) {
+      console.warn('无法绑定到 iframe 窗口:', error)
+    }
+  }
+
+  /**
+   * 创建订单选择器容器
+   */
+  private createOrderSelectorContainer(): void {
+    if (!this.simpleOrderSelector) return
+
+    // 尝试在 iframe 内部的 chat-wrap 元素中创建容器
+    const tryCreateInIframe = () => {
+      try {
+        const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+        if (iframe && iframe.contentDocument) {
+          const chatWrap = iframe.contentDocument.getElementById('chat-wrap')
+          if (chatWrap) {
+            let orderContainer = iframe.contentDocument.getElementById('simple-order-container')
+            if (!orderContainer) {
+              orderContainer = iframe.contentDocument.createElement('div')
+              orderContainer.id = 'simple-order-container'
+              orderContainer.style.position = 'absolute'
+              orderContainer.style.bottom = '0' // 在底部按钮上方
+              orderContainer.style.left = '0'
+              orderContainer.style.height = '100%'
+              orderContainer.style.right = '0'
+              orderContainer.style.zIndex = '1000'
+              orderContainer.style.pointerEvents = 'none' // 默认不拦截事件
+              chatWrap.appendChild(orderContainer)
+            }
+
+            // 挂载订单选择器
+            this.simpleOrderSelector?.mount(orderContainer)
+            return true
+          }
+        }
+      } catch (error) {
+        console.warn('无法在 iframe 内创建容器:', error)
+      }
+      return false
+    }
+
+    // 尝试创建，如果失败则重试
+    let attempts = 0
+    const maxAttempts = 10
+
+    const retryCreate = () => {
+      attempts++
+      const success = tryCreateInIframe()
+
+      if (!success && attempts < maxAttempts) {
+        setTimeout(retryCreate, 1000)
+      } else if (!success) {
+        // 降级：在主页面创建
+        console.warn('无法在 iframe 内创建容器，降级到主页面')
+        this.createOrderSelectorInMainWindow()
+      }
+    }
+
+    retryCreate()
+  }
+
+  /**
+   * 在主窗口中创建订单选择器容器（降级方案）
+   */
+  private createOrderSelectorInMainWindow(): void {
+    if (!this.simpleOrderSelector) return
+
+    let orderContainer = document.getElementById('simple-order-container')
+    if (!orderContainer) {
+      orderContainer = document.createElement('div')
+      orderContainer.id = 'simple-order-container'
+      orderContainer.style.position = 'fixed'
+      orderContainer.style.bottom = '80px'
+      orderContainer.style.right = '20px'
+      orderContainer.style.zIndex = '10000'
+      orderContainer.style.width = '350px'
+      orderContainer.style.maxHeight = '400px'
+      document.body.appendChild(orderContainer)
+    }
+
+    this.simpleOrderSelector.mount(orderContainer)
+  }
+
+  /**
+   * 发送简化版订单消息
+   */
+  private sendSimpleOrderMessage(orderItem: any): void {
+    if (typeof window !== 'undefined' && window.quickChatApi?.sendMessage) {
+      const orderMessage = this.formatSimpleOrderMessage(orderItem)
+      try {
+        window.quickChatApi.sendMessage(orderMessage)
+        console.log('订单消息已发送:', orderMessage)
+      } catch (error) {
+        console.error('发送订单消息失败:', error)
+      }
+    } else {
+      console.error('quickChatApi.sendMessage 方法不可用')
+    }
+  }
+
+  /**
+   * 格式化简化版订单消息
+   */
+  private formatSimpleOrderMessage(orderItem: any): string {
+    return `📦 订单信息
+订单号: ${orderItem.orderCode}
+产品名称: ${orderItem.title}
+金额: ${orderItem.orderAmount}
+类型: ${this.getBusinessTypeName(orderItem.businessType)}`
+  }
+
+  /**
+   * 获取业务类型名称
+   */
+  private getBusinessTypeName(businessType: string): string {
+    const typeMap: Record<string, string> = {
+      'order_pcb': 'PCB',
+      'order_smt': 'SMT',
+      'order_steel': 'Steel Mesh',
+      'order_cnc': 'CNC',
+      'order_tdp': '3D Printing',
+      'order_plate_metal': 'Sheet Metal',
+      'order_fa': 'Components'
+    }
+    return typeMap[businessType] || businessType
+  }
+
+  /**
+   * 恢复客服信息为默认状态
+   * 在会话关闭时调用，清除当前选择的客服信息
+   */
+  private resetToDefaultAgent(): void {
+    if (!this.chatUI) {
+      return
+    }
+
+    console.log('会话关闭，恢复客服信息为默认状态')
+
+    // 重置状态标记
+    this.operatorStatusReceived = false
+    this.pendingOperatorListChange = null
+
+    // 调用ChatCustomUI的重置方法
+    this.chatUI.resetToDefaultAgent()
+
+    // 更新左侧栏可见性
+    this.updateLeftBarVisibility()
+
+    console.log('已恢复为默认客服状态')
+  }
+
+  /**
    * 销毁聊天系统
    */
   destroy(): void {
@@ -921,11 +1215,13 @@ export class ChatManager {
 
       // 清理全局引用
       if (typeof window !== 'undefined') {
-        delete window.chatUI
-        delete window.debugQuickChat
+        delete (window as any).chatUI
+        delete (window as any).simpleOrderSelector
+        delete (window as any).debugQuickChat
       }
 
       this.chatUI = null
+      this.simpleOrderSelector = null
       this.isInitialized = false
     }
   }
