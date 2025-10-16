@@ -443,16 +443,16 @@ export class ChatCustomUI {
    */
   resetToDefaultAgent(): void {
     console.log('重置为默认客服状态')
-    
+
     // 清除当前选择的客服
     this.state.currentChatAgent = null
-    
+
     // 清除本地存储的客服选择
     this.saveSelectedAgent(null)
-    
+
     // 刷新UI显示
     this.refreshUI()
-    
+
     console.log('已重置为默认客服状态')
   }
 
@@ -486,7 +486,7 @@ export class ChatCustomUI {
     if (typeof window !== 'undefined' && (window as any).quickChatApi && (window as any).quickChatApi.switchChat) {
       try {
         console.log('切换座席', quickCepId)
-        ; (window as any).quickChatApi.switchChat(quickCepId)
+          ; (window as any).quickChatApi.switchChat(quickCepId)
       } catch (error) {
         console.error('切换客服失败:', error)
         // 如果API调用失败，清除待切换的座席ID
@@ -930,29 +930,29 @@ export class ChatCustomUI {
     }
 
     if (tooltip) {
-      // 创建带头像的 tooltip 内容
+      // 创建优化的 tooltip 内容，参考图片中的布局
       const avatarHtml = avatarUrl
-        ? `<img src="${avatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.src='${this.getDefaultAvatar(
-          24
+        ? `<img src="${avatarUrl}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid rgba(255,255,255,0.3); flex-shrink: 0;" onerror="this.src='${this.getDefaultAvatar(
+          40
         )}'">`
         : ''
 
       tooltip.innerHTML = `
-        <div style="display: flex; align-items: center;">
+        <div style="display: flex; align-items: center; padding: 4px 0;">
           ${avatarHtml}
           <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 600; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</div>
-            <div style="opacity: 0.9; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${role}</div>
+            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px; color: #ffffff; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</div>
+            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.85); font-weight: 500; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${role}</div>
           </div>
         </div>
       `
 
-      // 简化定位逻辑，确保 tooltip 可见
+      // 优化定位逻辑，确保 tooltip 可见且位置合适
       tooltip.style.position = 'absolute'
       tooltip.style.display = 'block'
       tooltip.style.zIndex = '99999'
-      tooltip.style.left = event.clientX + 12 + 'px'
-      tooltip.style.top = event.clientY - 50 + 'px'
+      tooltip.style.left = event.clientX + 15 + 'px'
+      tooltip.style.top = event.clientY - 65 + 'px'
     } else {
       console.error('无法创建或找到 tooltip 元素')
     }
@@ -1179,21 +1179,23 @@ export class ChatCustomUI {
     tooltip.id = id
     tooltip.className = className
 
-    // 直接设置基本样式，确保可见
+    // 设置优化的基本样式，确保可见且美观
     tooltip.style.position = 'absolute'
     tooltip.style.display = 'none'
     tooltip.style.zIndex = '99999'
     tooltip.style.pointerEvents = 'none'
-    tooltip.style.background = 'rgba(0, 0, 0, 0.9)'
+    tooltip.style.background = 'rgba(0, 0, 0, 0.92)'
     tooltip.style.color = 'white'
-    tooltip.style.padding = '8px 12px'
-    tooltip.style.borderRadius = '6px'
+    tooltip.style.padding = '14px 16px'
+    tooltip.style.borderRadius = '12px'
     tooltip.style.fontSize = '13px'
     tooltip.style.fontWeight = '500'
-    tooltip.style.lineHeight = '1.4'
-    tooltip.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)'
-    tooltip.style.maxWidth = '250px'
-    tooltip.style.whiteSpace = 'nowrap'
+    tooltip.style.lineHeight = '1.3'
+    tooltip.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2)'
+    tooltip.style.maxWidth = '280px'
+    tooltip.style.minWidth = '200px'
+    tooltip.style.border = '1px solid rgba(255, 255, 255, 0.15)'
+    tooltip.style.backdropFilter = 'blur(8px)'
 
     // 简化容器选择逻辑，直接添加到 body
     const targetContainer = doc.body || doc.documentElement

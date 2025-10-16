@@ -131,14 +131,14 @@ export class ChatStyles {
         }
 
         .open-leftbar-icon svg {
-          fill: white !important;
+          fill: #444 !important;
           width: 24px;
           height: 24px;
           display: block;
         }
 
         .open-leftbar-icon svg path {
-          fill: white !important;
+          fill: #444 !important;
         }
 
         .expand-icon-reverse {
@@ -173,31 +173,34 @@ export class ChatStyles {
 
         .agent-tooltip {
           position: absolute !important;
-          background: rgba(0, 0, 0, 0.9) !important;
+          background: rgba(0, 0, 0, 0.92) !important;
           color: white !important;
-          padding: 10px 12px !important;
-          border-radius: 8px !important;
+          padding: 14px 16px !important;
+          border-radius: 12px !important;
           font-size: 13px !important;
           font-weight: 500 !important;
-          line-height: 1.4 !important;
+          line-height: 1.3 !important;
           z-index: 10000 !important;
           display: none !important;
           pointer-events: none !important;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
-          max-width: 250px !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+          max-width: 280px !important;
+          min-width: 200px !important;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          backdrop-filter: blur(8px) !important;
+          -webkit-backdrop-filter: blur(8px) !important;
         }
 
         .agent-tooltip::before {
           content: '' !important;
           position: absolute !important;
           top: 100% !important;
-          left: 50% !important;
-          margin-left: -5px !important;
-          border-width: 5px !important;
+          left: 20px !important;
+          border-width: 8px !important;
           border-style: solid !important;
-          border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent !important;
+          border-color: rgba(0, 0, 0, 0.92) transparent transparent transparent !important;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) !important;
         }
 
       </style>
@@ -213,12 +216,12 @@ export class ChatStyles {
         .left-bar {
           width: 140px;
           height: 100%;
-          background: white;
           box-sizing: border-box;
           z-index: 999;
           display: flex;
           flex-direction: column;
           padding: 24px 8px;
+          background: #f1f3f6;
         }
 
         .left-bar-content {
@@ -231,6 +234,10 @@ export class ChatStyles {
 
         .left-bar-content::-webkit-scrollbar {
           display: none; /* Chrome, Safari 和 Opera */
+        }
+
+        .left-bar-footer {
+          padding-top: 8px;
         }
 
         .left-bar-footer .expand-icon{

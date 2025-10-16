@@ -227,6 +227,7 @@ export class ChatManager {
     window.quickEmitter.on('chat.model.toggleChat', (data: any) => {
       console.log('点击聊天探头')
       this.fetchAgentStatus()
+      this.injectCustomStyles()
     })
 
     // 监听成功获取消息列表 (用于自定义渲染组件时机):
@@ -665,6 +666,9 @@ export class ChatManager {
       return
     }
 
+    // 注入自定义样式到 iframe
+    this.injectCustomStyles()
+
     // 初始化头部的在线客服和打开左侧栏图标
     if (this.chatUI.state.containers.header) {
       this.chatUI.state.containers.header.innerHTML = this.chatUI.generateHeaderHTML()
@@ -688,6 +692,56 @@ export class ChatManager {
 
     // 获取客服状态
     this.fetchAgentStatus()
+  }
+
+  /**
+   * 注入自定义样式到 iframe
+   * 修改 QuickChat iframe 中原生元素的样式
+   */
+  private injectCustomStyles(): void {
+    try {
+      const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+      if (!iframe || !iframe.contentDocument) {
+        console.warn('无法访问 iframe，跳过样式注入')
+        return
+      }
+
+      const styleId = 'quickchat-custom-styles'
+
+      // 检查是否已经注入过样式
+      if (iframe.contentDocument.getElementById(styleId)) {
+        console.log('自定义样式已存在，跳过重复注入')
+        return
+      }
+
+      // 创建样式元素
+      const customStyle = iframe.contentDocument.createElement('style')
+      customStyle.id = styleId
+      customStyle.textContent = `
+        #chat-header {
+          padding-top: 12px !important;
+          padding-bottom: 12px !important;
+          background: #fff;
+          box-shadow: none;
+        }
+        .ant-dropdown-trigger.close-chat.icon {
+          color: #444;
+        }
+        .chat-header__close.pointer.icon {
+          color: #444;
+        }
+      `
+
+      // 注入到 iframe 的 head 中
+      if (iframe.contentDocument.head) {
+        iframe.contentDocument.head.appendChild(customStyle)
+        console.log('✅ 已成功注入自定义样式到 QuickChat iframe')
+      } else {
+        console.warn('iframe head 不存在，无法注入样式')
+      }
+    } catch (error) {
+      console.error('注入自定义样式失败:', error)
+    }
   }
 
   /**
@@ -991,6 +1045,28 @@ export class ChatManager {
           }
         } catch (error) {
           console.error('清除本地存储失败:', error)
+        }
+      },
+
+      // 测试样式注入
+      testStyleInjection: () => {
+        this.injectCustomStyles()
+      },
+
+      // 强制重新注入样式（先移除再注入）
+      forceReinjectStyles: () => {
+        try {
+          const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+          if (iframe && iframe.contentDocument) {
+            const existingStyle = iframe.contentDocument.getElementById('quickchat-custom-styles')
+            if (existingStyle) {
+              existingStyle.remove()
+              console.log('已移除现有样式')
+            }
+            this.injectCustomStyles()
+          }
+        } catch (error) {
+          console.error('强制重新注入样式失败:', error)
         }
       }
     }
