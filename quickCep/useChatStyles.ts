@@ -173,34 +173,53 @@ export class ChatStyles {
 
         .agent-tooltip {
           position: absolute !important;
-          background: rgba(0, 0, 0, 0.92) !important;
+          background: rgba(45, 45, 45, 0.95) !important;
           color: white !important;
-          padding: 14px 16px !important;
-          border-radius: 12px !important;
-          font-size: 13px !important;
+          padding: 16px 20px !important;
+          border-radius: 16px !important;
+          font-size: 14px !important;
           font-weight: 500 !important;
           line-height: 1.3 !important;
           z-index: 10000 !important;
           display: none !important;
           pointer-events: none !important;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-          max-width: 280px !important;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+          max-width: 320px !important;
           min-width: 200px !important;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-          border: 1px solid rgba(255, 255, 255, 0.15) !important;
-          backdrop-filter: blur(8px) !important;
-          -webkit-backdrop-filter: blur(8px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          backdrop-filter: blur(12px) !important;
+          -webkit-backdrop-filter: blur(12px) !important;
         }
 
         .agent-tooltip::before {
           content: '' !important;
           position: absolute !important;
           top: 100% !important;
-          left: 20px !important;
-          border-width: 8px !important;
-          border-style: solid !important;
-          border-color: rgba(0, 0, 0, 0.92) transparent transparent transparent !important;
-          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          width: 0 !important;
+          height: 0 !important;
+          border-left: 15px solid transparent !important;
+          border-right: 15px solid transparent !important;
+          border-top: 15px solid rgba(45, 45, 45, 0.95) !important;
+          z-index: 10001 !important;
+          display: block !important;
+        }
+
+        .agent-tooltip::after {
+          content: '' !important;
+          position: absolute !important;
+          top: calc(100% - 1px) !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          width: 0 !important;
+          height: 0 !important;
+          border-left: 16px solid transparent !important;
+          border-right: 16px solid transparent !important;
+          border-top: 16px solid rgba(255, 255, 255, 0.1) !important;
+          z-index: 10000 !important;
+          display: block !important;
         }
 
       </style>
@@ -220,7 +239,7 @@ export class ChatStyles {
           z-index: 999;
           display: flex;
           flex-direction: column;
-          padding: 24px 8px;
+          padding: 24px 0;
           background: #f1f3f6;
         }
 
@@ -289,24 +308,26 @@ export class ChatStyles {
         .business-line-title {
           font-size: 16px;
           color: #000;
-          margin-bottom: 8px;
+          margin-bottom: 4px;
           font-weight: 600;
+          padding-left: 8px;
+          padding-right: 8px;
           padding-bottom: 4px;
         }
 
         .agents-list {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 0px;
         }
 
         .agent-item {
           display: flex;
           align-items: center;
           gap: 8px;
-          border-radius: 6px;
           border: 1px solid transparent;
           transition: all 0.2s ease;
+          padding: 8px;
         }
 
         .agent-item.online {
@@ -319,12 +340,10 @@ export class ChatStyles {
         }
 
         .agent-item.current {
-          background: #e3f2fd;
-          border-color: #2196f3;
+          background: #d7ebff;
         }
 
         .agent-item.online:hover:not(.current) {
-          background: #f8f9fa;
         }
 
         .agent-avatar-container {
@@ -359,6 +378,8 @@ export class ChatStyles {
           font-size: 14px;
           line-height: 1.2;
           color: #222;
+          font-weight: bold;
+          margin-bottom: 4px;
         }
 
         .agent-role {
@@ -366,6 +387,8 @@ export class ChatStyles {
           line-height: 1.2;
           margin-top: 2px;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .agent-item.online .agent-role {
@@ -376,38 +399,13 @@ export class ChatStyles {
           color: #999;
         }
 
+        .agent-item.current .agent-name {
+          color: #0072fc;
+        }
+
         .current-indicator {
           color: #999;
           font-size: 12px;
-        }
-
-        .full-agent-tooltip {
-          position: absolute !important;
-          background: rgba(0, 0, 0, 0.9) !important;
-          color: white !important;
-          padding: 12px 14px !important;
-          border-radius: 10px !important;
-          font-size: 13px !important;
-          line-height: 1.5 !important;
-          z-index: 10000 !important;
-          display: none !important;
-          pointer-events: none !important;
-          max-width: 280px !important;
-          min-width: 140px !important;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3) !important;
-          backdrop-filter: blur(4px) !important;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-
-        .full-agent-tooltip::before {
-          content: '' !important;
-          position: absolute !important;
-          top: 100% !important;
-          left: 20px !important;
-          border-width: 6px !important;
-          border-style: solid !important;
-          border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent !important;
         }
       </style>
     `
@@ -471,10 +469,6 @@ export class ChatStyles {
           display: flex;
           align-items: center;
           justify-content: center;
-        }
-
-        .footer-btn.add-btn:hover {
-          background: #e9ecef;
         }
 
         .footer-btn.add-btn svg {

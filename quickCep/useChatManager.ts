@@ -730,6 +730,33 @@ export class ChatManager {
         .chat-header__close.pointer.icon {
           color: #444;
         }
+        .full-agent-tooltip {
+          position: absolute;
+          display: none;
+          z-index: 99999;
+          pointer-events: none;
+          background: rgba(0, 0, 0, 0.85);
+          color: white;
+          padding: 10px;
+          border-radius: 12px;
+          max-width: 320px;
+          min-width: 120px;
+        }
+
+        .full-agent-tooltip::before {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: 22%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: 8px solid rgba(0, 0, 0, 0.85);
+          z-index: 10001;
+          display: block;
+        }
       `
 
       // 注入到 iframe 的 head 中

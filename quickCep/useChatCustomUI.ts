@@ -869,8 +869,6 @@ export class ChatCustomUI {
           <div class="agent-name">${this.truncateText(agent.employeeEnName, 8)}</div>
           <div class="agent-role">${this.truncateText(agent.roleNameEn, 12)}</div>
         </div>
-
-        ${isCurrentChat ? '<div class="current-indicator">●</div>' : ''}
       </div>
     `
   }
@@ -883,19 +881,13 @@ export class ChatCustomUI {
       ${ChatStyles.generateFooterStyles()}
       <div class="chat-footer">
         <div class="footer-actions">
-          <button class="footer-btn order-btn" 
-                  onclick="if(window.handleOrderButtonClick) window.handleOrderButtonClick(); else if(window.parent && window.parent.postMessage) window.parent.postMessage({type:'TOGGLE_ORDER_SELECTOR'},'*');" 
-                  title="选择订单">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
-              <path d="M9 8V17H11V8H9ZM13 8V17H15V8H13Z"/>
-            </svg>
-            <span>订单</span>
-          </button>
-          <button class="footer-btn add-btn" title="添加">
-            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" viewBox="0 0 21 20" fill="currentColor">
-              <path d="M10.3877 18.6939C5.69893 18.6939 1.89792 14.8929 1.89792 10.2041C1.89792 5.51534 5.69893 1.71433 10.3877 1.71433C15.0765 1.71433 18.8775 5.51534 18.8775 10.2041C18.8775 14.8929 15.0765 18.6939 10.3877 18.6939ZM10.3877 20C15.7978 20 20.1836 15.6143 20.1836 10.2041C20.1836 4.79398 15.7978 0.408203 10.3877 0.408203C4.97758 0.408203 0.591797 4.79398 0.591797 10.2041C0.591797 15.6143 4.97758 20 10.3877 20Z" fill="currentColor"/>
-              <path d="M10.3877 5.30616C9.93687 5.30616 9.57139 5.67164 9.57139 6.12249V9.38779H6.30608C5.85524 9.38779 5.48976 9.75328 5.48976 10.2041C5.48976 10.655 5.85524 11.0204 6.30608 11.0204H9.57139V14.2858C9.57139 14.7366 9.93687 15.1021 10.3877 15.1021C10.8386 15.1021 11.204 14.7366 11.204 14.2858V11.0204H14.4693C14.9202 11.0204 15.2857 10.655 15.2857 10.2041C15.2857 9.75328 14.9202 9.38779 14.4693 9.38779H11.204V6.12249C11.204 5.67164 10.8386 5.30616 10.3877 5.30616Z" fill="currentColor"/>
+          <button class="footer-btn add-btn" title="send order" onclick="if(window.handleOrderButtonClick) window.handleOrderButtonClick(); else if(window.parent && window.parent.postMessage) window.parent.postMessage({type:'TOGGLE_ORDER_SELECTOR'},'*');">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M13.1116 4.91628H5.46284L5.46647 2.90638C5.46647 2.37896 5.89556 1.94987 6.42298 1.94987H7.41064C7.76377 1.2467 8.48817 0.790769 9.29087 0.790769C10.0936 0.790769 10.818 1.2467 11.1711 1.94987H12.1587C12.6862 1.94987 13.1153 2.37896 13.1153 2.90638L13.1116 4.91628ZM6.22871 4.15041H12.3458L12.3494 2.90638C12.3494 2.80126 12.2639 2.71574 12.1588 2.71574H10.6449L10.5558 2.45774C10.3698 1.91876 9.86146 1.55664 9.29087 1.55664C8.72027 1.55664 8.21192 1.91876 8.02589 2.45774L7.93684 2.71574H6.42298C6.31786 2.71574 6.23234 2.80126 6.23234 2.90638L6.22871 4.15041Z" fill="#999999"/>
+              <path d="M9.29042 0.578125C10.1287 0.578125 10.8886 1.03059 11.2965 1.73781H12.1585C12.8033 1.73781 13.3275 2.26208 13.3275 2.90683L13.3244 4.91709L13.3234 5.1287H5.25019V4.91605L5.25434 2.90579C5.25466 2.26131 5.77881 1.73781 6.42336 1.73781H7.28535C7.69319 1.03075 8.45231 0.578285 9.29042 0.578125ZM9.29042 1.00341C8.56915 1.00358 7.91812 1.41311 7.60068 2.04485L7.54156 2.16206H6.42336C6.01326 2.16206 5.67859 2.49673 5.67859 2.90683L5.67548 4.70341H12.8991L12.9033 2.90683L12.8877 2.75642C12.8181 2.41788 12.5173 2.16206 12.1585 2.16206H11.0403L10.9812 2.04485C10.6637 1.41294 10.0119 1.00341 9.29042 1.00341ZM9.29042 1.34468C9.95151 1.34468 10.5415 1.76351 10.7571 2.38819L10.7966 2.50333H12.1585C12.381 2.50333 12.562 2.68438 12.562 2.90683L12.5579 4.15054V4.36318H6.01571L6.01675 4.1495L6.01986 2.90579C6.02018 2.68362 6.20111 2.50333 6.42336 2.50333H7.78532L7.82474 2.38819C8.04033 1.76367 8.62952 1.34487 9.29042 1.34468ZM9.29042 1.76893C8.81054 1.76912 8.38359 2.07411 8.2272 2.52718L8.138 2.78547L8.08821 2.92861H6.44515L6.44203 3.93789H12.1347L12.1367 2.92861H10.4937L10.4439 2.78547L10.3547 2.52718C10.1982 2.07395 9.7705 1.76893 9.29042 1.76893Z" fill="#999999"/>
+              <path d="M2.59448 14.7722V4.15041C2.59448 3.15314 3.40313 2.34449 4.4004 2.34449H5.87853V3.83196H4.4004C4.22441 3.83196 4.08195 3.97442 4.08195 4.15041V14.7722C4.08195 14.9482 4.22441 15.0907 4.4004 15.0907H13.96C14.136 15.0907 14.2785 14.9482 14.2785 14.7722V4.15041C14.2785 3.97442 14.136 3.83196 13.96 3.83196H12.9902V2.34449H13.96C14.9573 2.34449 15.7659 3.15314 15.7659 4.15041V14.7722C15.7659 15.7695 14.9573 16.5781 13.96 16.5781H4.4004C3.40313 16.5781 2.59448 15.7695 2.59448 14.7722Z" fill="#999999"/>
+              <path d="M11.8357 7.65539C12.2463 7.65539 12.5794 7.98849 12.5794 8.39913C12.5794 8.80977 12.2463 9.14286 11.8357 9.14286H6.52476C6.11412 9.14286 5.78102 8.80977 5.78102 8.39913C5.78102 7.98849 6.11412 7.65539 6.52476 7.65539H11.8357Z" fill="#999999"/>
+              <path d="M9.7113 10.8419C10.1219 10.8419 10.455 11.175 10.455 11.5857C10.455 11.9963 10.1219 12.3294 9.7113 12.3294H6.52476C6.11412 12.3294 5.78102 11.9963 5.78102 11.5857C5.78102 11.175 6.11412 10.8419 6.52476 10.8419H9.7113Z" fill="#999999"/>
             </svg>
           </button>
         </div>
@@ -922,37 +914,33 @@ export class ChatCustomUI {
 
   // 事件处理方法
   showTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
+    console.log('showTooltip called:', { name, role, avatarUrl })
     const currentDoc = this.getCurrentDocument()
     let tooltip = currentDoc.getElementById('agent-tooltip')
 
     if (!tooltip) {
       tooltip = this.createTooltipElement(currentDoc, 'agent-tooltip', 'agent-tooltip')
+      console.log('Created new tooltip element:', tooltip)
     }
 
     if (tooltip) {
-      // 创建优化的 tooltip 内容，参考图片中的布局
-      const avatarHtml = avatarUrl
-        ? `<img src="${avatarUrl}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid rgba(255,255,255,0.3); flex-shrink: 0;" onerror="this.src='${this.getDefaultAvatar(
-          40
-        )}'">`
-        : ''
-
+      // 创建简洁的气泡式 tooltip 内容，不显示头像
       tooltip.innerHTML = `
-        <div style="display: flex; align-items: center; padding: 4px 0;">
-          ${avatarHtml}
-          <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px; color: #ffffff; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</div>
-            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.85); font-weight: 500; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${role}</div>
-          </div>
+        <div style="text-align: left;">
+          <div style="font-weight: 700; font-size: 18px; margin-bottom: 6px; color: #ffffff; line-height: 1.2;">${name}</div>
+          <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); font-weight: 500; line-height: 1.2;">${role}</div>
         </div>
       `
+      console.log('Tooltip content set, no avatar displayed')
 
-      // 优化定位逻辑，确保 tooltip 可见且位置合适
+      // 简化定位逻辑，确保 tooltip 可见且有箭头效果
       tooltip.style.position = 'absolute'
       tooltip.style.display = 'block'
       tooltip.style.zIndex = '99999'
       tooltip.style.left = event.clientX + 15 + 'px'
-      tooltip.style.top = event.clientY - 65 + 'px'
+      tooltip.style.top = event.clientY - 80 + 'px'
+
+      console.log('Tooltip positioned with arrow effect')
     } else {
       console.error('无法创建或找到 tooltip 元素')
     }
@@ -965,37 +953,31 @@ export class ChatCustomUI {
   }
 
   showFullTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
+    console.log('showFullTooltip called:', { name, role, avatarUrl })
     const currentDoc = this.getCurrentDocument()
     let tooltip = currentDoc.getElementById('full-agent-tooltip')
 
     if (!tooltip) {
       tooltip = this.createTooltipElement(currentDoc, 'full-agent-tooltip', 'full-agent-tooltip')
+      console.log('Created new full tooltip element:', tooltip)
     }
 
     if (tooltip) {
-      // 创建带头像的 tooltip 内容
-      const avatarHtml = avatarUrl
-        ? `<img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.src='${this.getDefaultAvatar(
-          32
-        )}'">`
-        : ''
-
+      // 创建简洁的气泡式 tooltip 内容，不显示头像
       tooltip.innerHTML = `
-        <div style="display: flex; align-items: center;">
-          ${avatarHtml}
-          <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</div>
-            <div style="opacity: 0.9; font-size: 12px; color: rgba(255, 255, 255, 0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${role}</div>
-          </div>
+        <div style="text-align: left;">
+          <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #ffffff; line-height: 1.2;">${name}</div>
+          <div style="font-size: 12px; color: rgba(255, 255, 255, 0.9); font-weight: 500; line-height: 1.2;">${role}</div>
         </div>
       `
+      console.log('Full tooltip content set, no avatar displayed')
 
-      // 简化定位逻辑，确保 tooltip 可见
-      tooltip.style.position = 'absolute'
+      // 简化定位逻辑，确保 tooltip 可见且有箭头效果
       tooltip.style.display = 'block'
-      tooltip.style.zIndex = '99999'
-      tooltip.style.left = event.clientX + 15 + 'px'
-      tooltip.style.top = event.clientY - 60 + 'px'
+      tooltip.style.left = event.clientX - Math.floor(tooltip.clientWidth / 4) + 'px'
+      tooltip.style.top = event.clientY - 70 + 'px'
+
+      console.log('Full tooltip positioned with arrow effect')
     }
   }
 
@@ -1179,23 +1161,23 @@ export class ChatCustomUI {
     tooltip.id = id
     tooltip.className = className
 
-    // 设置优化的基本样式，确保可见且美观
-    tooltip.style.position = 'absolute'
-    tooltip.style.display = 'none'
-    tooltip.style.zIndex = '99999'
-    tooltip.style.pointerEvents = 'none'
-    tooltip.style.background = 'rgba(0, 0, 0, 0.92)'
-    tooltip.style.color = 'white'
-    tooltip.style.padding = '14px 16px'
-    tooltip.style.borderRadius = '12px'
-    tooltip.style.fontSize = '13px'
-    tooltip.style.fontWeight = '500'
-    tooltip.style.lineHeight = '1.3'
-    tooltip.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2)'
-    tooltip.style.maxWidth = '280px'
-    tooltip.style.minWidth = '200px'
-    tooltip.style.border = '1px solid rgba(255, 255, 255, 0.15)'
-    tooltip.style.backdropFilter = 'blur(8px)'
+    // 设置气泡式样式，确保可见且美观
+    // tooltip.style.position = 'absolute'
+    // tooltip.style.display = 'none'
+    // tooltip.style.zIndex = '99999'
+    // tooltip.style.pointerEvents = 'none'
+    // tooltip.style.background = 'rgba(45, 45, 45, 0.95)'
+    // tooltip.style.color = 'white'
+    // tooltip.style.padding = '16px 20px'
+    // tooltip.style.borderRadius = '16px'
+    // tooltip.style.fontSize = '14px'
+    // tooltip.style.fontWeight = '500'
+    // tooltip.style.lineHeight = '1.3'
+    // tooltip.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25)'
+    // tooltip.style.maxWidth = '320px'
+    // tooltip.style.minWidth = '200px'
+    // tooltip.style.border = '1px solid rgba(255, 255, 255, 0.1)'
+    // tooltip.style.backdropFilter = 'blur(12px)'
 
     // 简化容器选择逻辑，直接添加到 body
     const targetContainer = doc.body || doc.documentElement
