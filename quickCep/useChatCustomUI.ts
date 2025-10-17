@@ -1067,7 +1067,7 @@ export class ChatCustomUI {
         leftBarParent.style.zIndex = '999'
 
         // 设置box-shadow，向左扩散
-        leftBarParent.style.boxShadow = '-8px 0 22px rgba(0, 18, 46, 0.16)'
+        leftBarParent.style.boxShadow = '-4px 0 8px rgba(0, 18, 46, 0.1)'
 
         // 设置白色背景
         leftBarParent.style.background = 'white'
@@ -1114,7 +1114,7 @@ export class ChatCustomUI {
 
         // 可选设置box-shadow
         if (includeBoxShadow) {
-          leftBarParent.style.boxShadow = '-8px 0 16px rgba(0, 18, 46, 0.16)'
+          leftBarParent.style.boxShadow = '-4px 0 8px rgba(0, 18, 46, 0.12)'
         }
 
         // 设置背景色
@@ -1130,7 +1130,7 @@ export class ChatCustomUI {
   /**
    * 公共方法：单独设置左侧父元素的box-shadow
    */
-  public updateLeftBarBoxShadow(boxShadow = '-8px 0 16px rgba(0, 18, 46, 0.16)'): void {
+  public updateLeftBarBoxShadow(boxShadow = '-4px 0 8px rgba(0, 18, 46, 0.12)'): void {
     try {
       const currentDoc = this.getCurrentDocument()
       const leftBarParent = currentDoc.getElementById('DIY-LEFT-BAR')

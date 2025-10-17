@@ -310,7 +310,35 @@ export class ChatManager {
       this.iframeResizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const { width, height } = entry.contentRect
-          console.log(`iframe 宽度变化: ${width}px`)
+          console.log(`iframe 尺寸变化: ${width}px x ${height}px`)
+
+          // 只有当 iframe 高度大于 350px 时才执行宽度修改逻辑
+          if (height > 350) {
+            // 获取 iframe 内部的 chat-wrap 元素
+            try {
+              if (iframe.contentDocument) {
+                const chatWrap = iframe.contentDocument.getElementById('chat-wrap')
+                const diyLeftBar = iframe.contentDocument.getElementById('DIY-LEFT-BAR')
+
+                if (chatWrap) {
+                  const chatWrapWidth = chatWrap.offsetWidth
+                  const diyLeftBarWidth = diyLeftBar ? diyLeftBar.offsetWidth : 0
+                  const newIframeWidth = chatWrapWidth + diyLeftBarWidth + 60
+
+                  console.log(`iframe 高度 ${height}px > 350px，chat-wrap 宽度: ${chatWrapWidth}px，DIY-LEFT-BAR 宽度: ${diyLeftBarWidth}px，设置 iframe 宽度为: ${newIframeWidth}px`)
+
+                  // 设置 iframe 的宽度
+                  iframe.style.width = `${newIframeWidth}px`
+                } else {
+                  console.log('未找到 chat-wrap 元素')
+                }
+              }
+            } catch (error) {
+              console.warn('访问 iframe 内容时出错:', error)
+            }
+          } else {
+            console.log(`iframe 高度 ${height}px <= 350px，跳过宽度调整`)
+          }
         }
       })
 
