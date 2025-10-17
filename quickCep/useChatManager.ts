@@ -6,7 +6,7 @@ import {
   type GroupedCustomerServiceData
 } from './useCustomerServiceData'
 
-// 全局类型声明在 type.d.ts 中
+// Global type declarations are in type.d.ts
 
 /**
  * 聊天管理器
@@ -37,7 +37,7 @@ export class ChatManager {
     }
 
     try {
-      // 等待API准备就绪
+      // Wait for API to be ready
       await this.waitForAPI()
 
       // 处理客服数据格式转换
@@ -59,10 +59,10 @@ export class ChatManager {
       // 创建UI管理器实例
       this.chatUI = new ChatCustomUI(finalCustomerServiceData)
 
-      // 创建简化版订单选择器实例
+      // Create simplified order selector instance
       this.simpleOrderSelector = new SimpleOrderSelector()
 
-      // 设置订单发送回调
+      // Set order send callback
       this.simpleOrderSelector.setOnSendOrderCallback((orderItem) => {
         this.sendSimpleOrderMessage(orderItem)
       })
@@ -78,33 +78,33 @@ export class ChatManager {
           ; (window as any).simpleOrderSelector = this.simpleOrderSelector
       }
 
-      // 挂载自定义组件
+      // Mount custom components
       this.mountCustomComponents()
 
-      // 设置事件监听
+      // Setup event listeners
       this.setupEventListeners()
 
-      // 调整iframe宽度
+      // Adjust iframe width
       this.adjustIframeWidth()
 
-      // 初始化客服状态
+      // Initialize agent status
       this.initializeAgentStatus()
 
-      // 设置定期状态更新
+      // Setup periodic status updates
       this.setupPeriodicStatusUpdate()
 
-      // 设置调试工具
+      // Setup debug tools
       this.setupDebugTools()
 
       this.isInitialized = true
     } catch (error) {
-      console.error('聊天系统初始化失败:', error)
+      console.error('Chat system initialization failed:', error)
       throw error
     }
   }
 
   /**
-   * 等待API准备就绪
+   * Wait for API to be ready
    */
   private async waitForAPI(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -125,7 +125,7 @@ export class ChatManager {
   }
 
   /**
-   * 挂载自定义组件
+   * Mount custom components
    */
   private mountCustomComponents(): void {
     if (!this.chatUI || typeof window === 'undefined') return
@@ -168,18 +168,18 @@ export class ChatManager {
       })
     }
 
-    // 在主窗口中创建订单选择器容器
+    // Create order selector container in main window
     if (this.simpleOrderSelector) {
       // 尝试在 iframe 外部创建容器
       this.createOrderSelectorContainer()
     }
 
-    // 开始监听聊天窗口状态
+    // Start monitoring chat window status
     this.startChatWindowMonitoring()
   }
 
   /**
-   * 设置事件监听
+   * Setup event listeners
    */
   private setupEventListeners(): void {
     if (typeof window === 'undefined' || !window.quickEmitter || !this.chatUI) return
@@ -193,7 +193,7 @@ export class ChatManager {
 
         // 状态对比和UI更新逻辑已在updateAgentStatus方法中处理
         this.chatUI.updateAgentStatus(data.operatorUserIdStatus)
-        // 更新左侧栏可见性
+        // Update left sidebar visibility
         this.updateLeftBarVisibility()
 
         // 如果当前没有选择客服，尝试恢复之前的选择
@@ -216,7 +216,7 @@ export class ChatManager {
 
     // 监听切换客服成功事件
     window.quickEmitter.on('chat.switch.operator.success', (data: any) => {
-      console.log('监听切换座席成功: chat.switch.operator.success', data)
+      console.log('Listening for agent switch success: chat.switch.operator.success', data)
       if (this.chatUI) {
         // 调用 ChatCustomUI 的处理方法
         this.chatUI.handleSwitchOperatorSuccess()
@@ -238,7 +238,7 @@ export class ChatManager {
     // 监听会话关闭:
     window.quickEmitter.on('chat.end', (data: any) => {
       console.log('chat.end', data)
-      // 会话关闭时，恢复客服信息为默认状态
+      // When session closes, restore agent info to default state
       this.resetToDefaultAgent()
     })
 
@@ -252,7 +252,7 @@ export class ChatManager {
         this.handleOperatorListChange(data)
       } else {
         // 如果还没有接收到状态数据，暂存待处理
-        console.log('等待 chat.operator.status 事件触发后再处理座席列表变化')
+        console.log('Waiting for chat.operator.status event to trigger before processing operator list changes')
         this.pendingOperatorListChange = data
       }
     })
@@ -288,8 +288,8 @@ export class ChatManager {
   }
 
   /**
-   * 调整iframe宽度
-   * 监听 iframe 高度变化，当高度大于 350px 时才设置宽度
+   * Adjust iframe width
+   * Monitor iframe height changes, only set width when height is greater than 350px
    */
   private adjustIframeWidth(): void {
     if (!this.chatUI) return
@@ -346,12 +346,12 @@ export class ChatManager {
   }
 
   /**
-   * 初始化客服状态
+   * Initialize agent status
    */
   private initializeAgentStatus(): void {
     setTimeout(() => {
       this.fetchAgentStatus()
-      // 初始化时更新左侧栏可见性
+      // Update left sidebar visibility during initialization
       this.updateLeftBarVisibility()
 
       // 提前初始化底部区域（如果还没有初始化的话）
@@ -380,7 +380,7 @@ export class ChatManager {
   }
 
   /**
-   * 获取客服状态
+   * Fetch agent status
    */
   private fetchAgentStatus(): void {
     if (typeof window !== 'undefined' && window.quickChatApi?.emitGetAllOperatorStatus && this.chatUI) {
@@ -391,14 +391,14 @@ export class ChatManager {
   }
 
   /**
-   * 处理座席列表变化
+   * Handle operator list changes
    */
   private handleOperatorListChange(data: any): void {
     if (!this.chatUI) return
 
-    // 处理座席列表变化
+    // Handle operator list changes
     if (data && Array.isArray(data) && data.length > 0) {
-      // 获取第一个座席信息（通常当前会话只有一个座席）
+      // Get first operator info (usually current session has only one operator)
       const currentOperator = data[0]
       const operatorId = currentOperator.operatorId
 
@@ -418,7 +418,7 @@ export class ChatManager {
           // 这里不直接更新状态，而是依赖 chat.operator.status 事件来更新客服状态
           console.log('座席列表变化，当前操作员信息:', currentOperator)
 
-          // 刷新UI显示
+          // Refresh UI display
           this.chatUI.refreshUI()
 
           // 保存当前选择的客服到本地存储
@@ -447,8 +447,8 @@ export class ChatManager {
   }
 
   /**
-   * 更新左侧栏可见性
-   * 根据在线客服人数和当前选择状态来决定是否显示左侧栏
+   * Update left sidebar visibility
+   * Decide whether to show left sidebar based on online agent count and current selection status
    */
   private updateLeftBarVisibility(): void {
     if (!this.chatUI || typeof window === 'undefined' || !window.quickChatApi?.customLeftBar) {
@@ -465,7 +465,7 @@ export class ChatManager {
   }
 
   /**
-   * 设置定期状态更新
+   * Setup periodic status updates
    */
   private setupPeriodicStatusUpdate(): void {
     // 移除定时更新，只通过事件监听来更新客服状态
@@ -473,8 +473,8 @@ export class ChatManager {
   }
 
   /**
-   * 开始监听聊天窗口状态
-   * 使用 MutationObserver 监听 iframe 中的 DOM 变化
+   * Start monitoring chat window status
+   * Use MutationObserver to monitor DOM changes in iframe
    */
   private startChatWindowMonitoring(): void {
     let isCustomElementsInitialized = false
@@ -657,8 +657,8 @@ export class ChatManager {
   }
 
   /**
-   * 初始化自定义元素
-   * 当检测到聊天窗口准备就绪时调用
+   * Initialize custom elements
+   * Called when chat window is detected to be ready
    */
   private initializeCustomElements(): void {
     if (!this.chatUI) {
@@ -666,7 +666,7 @@ export class ChatManager {
       return
     }
 
-    // 注入自定义样式到 iframe
+    // Inject custom styles into iframe
     this.injectCustomStyles()
 
     // 初始化头部的在线客服和打开左侧栏图标
@@ -687,16 +687,16 @@ export class ChatManager {
     // 绑定全局事件处理器
     this.bindGlobalEventHandlers()
 
-    // 更新左侧栏可见性
+    // Update left sidebar visibility
     this.updateLeftBarVisibility()
 
-    // 获取客服状态
+    // Fetch agent status
     this.fetchAgentStatus()
   }
 
   /**
-   * 注入自定义样式到 iframe
-   * 修改 QuickChat iframe 中原生元素的样式
+   * Inject custom styles into iframe
+   * Modify native element styles in QuickChat iframe
    */
   private injectCustomStyles(): void {
     try {
@@ -762,44 +762,44 @@ export class ChatManager {
       // 注入到 iframe 的 head 中
       if (iframe.contentDocument.head) {
         iframe.contentDocument.head.appendChild(customStyle)
-        console.log('✅ 已成功注入自定义样式到 QuickChat iframe')
+        console.log('✅ Successfully injected custom styles into QuickChat iframe')
       } else {
-        console.warn('iframe head 不存在，无法注入样式')
+        console.warn('iframe head does not exist, cannot inject styles')
       }
     } catch (error) {
-      console.error('注入自定义样式失败:', error)
+      console.error('Failed to inject custom styles:', error)
     }
   }
 
   /**
-   * 设置调试工具
+   * Setup debug tools
    */
   private setupDebugTools(): void {
     if (typeof window === 'undefined' || !this.chatUI) return
 
     window.debugQuickChat = {
-      // 查看当前客服状态
+      // View current agent status
       showAgentStatus: () => {
         if (!this.chatUI) return
         console.log('=== 当前客服状态 ===')
         this.chatUI.state.customerServiceData.forEach((agent) => {
           console.log(
-            `${agent.employeeEnName}: ${this.chatUI!.getStatusText(agent.status)} (${agent.isOnline ? '在线' : '离线'})`
+            `${agent.employeeEnName}: ${this.chatUI!.getStatusText(agent.status)} (${agent.isOnline ? 'Online' : 'Offline'})`
           )
         })
         const onlineCount = this.chatUI.state.customerServiceData.filter((agent) => agent.isOnline).length
-        console.log(`总计在线客服: ${onlineCount}/${this.chatUI.state.customerServiceData.length}`)
+        console.log(`Total online agents: ${onlineCount}/${this.chatUI.state.customerServiceData.length}`)
         console.log('==================')
       },
 
-      // 手动刷新UI
+      // Manually refresh UI
       refreshUI: () => {
         if (this.chatUI) {
           this.chatUI.refreshUI()
         }
       },
 
-      // 模拟状态更新
+      // Simulate status update
       simulateStatusUpdate: (quickCepId: string, newStatus: number) => {
         if (this.chatUI) {
           const mockData: Record<string, number> = {}
@@ -808,32 +808,32 @@ export class ChatManager {
         }
       },
 
-      // 获取客服数据
+      // Get agent data
       getAgentData: () => {
         return this.chatUI?.state.customerServiceData
       },
 
-      // 测试切换客服
+      // Test agent switching
       testSwitchAgent: (quickCepId: string) => {
-        console.log(`测试切换到客服 ID: ${quickCepId}`)
+        console.log(`Testing switch to agent ID: ${quickCepId}`)
         if (this.chatUI) {
           this.chatUI.selectAgent(quickCepId)
         }
       },
 
-      // 获取当前聊天客服
+      // Get current chat agent
       getCurrentAgent: () => {
         return this.chatUI?.state.currentChatAgent
       },
 
-      // 重新初始化系统
+      // Reinitialize system
       reinitialize: () => {
         this.isInitialized = false
         this.retryCount = 0
         this.init()
       },
 
-      // 获取系统状态
+      // Get system status
       getSystemStatus: () => {
         return {
           isInitialized: this.isInitialized,
@@ -843,31 +843,31 @@ export class ChatManager {
         }
       },
 
-      // 手动设置当前客服（用于测试）
+      // Manually set current agent (for testing)
       setCurrentAgent: (quickCepId: string) => {
         if (!this.chatUI) return
         const agent = this.chatUI.state.customerServiceData.find((a) => a.quickCepId === quickCepId)
         if (agent) {
           this.chatUI.state.currentChatAgent = agent
           this.chatUI.refreshUI()
-          console.log(`手动设置当前客服为: ${agent.employeeEnName}`)
+          console.log(`Manually set current agent to: ${agent.employeeEnName}`)
         } else {
-          console.error(`未找到客服ID: ${quickCepId}`)
+          console.error(`Agent ID not found: ${quickCepId}`)
         }
       },
 
-      // 清除当前客服
+      // Clear current agent
       clearCurrentAgent: () => {
         if (this.chatUI) {
           this.chatUI.state.currentChatAgent = null
           this.chatUI.refreshUI()
-          console.log('已清除当前客服')
+          console.log('Current agent cleared')
         }
       },
 
-      // 测试事件触发
+      // Test event triggering
       testSwitchEvent: (quickCepId: string) => {
-        console.log(`模拟触发切换客服成功事件: chat.switch.operator.success，客服ID: ${quickCepId}`)
+        console.log(`Simulating agent switch success event: chat.switch.operator.success, Agent ID: ${quickCepId}`)
         if (typeof window !== 'undefined' && window.quickEmitter) {
           window.quickEmitter.emit('chat.switch.operator.success', {
             operatorId: quickCepId,
@@ -876,78 +876,78 @@ export class ChatManager {
         }
       },
 
-      // 测试客服离线功能
+      // Test agent offline functionality
       testAgentOffline: (quickCepId: string) => {
         if (!this.chatUI) return
         const agent = this.chatUI.state.customerServiceData.find((a) => a.quickCepId === quickCepId)
         if (agent) {
-          console.log(`模拟客服 ${agent.employeeEnName} 离线`)
+          console.log(`Simulating agent ${agent.employeeEnName} offline`)
           agent.isOnline = false
-          agent.status = 1 // 离线状态
+          agent.status = 1 // Offline status
           this.chatUI.refreshUI()
         } else {
           console.error(`未找到客服ID: ${quickCepId}`)
         }
       },
 
-      // 测试客服上线功能
+      // Test agent online functionality
       testAgentOnline: (quickCepId: string) => {
         if (!this.chatUI) return
         const agent = this.chatUI.state.customerServiceData.find((a) => a.quickCepId === quickCepId)
         if (agent) {
-          console.log(`模拟客服 ${agent.employeeEnName} 上线`)
+          console.log(`Simulating agent ${agent.employeeEnName} online`)
           agent.isOnline = true
-          agent.status = 2 // 在线空闲状态
+          agent.status = 2 // Online available status
           this.chatUI.refreshUI()
         } else {
           console.error(`未找到客服ID: ${quickCepId}`)
         }
       },
 
-      // 测试当前客服离线场景
+      // Test current agent offline scenario
       testCurrentAgentOffline: () => {
         if (!this.chatUI || !this.chatUI.state.currentChatAgent) {
-          console.log('当前没有选中的客服')
+          console.log('No agent currently selected')
           return
         }
         const currentAgent = this.chatUI.state.currentChatAgent
-        console.log(`测试当前客服 ${currentAgent.employeeEnName} 离线场景`)
+        console.log(`Testing current agent ${currentAgent.employeeEnName} offline scenario`)
 
-        // 模拟当前客服离线
+        // Simulate current agent offline
         const agent = this.chatUI.state.customerServiceData.find((a) => a.quickCepId === currentAgent.quickCepId)
         if (agent) {
           agent.isOnline = false
           agent.status = 1
-          console.log(`已将客服 ${agent.employeeEnName} 设置为离线，刷新UI...`)
+          console.log(`Set agent ${agent.employeeEnName} to offline, refreshing UI...`)
           this.chatUI.refreshUI()
         }
       },
 
-      // 检查当前客服状态
+      // Check current agent status
       checkCurrentAgentStatus: () => {
         if (!this.chatUI) return
         const result = this.chatUI.checkCurrentAgentStatus()
         if (result) {
-          console.log('当前客服已离线，已自动恢复为默认状态')
+          console.log('Current agent went offline, automatically restored to default state')
         } else {
-          console.log('当前客服状态正常或无当前客服')
+          console.log('Current agent status is normal or no current agent')
         }
         return result
       },
 
-      // 测试恢复之前选择的客服
+      // Test restoring previously selected agent
       testRestorePreviousAgent: () => {
         if (this.chatUI) {
           this.chatUI.restorePreviousSelectedAgent()
         }
       },
 
-      // 手动初始化自定义元素
+      // Manually ini
       initializeCustomElements: () => {
         this.initializeCustomElements()
       },
 
-      // 检查聊天窗口状态
+      // Check chat window status
       checkChatWindow: () => {
         try {
           const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
@@ -973,14 +973,14 @@ export class ChatManager {
         }
       },
 
-      // 重新开始监听
+      // Restart monitoring
       restartMonitoring: () => {
         this.startChatWindowMonitoring()
       },
 
-      // 测试 MutationObserver 功能
+      // Test MutationObserver functionality
       testMutationObserver: () => {
-        console.log('测试 MutationObserver 功能...')
+        console.log('Testing MutationObserver functionality...')
 
         // 检查浏览器是否支持 MutationObserver
         if (typeof MutationObserver === 'undefined') {
@@ -988,9 +988,9 @@ export class ChatManager {
           return false
         }
 
-        console.log('✅ MutationObserver 支持正常')
+        console.log('✅ MutationObserver support is normal')
 
-        // 测试基本的 MutationObserver 功能
+        // Test basic MutationObserver functionality
         const testDiv = document.createElement('div')
         testDiv.id = 'mutation-test'
         document.body.appendChild(testDiv)
@@ -1044,7 +1044,7 @@ export class ChatManager {
         }
       },
 
-      // 查看本地存储的客服选择
+      // View locally stored agent selection
       getStoredAgent: () => {
         try {
           if (typeof localStorage !== 'undefined') {
@@ -1075,7 +1075,7 @@ export class ChatManager {
         }
       },
 
-      // 测试样式注入
+      // Test style injection
       testStyleInjection: () => {
         this.injectCustomStyles()
       },
@@ -1135,7 +1135,7 @@ export class ChatManager {
                 window.parent.postMessage({type: 'TOGGLE_ORDER_SELECTOR'}, '*');
               }
             } catch (error) {
-              console.error('iframe 内处理订单按钮点击时出错:', error);
+              console.error('Error handling order button click in iframe:', error);
               if (window.parent && window.parent.postMessage) {
                 window.parent.postMessage({type: 'TOGGLE_ORDER_SELECTOR'}, '*');
               }
@@ -1152,7 +1152,7 @@ export class ChatManager {
   }
 
   /**
-   * 创建订单选择器容器
+   * Create order selector container
    */
   private createOrderSelectorContainer(): void {
     if (!this.simpleOrderSelector) return
@@ -1178,7 +1178,7 @@ export class ChatManager {
               chatWrap.appendChild(orderContainer)
             }
 
-            // 挂载订单选择器
+            // Mount order selector
             this.simpleOrderSelector?.mount(orderContainer)
             return true
           }
@@ -1210,7 +1210,7 @@ export class ChatManager {
   }
 
   /**
-   * 在主窗口中创建订单选择器容器（降级方案）
+   * Create order selector container in main window (fallback solution)
    */
   private createOrderSelectorInMainWindow(): void {
     if (!this.simpleOrderSelector) return
@@ -1232,16 +1232,16 @@ export class ChatManager {
   }
 
   /**
-   * 发送简化版订单消息
+   * Send simplified order message
    */
   private sendSimpleOrderMessage(orderItem: any): void {
     if (typeof window !== 'undefined' && window.quickChatApi?.sendMessage) {
       const orderMessage = this.formatSimpleOrderMessage(orderItem)
       try {
         window.quickChatApi.sendMessage(orderMessage)
-        console.log('订单消息已发送:', orderMessage)
+        console.log('Order message sent:', orderMessage)
       } catch (error) {
-        console.error('发送订单消息失败:', error)
+        console.error('Failed to send order message:', error)
       }
     } else {
       console.error('quickChatApi.sendMessage 方法不可用')
@@ -1249,18 +1249,18 @@ export class ChatManager {
   }
 
   /**
-   * 格式化简化版订单消息
+   * Format simplified order message
    */
   private formatSimpleOrderMessage(orderItem: any): string {
-    return `📦 订单信息
-订单号: ${orderItem.orderCode}
-产品名称: ${orderItem.title}
-金额: ${orderItem.orderAmount}
-类型: ${this.getBusinessTypeName(orderItem.businessType)}`
+    return `📦 Order Information
+Order #: ${orderItem.orderCode}
+Product Name: ${orderItem.title}
+Amount: ${orderItem.orderAmount}
+Type: ${this.getBusinessTypeName(orderItem.businessType)}`
   }
 
   /**
-   * 获取业务类型名称
+   * Get business type name
    */
   private getBusinessTypeName(businessType: string): string {
     const typeMap: Record<string, string> = {
@@ -1276,24 +1276,24 @@ export class ChatManager {
   }
 
   /**
-   * 恢复客服信息为默认状态
-   * 在会话关闭时调用，清除当前选择的客服信息
+   * Restore agent info to default state
+   * Called when session closes, clear currently selected agent info
    */
   private resetToDefaultAgent(): void {
     if (!this.chatUI) {
       return
     }
 
-    console.log('会话关闭，恢复客服信息为默认状态')
+    console.log('Session closed, restoring agent info to default state')
 
-    // 重置状态标记
+    // Reset status flags
     this.operatorStatusReceived = false
     this.pendingOperatorListChange = null
 
     // 调用ChatCustomUI的重置方法
     this.chatUI.resetToDefaultAgent()
 
-    // 更新左侧栏可见性
+    // Update left sidebar visibility
     this.updateLeftBarVisibility()
 
     console.log('已恢复为默认客服状态')

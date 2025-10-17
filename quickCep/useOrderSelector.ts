@@ -1,6 +1,6 @@
 /**
- * 订单选择器组件
- * 用于在聊天窗口中选择和发送订单信息
+ * Order Selector Component
+ * Used for selecting and sending order information in chat window
  */
 
 interface OrderItem {
@@ -71,15 +71,15 @@ export class OrderSelector {
    */
   show(): void {
     if (this.state.isVisible) return
-    
+
     this.state.isVisible = true
     this.state.isClosing = false
-    
+
     // 显示容器
     if (this.container) {
       this.container.style.display = 'block'
     }
-    
+
     this.render()
     this.initList()
   }
@@ -89,14 +89,14 @@ export class OrderSelector {
    */
   hide(): void {
     if (!this.state.isVisible) return
-    
+
     this.state.isClosing = true
     this.render()
-    
+
     setTimeout(() => {
       this.state.isVisible = false
       this.state.isClosing = false
-      
+
       // 隐藏容器
       if (this.container) {
         this.container.style.display = 'none'
@@ -608,7 +608,7 @@ export class OrderSelector {
           line-height: 1.5;
         }
 
-        /* 统一的加载状态样式 */
+        /* Unified loading state styles */
         .chat-loading {
           position: absolute;
           top: 50%;
@@ -763,7 +763,7 @@ export class OrderSelector {
   sendOrder(orderCode: string): void {
     const allItems = [...this.state.cartList, ...this.state.orderList.flatMap(batch => batch.orderSimpleVOS)]
     const orderItem = allItems.find(item => item._orderCode === orderCode)
-    
+
     if (orderItem && this.onSendOrderCallback) {
       this.onSendOrderCallback(orderItem)
       this.hide()
@@ -936,7 +936,7 @@ export class OrderSelector {
    */
   private dealCartList(list: any[]): OrderItem[] {
     const newList: OrderItem[] = []
-    
+
     for (const item of list) {
       if (item.pcbGoods) {
         newList.push({
@@ -951,9 +951,9 @@ export class OrderSelector {
           source: 'cart'
         })
       }
-      // 可以添加其他商品类型的处理逻辑
+      // Can add processing logic for other product types
     }
-    
+
     return newList
   }
 
@@ -975,7 +975,7 @@ export class OrderSelector {
   }
 
   /**
-   * 根据批次号获取日期
+   * Get date by batch number
    */
   private getDateByBatchNum(batchNum: string): string {
     const year = batchNum.slice(1, 5)

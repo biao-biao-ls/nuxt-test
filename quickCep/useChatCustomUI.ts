@@ -11,8 +11,8 @@ const imFileDownloadFile = (fileSystemAccessId: string) =>
 
 interface UIState {
   isLeftBarExpanded: boolean
-  isLeftBarManuallyHidden: boolean // 用户是否手动隐藏了左侧栏
-  isLeftBarForceShown: boolean // 用户是否强制显示了左侧栏
+  isLeftBarManuallyHidden: boolean // Whether user manually hid the left sidebar
+  isLeftBarForceShown: boolean // Whether user forced to show the left sidebar
   currentChatAgent: CustomerServiceAgent | null
   customerServiceData: CustomerServiceAgent[]
   containers: {
@@ -81,7 +81,7 @@ export class ChatCustomUI {
   }
 
   /**
-   * 设置客服数据
+   * Set customer service data
    */
   setCustomerServiceData(customerServiceData: CustomerServiceAgent[]): void {
     this.state.customerServiceData = customerServiceData
@@ -106,7 +106,7 @@ export class ChatCustomUI {
    * 工具函数：根据状态码判断是否在线
    */
   isAgentOnline(status: number): boolean {
-    return status === 2 // 只有空闲状态才算在线，忙碌状态算离线
+    return status === 2 // Only available status counts as online, busy status counts as offline
   }
 
   /**
@@ -226,12 +226,12 @@ export class ChatCustomUI {
         }
       }
     } catch (error) {
-      console.warn('保存客服选择到本地存储失败:', error)
+      console.warn('Failed to save agent selection to local storage:', error)
     }
   }
 
   /**
-   * 从本地存储获取之前选择的客服
+   * Get previously selected agent from local storage
    */
   private getStoredSelectedAgent(): {
     quickCepId: string
@@ -255,7 +255,7 @@ export class ChatCustomUI {
         }
       }
     } catch (error) {
-      console.warn('从本地存储获取客服选择失败:', error)
+      console.warn('Failed to get agent selection from local storage:', error)
     }
     return null
   }
@@ -291,10 +291,10 @@ export class ChatCustomUI {
    */
   getStatusColor(status: number): string {
     const colors: Record<number, string> = {
-      2: '#48DE8C', // 在线空闲 - 绿色
-      3: '#ffc107' // 在线忙碌 - 黄色
+      2: '#48DE8C', // Online Available - Green
+      3: '#ffc107' // Online Busy - Yellow
     }
-    return colors[status] || '#d8d8d8' // 离线 - 灰色
+    return colors[status] || '#d8d8d8' // Offline - Gray
   }
 
   /**
@@ -302,10 +302,10 @@ export class ChatCustomUI {
    */
   getStatusText(status: number): string {
     const texts: Record<number, string> = {
-      2: '在线空闲',
-      3: '在线忙碌'
+      2: 'Online Available',
+      3: 'Online Busy'
     }
-    return texts[status] || '离线'
+    return texts[status] || 'Offline'
   }
 
   /**
@@ -357,7 +357,7 @@ export class ChatCustomUI {
           agent.isOnline = newOnlineStatus
           hasStatusChanged = true
 
-          // 检查当前选中的客服是否离线了
+          // Check if the currently selected agent went offline
           if (
             this.state.currentChatAgent &&
             this.state.currentChatAgent.quickCepId === agent.quickCepId &&
@@ -369,14 +369,14 @@ export class ChatCustomUI {
       }
     })
 
-    // 如果当前客服离线了，清除当前客服状态
+    // If current agent went offline, clear current agent status
     if (currentAgentWentOffline) {
       this.state.currentChatAgent = null
     }
 
     // 如果客服状态发生变化，只在特定情况下重置手动控制状态
     if (hasStatusChanged) {
-      // 只有当所有客服都离线时，才重置手动控制状态
+      // Only reset manual control status when all agents are offline
       const hasAnyOnlineAgents = this.state.customerServiceData.some((agent) => agent.isOnline)
       if (!hasAnyOnlineAgents) {
         this.state.isLeftBarManuallyHidden = false
@@ -396,14 +396,14 @@ export class ChatCustomUI {
   }
 
   /**
-   * 检查当前客服状态，如果离线则自动恢复为默认状态
+   * Check current agent status, automatically restore to default if offline
    */
   checkCurrentAgentStatus(): boolean {
     if (!this.state.currentChatAgent) {
-      return false // 没有当前客服，无需检查
+      return false // No current agent, no need to check
     }
 
-    // 从最新的客服数据中找到当前客服
+    // Find current agent from latest agent data
     const currentAgent = this.state.customerServiceData.find(
       (agent) => agent.quickCepId === this.state.currentChatAgent!.quickCepId
     )
@@ -416,16 +416,16 @@ export class ChatCustomUI {
 
       this.refreshUI()
 
-      // 发射客服离线事件
+      // Emit agent offline event
       this.emitCustomEvent('currentAgentWentOffline', {
         previousAgent: currentAgent || this.state.currentChatAgent,
         timestamp: new Date().toISOString()
       })
 
-      return true // 返回true表示当前客服已离线并被清除
+      return true // Return true indicates current agent went offline and was cleared
     }
 
-    return false // 返回false表示当前客服仍在线
+    return false // Return false indicates current agent is still online
   }
 
   /**
@@ -438,11 +438,11 @@ export class ChatCustomUI {
   }
 
   /**
-   * 重置为默认客服状态
-   * 清除当前选择的客服并更新本地存储
+   * Reset to default agent status
+   * Clear currently selected agent and update local storage
    */
   resetToDefaultAgent(): void {
-    console.log('重置为默认客服状态')
+    console.log('Resetting to default agent status')
 
     // 清除当前选择的客服
     this.state.currentChatAgent = null
@@ -450,10 +450,10 @@ export class ChatCustomUI {
     // 清除本地存储的客服选择
     this.saveSelectedAgent(null)
 
-    // 刷新UI显示
+    // Refresh UI display
     this.refreshUI()
 
-    console.log('已重置为默认客服状态')
+    console.log('Reset to default agent status completed')
   }
 
   // 记住待切换的座席ID
@@ -485,7 +485,7 @@ export class ChatCustomUI {
 
     if (typeof window !== 'undefined' && (window as any).quickChatApi && (window as any).quickChatApi.switchChat) {
       try {
-        console.log('切换座席', quickCepId)
+        console.log('Switching agent', quickCepId)
           ; (window as any).quickChatApi.switchChat(quickCepId)
       } catch (error) {
         console.error('切换客服失败:', error)
@@ -500,8 +500,8 @@ export class ChatCustomUI {
   }
 
   /**
-   * 处理切换座席成功事件
-   * 当收到 chat.switch.operator.success 事件时调用
+   * Handle agent switch success event
+   * Called when receiving chat.switch.operator.success event
    */
   handleSwitchOperatorSuccess(): void {
     if (!this.pendingSwitchAgentId) {
@@ -518,12 +518,12 @@ export class ChatCustomUI {
     }
 
     if (!agent.isOnline) {
-      console.warn(`客服 ${agent.employeeEnName} 已离线，无法切换`)
+      console.warn(`Agent ${agent.employeeEnName} is offline, cannot switch`)
       this.pendingSwitchAgentId = null
       return
     }
 
-    console.log('切换座席成功，更新客服信息:', agent.employeeEnName)
+    console.log('Agent switch successful, updating agent info:', agent.employeeEnName)
 
     // 更新当前聊天客服
     this.state.currentChatAgent = agent
@@ -531,7 +531,7 @@ export class ChatCustomUI {
     // 保存到本地存储
     this.saveSelectedAgent(agent)
 
-    // 刷新UI
+    // Refresh UI
     this.refreshUI()
 
     // 清除待切换的座席ID
@@ -556,7 +556,7 @@ export class ChatCustomUI {
       this.state.isLeftBarForceShown = true
     }
 
-    // 通知管理器更新左侧栏可见性
+    // Notify manager to update left sidebar visibility
     if (this.onAgentStatusChangeCallback) {
       this.onAgentStatusChangeCallback()
     }
@@ -565,7 +565,7 @@ export class ChatCustomUI {
   }
 
   /**
-   * 强制刷新UI（用于调试）
+   * Force refresh UI (for debugging)
    */
   forceRefreshUI(): void {
     this.refreshUI()
@@ -614,10 +614,10 @@ export class ChatCustomUI {
   }
 
   /**
-   * 刷新UI
+   * Refresh UI
    */
   refreshUI(): void {
-    // 在刷新UI之前，检查当前客服是否仍在线
+    // Before refreshing UI, check if current agent is still online
     this.checkCurrentAgentStatus()
 
     // 更新头部
@@ -636,7 +636,7 @@ export class ChatCustomUI {
     // 绑定全局事件处理器
     this.bindGlobalEventHandlers()
 
-    // 通知管理器更新左侧栏可见性
+    // Notify manager to update left sidebar visibility
     if (this.onAgentStatusChangeCallback) {
       this.onAgentStatusChangeCallback()
     }
@@ -671,7 +671,7 @@ export class ChatCustomUI {
    */
   generateHeaderHTML(): string {
     const onlineAgents = this.state.customerServiceData.filter((agent) => agent.isOnline)
-    // 如果有当前客服，从在线客服列表中排除它
+    // If there's a current agent, exclude it from online agents list
     const availableAgents = onlineAgents.filter(
       (agent) => !this.state.currentChatAgent || agent.quickCepId !== this.state.currentChatAgent.quickCepId
     )
@@ -695,7 +695,7 @@ export class ChatCustomUI {
           ${shouldShowMoreIndicator ? this.renderMoreAgentsIndicator(availableCount) : ''}
           ${shouldShowOpenIcon ? this.renderOpenLeftBarIcon() : ''}
           ${onlineAgents.length === 0 && !this.state.currentChatAgent
-        ? `<div class="no-agents"></div>` // 暂无客服在线
+        ? `<div class="no-agents"></div>` // No agents online
         : ''
       }
         </div>
@@ -711,7 +711,7 @@ export class ChatCustomUI {
     // 当未选择客服时，显示默认头像和JLCONE名称
     if (!this.state.currentChatAgent) {
       return `
-        <div class="current-agent default" title="当前客服: JLCONE">
+        <div class="current-agent default" title="Current Agent: JLCONE">
           <div class="agent-avatar-wrapper">
             <svg t="1758729790429" class="default-avatar" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="36" height="36">
               <path d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z" fill="#2B8CED"></path>
@@ -729,7 +729,7 @@ export class ChatCustomUI {
       this.state.currentChatAgent
 
     return `
-      <div class="current-agent selected" title="当前沟通: ${agent.employeeEnName}">
+      <div class="current-agent selected" title="Current Chat: ${agent.employeeEnName}">
         <div class="agent-avatar-wrapper">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                class="agent-avatar current"
@@ -777,7 +777,7 @@ export class ChatCustomUI {
     return `
       <div class="more-agents"
            onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()"
-           title="查看更多客服 (${availableCount}个可选择)">
+           title="View More Agents (${availableCount} available)">
         +${displayCount}
       </div>
     `
@@ -790,7 +790,7 @@ export class ChatCustomUI {
     return `
       <div class="open-leftbar-icon"
            onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()"
-           title="打开客服列表">
+           title="Open Agent List">
         <svg t="1758522231178" class="expand-icon-reverse" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
               <path d="M636.501333 383.658667a37.973333 37.973333 0 0 1 41.898667 62.762666l-3.157333 2.304-99.925334 66.645334 103.210667 86.016a37.930667 37.930667 0 1 1-48.554667 58.24l-142.250666-118.485334a37.973333 37.973333 0 0 1 3.242666-60.714666L633.173333 385.706667l3.328-2.005334zM308.181333 891.306667V156.416a37.930667 37.930667 0 1 1 75.818667 0v734.805333a37.930667 37.930667 0 0 1-75.818667 0z" fill="#999" p-id="15574"></path>
               <path d="M749.056 862.848V938.666667H274.986667v-75.818667h474.026666z m113.792-113.792V274.944a113.792 113.792 0 0 0-113.792-113.792H274.986667a113.792 113.792 0 0 0-113.792 113.792v474.112a113.792 113.792 0 0 0 113.792 113.792V938.666667l-9.770667-0.256a189.653333 189.653333 0 0 1-179.626667-179.626667L85.333333 749.056V274.944a189.653333 189.653333 0 0 1 179.882667-189.354667L274.986667 85.333333h474.026666l9.813334 0.256A189.610667 189.610667 0 0 1 938.666667 274.944v474.112l-0.256 9.728a189.653333 189.653333 0 0 1-179.626667 179.626667l-9.728 0.256v-75.818667a113.834667 113.834667 0 0 0 113.792-113.792z" fill="#999" p-id="15575"></path>

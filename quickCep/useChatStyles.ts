@@ -1,10 +1,10 @@
 /**
- * 聊天UI样式管理器
- * 提供所有自定义组件的CSS样式
+ * Chat UI Style Manager
+ * Provides CSS styles for all custom components
  */
 export class ChatStyles {
   /**
-   * 生成头部样式
+   * Generate header styles
    */
   static generateHeaderStyles(): string {
     return `
@@ -227,7 +227,7 @@ export class ChatStyles {
   }
 
   /**
-   * 生成左侧栏样式
+   * Generate left sidebar styles
    */
   static generateLeftBarStyles(): string {
     return `
@@ -246,13 +246,13 @@ export class ChatStyles {
         .left-bar-content {
           flex: 1;
           overflow-y: auto;
-          /* 隐藏滚动条 */
+          /* Hide scrollbar */
           scrollbar-width: none; /* Firefox */
-          -ms-overflow-style: none; /* IE 和 Edge */
+          -ms-overflow-style: none; /* IE and Edge */
         }
 
         .left-bar-content::-webkit-scrollbar {
-          display: none; /* Chrome, Safari 和 Opera */
+          display: none; /* Chrome, Safari and Opera */
         }
 
         .left-bar-footer {
@@ -413,7 +413,7 @@ export class ChatStyles {
   }
 
   /**
-   * 生成底部样式
+   * Generate footer styles
    */
   static generateFooterStyles(): string {
     return `

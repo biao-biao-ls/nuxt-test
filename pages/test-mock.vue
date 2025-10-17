@@ -32,6 +32,10 @@
               <div class="code">{{ getCartItemCode(item) }}</div>
               <div class="price">${{ getCartItemPrice(item) }}</div>
               <div class="type">{{ getCartItemType(item) }}</div>
+              <div class="image-info">
+                <div class="image-id">图片ID: {{ getCartItemImageId(item) || '无' }}</div>
+                <div class="image-url">图片地址: {{ getCartItemImageUrl(item) || '无' }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -77,6 +81,10 @@
                 <div class="order-code">{{ order.orderCode }}</div>
                 <div class="order-amount">${{ order.orderAmount }}</div>
                 <div class="order-type">{{ order.businessType }}</div>
+                <div class="image-info">
+                  <div class="image-id">图片ID: {{ order.fileAccessId || '无' }}</div>
+                  <div class="image-url">图片地址: {{ order.fileAccessId ? buildImageUrl(order.fileAccessId) : '无' }}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -192,6 +200,22 @@ const getCartItemType = (item: any) => {
   if (item.steelmeshGoods) return 'Steel Mesh'
   if (item.flexHeaterGoods) return 'Flex Heater'
   return 'Unknown'
+}
+
+const getCartItemImageId = (item: any) => {
+  if (item.pcbGoods) return item.pcbGoods.previewImgAccessId
+  if (item.steelmeshGoods) return item.steelmeshGoods.previewImgAccessId
+  if (item.flexHeaterGoods) return item.flexHeaterGoods.previewImgAccessId
+  return null
+}
+
+const getCartItemImageUrl = (item: any) => {
+  const imageId = getCartItemImageId(item)
+  return imageId ? buildImageUrl(imageId) : null
+}
+
+const buildImageUrl = (fileAccessId: string) => {
+  return `https://test.jlcpcb.com/api/overseas-pcb-order/v1/fileCommon/downloadCommonFile?fileAccessId=${fileAccessId}`
 }
 
 const getDateByBatchNum = (batchNum: string) => {
@@ -343,6 +367,23 @@ onMounted(() => {
   padding: 2px 6px;
   border-radius: 12px;
   display: inline-block;
+}
+
+.image-info {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.image-id, .image-url {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 2px;
+  word-break: break-all;
+}
+
+.image-url {
+  color: #007bff;
 }
 
 .selector-container {

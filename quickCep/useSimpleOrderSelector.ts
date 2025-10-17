@@ -1,6 +1,6 @@
 /**
- * 简化版订单选择器
- * 直接在底部区域显示，不依赖 bottomCustomDrawer API
+ * Simplified Order Selector
+ * Display directly in bottom area, does not depend on bottomCustomDrawer API
  */
 
 interface SimpleOrderItem {
@@ -8,6 +8,8 @@ interface SimpleOrderItem {
   orderCode: string
   orderAmount: string
   businessType: string
+  fileAccessId?: string
+  imgUrl?: string
 }
 
 interface SimpleOrderSelectorState {
@@ -40,14 +42,14 @@ export class SimpleOrderSelector {
       loading: false
     }
 
-    // 绑定全局方法
+    // Bind global methods
     if (typeof window !== 'undefined') {
       window.simpleOrderSelector = this
     }
   }
 
   /**
-   * 设置发送订单回调
+   * Set send order callback
    */
   setOnSendOrderCallback(callback: (orderItem: SimpleOrderItem) => void): void {
     this.onSendOrderCallback = callback
@@ -72,7 +74,7 @@ export class SimpleOrderSelector {
   }
 
   /**
-   * 显示订单选择器
+   * Show order selector
    */
   async show(): Promise<void> {
     if (this.state.isVisible || !this.container) return
@@ -91,7 +93,7 @@ export class SimpleOrderSelector {
   }
 
   /**
-   * 隐藏订单选择器
+   * Hide order selector
    */
   hide(): void {
     if (!this.state.isVisible || !this.container) return
@@ -214,7 +216,7 @@ export class SimpleOrderSelector {
   }
 
   /**
-   * 更新订单列表
+   * Update order list
    */
   private updateOrderList(): void {
     const orderListContainer = this.container?.querySelector('.simple-order-list') as HTMLElement
@@ -259,9 +261,9 @@ export class SimpleOrderSelector {
    */
   async handleSearch(): Promise<void> {
     this.state.loading = true
-    this.updateOrderList() // 只更新订单列表部分
+    this.updateOrderList() // Only update order list section
 
-    // 添加短暂延迟以改善用户体验
+    // Add brief delay to improve user experience
     await new Promise(resolve => setTimeout(resolve, 300))
     await this.loadData()
   }
@@ -289,7 +291,7 @@ export class SimpleOrderSelector {
    */
   private async loadData(): Promise<void> {
     this.state.loading = true
-    this.updateOrderList() // 只更新订单列表显示加载状态
+    this.updateOrderList() // Only update order list to show loading state
 
     try {
       if (this.state.activeName === 'Orders') {
@@ -307,7 +309,7 @@ export class SimpleOrderSelector {
       }
     } finally {
       this.state.loading = false
-      this.updateOrderList() // 只更新订单列表显示数据
+      this.updateOrderList() // Only update order list to show data
     }
   }
 
@@ -362,7 +364,9 @@ export class SimpleOrderSelector {
         title: order.title,
         orderCode: order.orderCode,
         orderAmount: `$${order.orderAmount}`,
-        businessType: order.businessType
+        businessType: order.businessType,
+        fileAccessId: order.fileAccessId,
+        imgUrl: order.fileAccessId ? this.buildImageUrl(order.fileAccessId) : undefined
       }))
     }))
   }
@@ -377,51 +381,62 @@ export class SimpleOrderSelector {
       let price = 0
       let businessType = ''
 
-      // 根据不同的商品类型提取数据
+      // Extract data based on different product types
+      let fileAccessId = ''
+      
       if (item.pcbGoods) {
         title = item.pcbGoods.gerberFile || item.pcbGoods.goodsCode || 'PCB Product'
         orderCode = item.pcbGoods.goodsCode
         price = item.pcbGoods.price || 0
         businessType = 'order_pcb'
+        fileAccessId = item.pcbGoods.previewImgAccessId || ''
       } else if (item.steelmeshGoods) {
         title = item.steelmeshGoods.gerberFile || item.steelmeshGoods.goodsCode || 'Steel Mesh Product'
         orderCode = item.steelmeshGoods.goodsCode
         price = item.steelmeshGoods.price || 0
         businessType = 'order_steel'
+        fileAccessId = item.steelmeshGoods.previewImgAccessId || ''
       } else if (item.flexHeaterGoods) {
         title = item.flexHeaterGoods.gerberFile || item.flexHeaterGoods.goodsCode || 'Flex Heater Product'
         orderCode = item.flexHeaterGoods.goodsCode
         price = item.flexHeaterGoods.price || 0
         businessType = 'order_flexheater'
+        fileAccessId = item.flexHeaterGoods.previewImgAccessId || ''
       } else if (item.smtGoods) {
         title = item.smtGoods.gerberFile || item.smtGoods.goodsCode || 'SMT Product'
         orderCode = item.smtGoods.goodsCode
         price = item.smtGoods.price || 0
         businessType = 'order_smt'
+        fileAccessId = item.smtGoods.previewImgAccessId || ''
       } else if (item.tdpGoods) {
         title = item.tdpGoods.gerberFile || item.tdpGoods.goodsCode || '3D Printing Product'
         orderCode = item.tdpGoods.goodsCode
         price = item.tdpGoods.price || 0
         businessType = 'order_tdp'
+        fileAccessId = item.tdpGoods.previewImgAccessId || ''
       } else if (item.cncGoods) {
         title = item.cncGoods.gerberFile || item.cncGoods.goodsCode || 'CNC Product'
         orderCode = item.cncGoods.goodsCode
         price = item.cncGoods.price || 0
         businessType = 'order_cnc'
+        fileAccessId = item.cncGoods.previewImgAccessId || ''
       } else if (item.plateMetalGoods) {
         title = item.plateMetalGoods.gerberFile || item.plateMetalGoods.goodsCode || 'Plate Metal Product'
         orderCode = item.plateMetalGoods.goodsCode
         price = item.plateMetalGoods.price || 0
         businessType = 'order_plate_metal'
+        fileAccessId = item.plateMetalGoods.previewImgAccessId || ''
       }
 
       return {
         title,
         orderCode,
         orderAmount: `$${price.toFixed(2)}`,
-        businessType
+        businessType,
+        fileAccessId,
+        imgUrl: fileAccessId ? this.buildImageUrl(fileAccessId) : undefined
       }
-    }).filter(item => item.orderCode) // 过滤掉没有订单编码的项目
+    }).filter(item => item.orderCode) // Filter out items without order codes
   }
 
   /**
@@ -611,36 +626,45 @@ export class SimpleOrderSelector {
   }
 
   /**
+   * 构建图片URL
+   */
+  private buildImageUrl(fileAccessId: string): string {
+    return `https://test.jlcpcb.com/api/overseas-pcb-order/v1/fileCommon/downloadCommonFile?fileAccessId=${fileAccessId}`
+  }
+
+  /**
    * 获取订单图片URL
    */
   private getOrderImageUrl(item: SimpleOrderItem): string {
-    console.log(item)
-    return 'https://test.jlcpcb.com/api/overseas-pcb-order/v1/fileCommon/downloadCommonFile?fileAccessId=8667440297175171072'
-    // 尝试获取真实的图片URL，如果没有则返回默认图片
-    const realImageUrl = this.getRealImageUrl(item)
-    if (realImageUrl) {
-      return realImageUrl
+    // 如果已经有构建好的图片URL，直接使用
+    if (item.imgUrl) {
+      return item.imgUrl
     }
 
-    // 根据业务类型返回不同的默认图片
+    // 如果有 fileAccessId，构建图片URL
+    if (item.fileAccessId) {
+      return this.buildImageUrl(item.fileAccessId)
+    }
+
+    // Return default image based on business type
     return this.getDefaultImageByType(item.businessType)
   }
 
   /**
-   * 获取真实图片URL（这里可以根据实际业务逻辑获取）
+   * Get real image URL (can be obtained based on actual business logic)
    */
   private getRealImageUrl(item: SimpleOrderItem): string | null {
-    // 这里可以根据订单编码或其他信息构建真实的图片URL
-    // 例如：return `/api/order-images/${item.orderCode}.jpg`
-    // 暂时返回null，使用默认图片
+    // Can build real image URL based on order code or other info
+    // Example: return `/api/order-images/${item.orderCode}.jpg`
+    // Temporarily return null, use default image
     return null
   }
 
   /**
-   * 根据业务类型获取默认图片 - 统一使用 JLCPCB 水印样式 09fca30
+   * Get default image by business type - Unified JLCPCB watermark style 09fca30
    */
   private getDefaultImageByType(businessType: string): string {
-    // 所有类型都使用相同的 JLCPCB 水印样式
+    // All types use the same JLCPCB watermark style
     return this.getJLCPCBPlaceholder()
   }
 
@@ -662,15 +686,15 @@ export class SimpleOrderSelector {
   }
 
   /**
-   * 获取加载失败时的占位符图片 - 使用相同的 JLCPCB 水印样式
+   * Get placeholder image for loading failures - Use same JLCPCB watermark style
    */
   private getErrorPlaceholder(): string {
-    // 加载失败时也使用相同的 JLCPCB 水印样式
+    // Also use same JLCPCB watermark style when loading fails
     return this.getJLCPCBPlaceholder()
   }
 
   /**
-   * 处理图片加载错误
+   * Handle image loading errors
    */
   handleImageError(imgElement: HTMLImageElement): void {
     if (imgElement && !imgElement.dataset.errorHandled) {
@@ -680,7 +704,7 @@ export class SimpleOrderSelector {
   }
 
   /**
-   * 根据批次号获取日期
+   * Get date by batch number
    */
   private getDateByBatchNum(batchNum: string): string {
     const year = batchNum.slice(1, 5)
@@ -698,7 +722,7 @@ export class SimpleOrderSelector {
     if (this.state.activeName === 'Cart') {
       selectedOrder = this.state.cartList.find(order => order.orderCode === orderCode)
     } else {
-      // 在订单批次中查找
+      // Search in order batches
       for (const batch of this.state.orderList) {
         selectedOrder = batch.orderSimpleVOS.find(order => order.orderCode === orderCode)
         if (selectedOrder) break
@@ -1057,7 +1081,7 @@ export class SimpleOrderSelector {
           background: #f5f5f5;
         }
 
-        /* 图片加载状态 */
+        /* Image loading state */
         .order-image::before {
           content: '';
           position: absolute;

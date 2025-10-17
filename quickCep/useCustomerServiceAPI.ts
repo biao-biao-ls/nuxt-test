@@ -1,4 +1,4 @@
-// 客服数据API接口
+// Customer service data API interface
 interface CustomerServiceAgent {
   employeeEnName: string
   quickCepId: string
@@ -10,8 +10,8 @@ interface CustomerServiceAgent {
 }
 
 /**
- * 客服数据API管理器
- * 用于从外部数据源获取客服数据
+ * Customer Service Data API Manager
+ * Used to fetch customer service data from external data sources
  */
 export class CustomerServiceAPI {
   private baseURL: string
@@ -21,11 +21,11 @@ export class CustomerServiceAPI {
   }
 
   /**
-   * 从API获取客服数据
+   * Fetch customer service data from API
    */
   async fetchCustomerServiceData(): Promise<CustomerServiceAgent[]> {
     try {
-      // 这里可以替换为实际的API调用
+      // This can be replaced with actual API calls
       const response = await fetch(`${this.baseURL}/customer-service/agents`)
 
       if (!response.ok) {
@@ -36,15 +36,15 @@ export class CustomerServiceAPI {
 
       return data
     } catch (error) {
-      console.error('获取客服数据失败:', error)
+      console.error('Failed to fetch customer service data:', error)
 
-      // 返回默认数据作为降级处理
+      // Return default data as fallback
       return this.getDefaultCustomerServiceData()
     }
   }
 
   /**
-   * 从本地JSON文件获取客服数据
+   * Fetch customer service data from local JSON file
    */
   async fetchFromLocalFile(filePath: string = '/customer-service-data.json'): Promise<CustomerServiceAgent[]> {
     try {
@@ -58,15 +58,15 @@ export class CustomerServiceAPI {
 
       return data
     } catch (error) {
-      console.error('从本地文件获取客服数据失败:', error)
+      console.error('Failed to fetch customer service data from local file:', error)
 
-      // 返回默认数据作为降级处理
+      // Return default data as fallback
       return this.getDefaultCustomerServiceData()
     }
   }
 
   /**
-   * 获取默认客服数据
+   * Get default customer service data
    */
   private getDefaultCustomerServiceData(): CustomerServiceAgent[] {
     return [
@@ -146,7 +146,7 @@ export class CustomerServiceAPI {
   }
 
   /**
-   * 验证客服数据格式
+   * Validate customer service data format
    */
   validateCustomerServiceData(data: any[]): CustomerServiceAgent[] {
     return data.filter((agent) => {
