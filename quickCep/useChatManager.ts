@@ -289,60 +289,38 @@ export class ChatManager {
 
   /**
    * Adjust iframe width
-   * Monitor iframe height changes, only set width when height is greater than 350px
+   * Monitor iframe width changes using ResizeObserver
    */
   private adjustIframeWidth(): void {
-    if (!this.chatUI) return
+    // 清理之前的观察器
+    if (this.iframeResizeObserver) {
+      this.iframeResizeObserver.disconnect()
+      this.iframeResizeObserver = null
+    }
 
-    const newWidth = this.chatUI.config.originalIframeWidth + this.chatUI.config.leftBarWidth
-
-    const tryAdjust = (): boolean => {
-      if (typeof document === 'undefined') return false
-
+    const setupIframeWidthMonitoring = () => {
       const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
-      if (iframe) {
-        const currentHeight = iframe.offsetHeight
-
-        // 只有当高度大于 350px 时才设置宽度
-        if (currentHeight > 350) {
-          iframe.style.width = `${newWidth}px`
-          iframe.style.minWidth = `${newWidth}px`
-        }
-
-        // 设置 ResizeObserver 监听高度变化
-        if (!this.iframeResizeObserver && typeof ResizeObserver !== 'undefined') {
-          this.iframeResizeObserver = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-              const height = entry.contentRect.height
-              if (height > 350) {
-                iframe.style.width = `${newWidth}px`
-                iframe.style.minWidth = `${newWidth}px`
-              }
-            }
-          })
-
-          this.iframeResizeObserver.observe(iframe)
-        }
-
-        return true
+      if (!iframe) {
+        // 如果 iframe 还不存在，延迟重试
+        setTimeout(setupIframeWidthMonitoring, 1000)
+        return
       }
-      return false
+
+      // 创建 ResizeObserver 来监听 iframe 尺寸变化
+      this.iframeResizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect
+          console.log(`iframe 宽度变化: ${width}px`)
+        }
+      })
+
+      // 开始观察 iframe
+      this.iframeResizeObserver.observe(iframe)
+      console.log('✅ 开始监听 iframe 宽度变化')
     }
 
-    // 持续尝试调整宽度
-    let attempts = 0
-    const maxAttempts = this.chatUI.config.maxRetryAttempts
-
-    const retryAdjust = () => {
-      attempts++
-      const success = tryAdjust()
-
-      if (!success && attempts < maxAttempts) {
-        setTimeout(retryAdjust, 500)
-      }
-    }
-
-    retryAdjust()
+    // 立即尝试设置监听
+    setupIframeWidthMonitoring()
   }
 
   /**
@@ -560,30 +538,30 @@ export class ChatManager {
 
     const setupIframeObserver = () => {
       // 监听页面中 iframe 的变化
-      iframeObserver = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          if (mutation.type === 'childList') {
-            for (const node of mutation.addedNodes) {
-              if (node.nodeType === Node.ELEMENT_NODE) {
-                const element = node as Element
-                if (element.id === 'quick-chat-iframe' || element.querySelector?.('#quick-chat-iframe')) {
-                  setTimeout(() => {
-                    const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
-                    if (iframe) {
-                      setupIframeLoadListener(iframe)
-                    }
-                  }, 100)
-                }
-              }
-            }
-          }
-        }
-      })
+      // iframeObserver = new MutationObserver((mutations) => {
+      //   for (const mutation of mutations) {
+      //     if (mutation.type === 'childList') {
+      //       for (const node of mutation.addedNodes) {
+      //         if (node.nodeType === Node.ELEMENT_NODE) {
+      //           const element = node as Element
+      //           if (element.id === 'quick-chat-iframe' || element.querySelector?.('#quick-chat-iframe')) {
+      //             setTimeout(() => {
+      //               const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+      //               if (iframe) {
+      //                 setupIframeLoadListener(iframe)
+      //               }
+      //             }, 100)
+      //           }
+      //         }
+      //       }
+      //     }
+      //   }
+      // })
 
-      iframeObserver.observe(document.body, {
-        childList: true,
-        subtree: true
-      })
+      // iframeObserver.observe(document.body, {
+      //   childList: true,
+      //   subtree: true
+      // })
     }
 
     const setupIframeLoadListener = (iframe: HTMLIFrameElement) => {
@@ -1095,7 +1073,9 @@ export class ChatManager {
         } catch (error) {
           console.error('强制重新注入样式失败:', error)
         }
-      }
+      },
+
+
     }
   }
 

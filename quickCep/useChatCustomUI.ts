@@ -1077,81 +1077,7 @@ export class ChatCustomUI {
     }
   }
 
-  /**
-   * 针对 iframe 环境的 tooltip 定位方法
-   */
-  private positionTooltipInIframe(
-    tooltip: HTMLElement,
-    event: MouseEvent,
-    doc: Document,
-    offsetX = 12,
-    offsetY = -50
-  ): void {
-    // 获取 iframe 的边界信息
-    const isInIframe = window.frameElement !== null
 
-    if (isInIframe) {
-      // 在 iframe 内部，使用相对于 iframe 的坐标
-      const iframeRect = (event.target as HTMLElement).getBoundingClientRect()
-      const viewportWidth = doc.documentElement.clientWidth
-      const viewportHeight = doc.documentElement.clientHeight
-
-      // 先设置内容以获取尺寸
-      tooltip.style.position = 'absolute'
-      tooltip.style.visibility = 'hidden'
-      tooltip.style.display = 'block'
-
-      const tooltipRect = tooltip.getBoundingClientRect()
-
-      let left = event.clientX + offsetX
-      let top = event.clientY + offsetY
-
-      // 边界检测和调整
-      if (left + tooltipRect.width > viewportWidth) {
-        left = event.clientX - tooltipRect.width - Math.abs(offsetX)
-      }
-
-      if (left < 0) {
-        left = 10
-      }
-
-      if (top < 0) {
-        top = event.clientY + 20
-      }
-
-      if (top + tooltipRect.height > viewportHeight) {
-        top = event.clientY - tooltipRect.height - 15
-      }
-
-      tooltip.style.left = left + 'px'
-      tooltip.style.top = top + 'px'
-      tooltip.style.visibility = 'visible'
-    } else {
-      // 不在 iframe 中，使用原有逻辑
-      const viewportWidth = doc.documentElement.clientWidth
-      const viewportHeight = doc.documentElement.clientHeight
-
-      let left = event.clientX + offsetX
-      let top = event.clientY + offsetY
-
-      // 边界检测
-      const tooltipRect = tooltip.getBoundingClientRect()
-      if (left + tooltipRect.width > viewportWidth) {
-        left = event.clientX - tooltipRect.width - Math.abs(offsetX)
-      }
-
-      if (top < 0) {
-        top = event.clientY + 20
-      }
-
-      if (top + tooltipRect.height > viewportHeight) {
-        top = event.clientY - tooltipRect.height - 15
-      }
-
-      tooltip.style.left = left + 'px'
-      tooltip.style.top = top + 'px'
-    }
-  }
 
   /**
    * 创建tooltip元素
@@ -1160,24 +1086,6 @@ export class ChatCustomUI {
     const tooltip = doc.createElement('div')
     tooltip.id = id
     tooltip.className = className
-
-    // 设置气泡式样式，确保可见且美观
-    // tooltip.style.position = 'absolute'
-    // tooltip.style.display = 'none'
-    // tooltip.style.zIndex = '99999'
-    // tooltip.style.pointerEvents = 'none'
-    // tooltip.style.background = 'rgba(45, 45, 45, 0.95)'
-    // tooltip.style.color = 'white'
-    // tooltip.style.padding = '16px 20px'
-    // tooltip.style.borderRadius = '16px'
-    // tooltip.style.fontSize = '14px'
-    // tooltip.style.fontWeight = '500'
-    // tooltip.style.lineHeight = '1.3'
-    // tooltip.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25)'
-    // tooltip.style.maxWidth = '320px'
-    // tooltip.style.minWidth = '200px'
-    // tooltip.style.border = '1px solid rgba(255, 255, 255, 0.1)'
-    // tooltip.style.backdropFilter = 'blur(12px)'
 
     // 简化容器选择逻辑，直接添加到 body
     const targetContainer = doc.body || doc.documentElement
@@ -1263,6 +1171,8 @@ export class ChatCustomUI {
   handleRating(): void {
     // 实现服务评价逻辑
   }
+
+
 }
 
 export default ChatCustomUI

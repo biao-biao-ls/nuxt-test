@@ -19,6 +19,16 @@ interface SimpleOrderSelectorState {
   cartList: SimpleOrderItem[]
   orderList: SimpleOrderBatch[]
   loading: boolean
+  // 懒加载状态跟踪
+  dataLoaded: {
+    Orders: boolean
+    Cart: boolean
+  }
+  // 缓存数据，避免重复请求
+  cachedData: {
+    Orders: SimpleOrderBatch[]
+    Cart: SimpleOrderItem[]
+  }
 }
 
 interface SimpleOrderBatch {
@@ -39,7 +49,17 @@ export class SimpleOrderSelector {
       keyword: '',
       cartList: [],
       orderList: [],
-      loading: false
+      loading: false,
+      // 初始化懒加载状态
+      dataLoaded: {
+        Orders: false,
+        Cart: false
+      },
+      // 初始化缓存
+      cachedData: {
+        Orders: [],
+        Cart: []
+      }
     }
 
     // Bind global methods
@@ -87,9 +107,9 @@ export class SimpleOrderSelector {
       this.container.style.pointerEvents = 'auto'
     }
 
-    // 先渲染界面，再加载数据
+    // 先渲染界面，然后懒加载当前 tab 的数据
     this.render()
-    await this.initData()
+    await this.lazyLoadCurrentTab()
   }
 
   /**
@@ -106,6 +126,32 @@ export class SimpleOrderSelector {
       this.container.style.pointerEvents = 'none'
       this.container.innerHTML = ''
     }
+  }
+
+  /**
+   * 清除所有缓存数据，强制重新加载
+   */
+  clearCache(): void {
+    this.state.dataLoaded = {
+      Orders: false,
+      Cart: false
+    }
+    this.state.cachedData = {
+      Orders: [],
+      Cart: []
+    }
+  }
+
+  /**
+   * 刷新当前标签页数据
+   */
+  async refreshCurrentTab(): Promise<void> {
+    // 清除当前标签页缓存
+    this.state.dataLoaded[this.state.activeName] = false
+    this.state.cachedData[this.state.activeName] = this.state.activeName === 'Orders' ? [] : []
+
+    // 重新加载
+    await this.lazyLoadCurrentTab()
   }
 
   /**
@@ -199,19 +245,19 @@ export class SimpleOrderSelector {
     const tabs = this.container?.querySelectorAll('.tab-item')
     tabs?.forEach(tab => {
       const tabElement = tab as HTMLElement
-      const tabName = tabElement.getAttribute('data-tab')
+      const tabName = tabElement.getAttribute('data-tab') as 'Orders' | 'Cart'
 
-      // 添加切换动画
-      tabElement.classList.add('switching')
+      // 清除之前的状态
+      tabElement.classList.remove('active', 'switching', 'loading')
 
-      setTimeout(() => {
-        if (tabName === this.state.activeName) {
-          tabElement.classList.add('active')
-        } else {
-          tabElement.classList.remove('active')
+      if (tabName === this.state.activeName) {
+        tabElement.classList.add('active')
+
+        // 如果当前标签页正在加载数据，显示加载状态
+        if (this.state.loading && !this.state.dataLoaded[tabName]) {
+          tabElement.classList.add('loading')
         }
-        tabElement.classList.remove('switching')
-      }, 50)
+      }
     })
   }
 
@@ -224,7 +270,14 @@ export class SimpleOrderSelector {
       if (this.state.loading) {
         // 添加更新中的样式
         orderListContainer.classList.add('updating')
-        orderListContainer.innerHTML = '<div class="loading">Loading...</div>'
+
+        // 如果是首次加载，显示骨架屏；如果是刷新，显示简单加载提示
+        if (!this.state.dataLoaded[this.state.activeName]) {
+          orderListContainer.innerHTML = this.renderSkeletonScreen()
+        } else {
+          const loadingMessage = 'Refreshing...'
+          orderListContainer.innerHTML = `<div class="loading">${loadingMessage}</div>`
+        }
       } else {
         // 平滑更新内容
         orderListContainer.classList.add('updating')
@@ -232,9 +285,50 @@ export class SimpleOrderSelector {
         setTimeout(() => {
           orderListContainer.innerHTML = this.renderOrderList()
           orderListContainer.classList.remove('updating')
+
+          // 更新标签页状态（移除加载指示器）
+          this.updateTabs()
         }, 100) // 短暂延迟让过渡效果更明显
       }
     }
+  }
+
+  /**
+   * 直接更新订单列表内容（用于缓存数据，无加载状态）
+   */
+  private updateOrderListContent(): void {
+    const orderListContainer = this.container?.querySelector('.simple-order-list') as HTMLElement
+    if (orderListContainer) {
+      // 直接更新内容，无加载动画
+      orderListContainer.innerHTML = this.renderOrderList()
+      orderListContainer.classList.remove('updating')
+
+      // 更新标签页状态
+      this.updateTabs()
+    }
+  }
+
+  /**
+   * 渲染骨架屏
+   */
+  private renderSkeletonScreen(): string {
+    const skeletonItems = Array(3).fill(0).map(() => `
+      <div class="skeleton-item">
+        <div class="skeleton-image"></div>
+        <div class="skeleton-content">
+          <div class="skeleton-line medium"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton-button"></div>
+      </div>
+    `).join('')
+
+    return `
+      <div class="skeleton-container">
+        ${skeletonItems}
+      </div>
+    `
   }
 
   /**
@@ -257,33 +351,147 @@ export class SimpleOrderSelector {
   }
 
   /**
-   * 处理搜索
+   * 处理搜索 - 重置缓存并重新加载
    */
   async handleSearch(): Promise<void> {
-    this.state.loading = true
-    this.updateOrderList() // Only update order list section
+    // 搜索时清除当前标签页的缓存，强制重新加载
+    this.state.dataLoaded[this.state.activeName] = false
+    this.state.cachedData[this.state.activeName] = this.state.activeName === 'Orders' ? [] : []
 
-    // Add brief delay to improve user experience
-    await new Promise(resolve => setTimeout(resolve, 300))
-    await this.loadData()
+    this.state.loading = true
+    this.updateOrderList() // 显示加载状态
+
+    // 添加短暂延迟提升用户体验
+    await new Promise(resolve => setTimeout(resolve, 200))
+    await this.lazyLoadCurrentTab()
   }
 
   /**
-   * 切换标签页
+   * 切换标签页 - 实现懒加载
    */
   async switchTab(tabName: 'Orders' | 'Cart'): Promise<void> {
     if (this.state.activeName === tabName) return // 避免重复切换
 
+    const previousTab = this.state.activeName
     this.state.activeName = tabName
-    this.updateTabs() // 只更新标签页状态
-    await this.loadData() // 加载对应的数据
+
+    // 立即更新标签页状态，提供即时反馈
+    this.updateTabs()
+
+    // 检查是否需要懒加载数据
+    await this.lazyLoadCurrentTab()
   }
 
   /**
-   * 初始化数据
+   * 懒加载当前标签页数据
    */
-  private async initData(): Promise<void> {
-    await this.loadData()
+  private async lazyLoadCurrentTab(): Promise<void> {
+    const currentTab = this.state.activeName
+
+    // 如果数据已经加载过且没有搜索关键词变化，直接使用缓存
+    if (this.state.dataLoaded[currentTab] && !this.hasSearchChanged()) {
+      this.loadFromCache()
+      // 启动预加载另一个标签页
+      this.preloadOtherTab()
+      return
+    }
+
+    // 显示加载状态
+    this.state.loading = true
+    this.updateOrderList()
+
+    try {
+      // 根据当前标签页加载对应数据
+      if (currentTab === 'Orders') {
+        await this.loadOrdersData()
+        this.state.cachedData.Orders = [...this.state.orderList]
+      } else {
+        await this.loadCartData()
+        this.state.cachedData.Cart = [...this.state.cartList]
+      }
+
+      // 标记数据已加载
+      this.state.dataLoaded[currentTab] = true
+
+      // 启动预加载另一个标签页
+      this.preloadOtherTab()
+
+    } catch (error) {
+      console.error(`Failed to load ${currentTab} data:`, error)
+      // 降级到模拟数据
+      this.loadMockDataForCurrentTab()
+    } finally {
+      this.state.loading = false
+      this.updateOrderList()
+    }
+  }
+
+  /**
+   * 预加载另一个标签页的数据（后台静默加载）
+   */
+  private async preloadOtherTab(): Promise<void> {
+    const otherTab: 'Orders' | 'Cart' = this.state.activeName === 'Orders' ? 'Cart' : 'Orders'
+
+    // 如果另一个标签页的数据还没有加载，且没有搜索关键词，则预加载
+    if (!this.state.dataLoaded[otherTab] && !this.hasSearchChanged()) {
+      try {
+        // 延迟一段时间再开始预加载，避免影响当前页面性能
+        setTimeout(async () => {
+          if (otherTab === 'Orders') {
+            const tempOrderList = this.state.orderList
+            await this.loadOrdersData()
+            this.state.cachedData.Orders = [...this.state.orderList]
+            this.state.orderList = tempOrderList // 恢复当前显示的数据
+          } else {
+            const tempCartList = this.state.cartList
+            await this.loadCartData()
+            this.state.cachedData.Cart = [...this.state.cartList]
+            this.state.cartList = tempCartList // 恢复当前显示的数据
+          }
+          this.state.dataLoaded[otherTab] = true
+          console.log(`Preloaded ${otherTab} data in background`)
+        }, 1000) // 1秒后开始预加载
+      } catch (error) {
+        console.log(`Background preload failed for ${otherTab}:`, error)
+        // 预加载失败不影响用户体验，静默处理
+      }
+    }
+  }
+
+  /**
+   * 从缓存加载数据
+   */
+  private loadFromCache(): void {
+    if (this.state.activeName === 'Orders') {
+      this.state.orderList = [...this.state.cachedData.Orders]
+    } else {
+      this.state.cartList = [...this.state.cachedData.Cart]
+    }
+    // 直接更新内容，不显示加载状态
+    this.updateOrderListContent()
+  }
+
+  /**
+   * 检查搜索条件是否发生变化
+   */
+  private hasSearchChanged(): boolean {
+    // 这里可以添加更复杂的逻辑来检测搜索条件变化
+    // 暂时简单处理：如果有搜索关键词就认为需要重新加载
+    return this.state.keyword.trim() !== ''
+  }
+
+  /**
+   * 为当前标签页加载模拟数据
+   */
+  private loadMockDataForCurrentTab(): void {
+    if (this.state.activeName === 'Orders') {
+      this.state.orderList = this.getMockOrderBatches()
+      this.state.cachedData.Orders = [...this.state.orderList]
+    } else {
+      this.state.cartList = this.getMockCartItems()
+      this.state.cachedData.Cart = [...this.state.cartList]
+    }
+    this.state.dataLoaded[this.state.activeName] = true
   }
 
   /**
@@ -383,7 +591,7 @@ export class SimpleOrderSelector {
 
       // Extract data based on different product types
       let fileAccessId = ''
-      
+
       if (item.pcbGoods) {
         title = item.pcbGoods.gerberFile || item.pcbGoods.goodsCode || 'PCB Product'
         orderCode = item.pcbGoods.goodsCode
@@ -969,6 +1177,30 @@ export class SimpleOrderSelector {
           opacity: 0.6;
         }
 
+        .tab-item.loading {
+          position: relative;
+          pointer-events: none;
+        }
+
+        .tab-item.loading::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          right: 8px;
+          transform: translateY(-50%);
+          width: 12px;
+          height: 12px;
+          border: 2px solid #007bff;
+          border-top: 2px solid transparent;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: translateY(-50%) rotate(0deg); }
+          100% { transform: translateY(-50%) rotate(360deg); }
+        }
+
         .simple-order-list {
           overflow-y: auto;
           transition: opacity 0.2s ease;
@@ -1132,6 +1364,71 @@ export class SimpleOrderSelector {
           padding: 40px 20px;
           color: #666;
           font-size: 14px;
+          position: relative;
+        }
+
+        .loading::before {
+          content: '';
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          border: 2px solid #e0e0e0;
+          border-top: 2px solid #007bff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-right: 8px;
+          vertical-align: middle;
+        }
+
+        /* 骨架屏效果 */
+        .skeleton-item {
+          display: flex;
+          align-items: center;
+          margin-bottom: 15px;
+          animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .skeleton-image {
+          width: 56px;
+          height: 56px;
+          background: #e0e0e0;
+          border-radius: 4px;
+          margin-right: 12px;
+        }
+
+        .skeleton-content {
+          flex: 1;
+        }
+
+        .skeleton-line {
+          height: 12px;
+          background: #e0e0e0;
+          border-radius: 6px;
+          margin-bottom: 8px;
+        }
+
+        .skeleton-line.short {
+          width: 60%;
+        }
+
+        .skeleton-line.medium {
+          width: 80%;
+        }
+
+        .skeleton-button {
+          width: 60px;
+          height: 28px;
+          background: #e0e0e0;
+          border-radius: 14px;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.6;
+          }
         }
 
         .no-data {
