@@ -257,6 +257,7 @@ export class ChatStyles {
 
         .left-bar-footer {
           padding-top: 8px;
+          padding-left: 8px;
         }
 
         .left-bar-footer .expand-icon{

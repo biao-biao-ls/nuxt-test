@@ -74,7 +74,7 @@ export class SimpleOrderSelector {
   /**
    * 显示订单选择器
    */
-  show(): void {
+  async show(): Promise<void> {
     if (this.state.isVisible || !this.container) return
 
     this.state.isVisible = true
@@ -85,9 +85,9 @@ export class SimpleOrderSelector {
       this.container.style.pointerEvents = 'auto'
     }
 
-    // 初始化数据
-    this.initData()
+    // 先渲染界面，再加载数据
     this.render()
+    await this.initData()
   }
 
   /**
@@ -257,51 +257,171 @@ export class SimpleOrderSelector {
   /**
    * 处理搜索
    */
-  handleSearch(): void {
+  async handleSearch(): Promise<void> {
     this.state.loading = true
     this.updateOrderList() // 只更新订单列表部分
 
-    // 模拟搜索延迟
-    setTimeout(() => {
-      this.loadData()
-    }, 300)
+    // 添加短暂延迟以改善用户体验
+    await new Promise(resolve => setTimeout(resolve, 300))
+    await this.loadData()
   }
 
   /**
    * 切换标签页
    */
-  switchTab(tabName: 'Orders' | 'Cart'): void {
+  async switchTab(tabName: 'Orders' | 'Cart'): Promise<void> {
     if (this.state.activeName === tabName) return // 避免重复切换
 
     this.state.activeName = tabName
     this.updateTabs() // 只更新标签页状态
-    this.loadData() // 加载对应的数据
+    await this.loadData() // 加载对应的数据
   }
 
   /**
    * 初始化数据
    */
-  private initData(): void {
-    this.loadData()
+  private async initData(): Promise<void> {
+    await this.loadData()
   }
 
   /**
    * 加载数据
    */
-  private loadData(): void {
+  private async loadData(): Promise<void> {
     this.state.loading = true
     this.updateOrderList() // 只更新订单列表显示加载状态
 
-    // 模拟API调用
-    setTimeout(() => {
+    try {
+      if (this.state.activeName === 'Orders') {
+        await this.loadOrdersData()
+      } else {
+        await this.loadCartData()
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error)
+      // 降级到模拟数据
       if (this.state.activeName === 'Orders') {
         this.state.orderList = this.getMockOrderBatches()
       } else {
         this.state.cartList = this.getMockCartItems()
       }
+    } finally {
       this.state.loading = false
       this.updateOrderList() // 只更新订单列表显示数据
-    }, 500)
+    }
+  }
+
+  /**
+   * 加载订单数据
+   */
+  private async loadOrdersData(): Promise<void> {
+    const params = new URLSearchParams()
+    if (this.state.keyword) {
+      params.append('keyword', this.state.keyword)
+    }
+    params.append('pageNum', '1')
+    params.append('pageSize', '20')
+
+    const response = await fetch(`/api/simple-orders?${params.toString()}`)
+    const result = await response.json()
+
+    if (result.success && result.data && result.data.list) {
+      this.state.orderList = this.transformOrdersData(result.data.list)
+    } else {
+      throw new Error('Invalid orders data format')
+    }
+  }
+
+  /**
+   * 加载购物车数据
+   */
+  private async loadCartData(): Promise<void> {
+    const params = new URLSearchParams()
+    if (this.state.keyword) {
+      params.append('keyword', this.state.keyword)
+    }
+
+    const response = await fetch(`/api/shopping-cart?${params.toString()}`)
+    const result = await response.json()
+
+    if (result.code === 200 && result.data && result.data.list) {
+      this.state.cartList = this.transformCartData(result.data.list)
+    } else {
+      throw new Error('Invalid cart data format')
+    }
+  }
+
+  /**
+   * 转换订单数据格式
+   */
+  private transformOrdersData(orderBatches: any[]): SimpleOrderBatch[] {
+    return orderBatches.map(batch => ({
+      batchNum: batch.batchNum,
+      createTime: batch.createTime,
+      orderSimpleVOS: batch.orderSimpleVOS.map((order: any) => ({
+        title: order.title,
+        orderCode: order.orderCode,
+        orderAmount: `$${order.orderAmount}`,
+        businessType: order.businessType
+      }))
+    }))
+  }
+
+  /**
+   * 转换购物车数据格式
+   */
+  private transformCartData(cartItems: any[]): SimpleOrderItem[] {
+    return cartItems.map(item => {
+      let title = ''
+      let orderCode = ''
+      let price = 0
+      let businessType = ''
+
+      // 根据不同的商品类型提取数据
+      if (item.pcbGoods) {
+        title = item.pcbGoods.gerberFile || item.pcbGoods.goodsCode || 'PCB Product'
+        orderCode = item.pcbGoods.goodsCode
+        price = item.pcbGoods.price || 0
+        businessType = 'order_pcb'
+      } else if (item.steelmeshGoods) {
+        title = item.steelmeshGoods.gerberFile || item.steelmeshGoods.goodsCode || 'Steel Mesh Product'
+        orderCode = item.steelmeshGoods.goodsCode
+        price = item.steelmeshGoods.price || 0
+        businessType = 'order_steel'
+      } else if (item.flexHeaterGoods) {
+        title = item.flexHeaterGoods.gerberFile || item.flexHeaterGoods.goodsCode || 'Flex Heater Product'
+        orderCode = item.flexHeaterGoods.goodsCode
+        price = item.flexHeaterGoods.price || 0
+        businessType = 'order_flexheater'
+      } else if (item.smtGoods) {
+        title = item.smtGoods.gerberFile || item.smtGoods.goodsCode || 'SMT Product'
+        orderCode = item.smtGoods.goodsCode
+        price = item.smtGoods.price || 0
+        businessType = 'order_smt'
+      } else if (item.tdpGoods) {
+        title = item.tdpGoods.gerberFile || item.tdpGoods.goodsCode || '3D Printing Product'
+        orderCode = item.tdpGoods.goodsCode
+        price = item.tdpGoods.price || 0
+        businessType = 'order_tdp'
+      } else if (item.cncGoods) {
+        title = item.cncGoods.gerberFile || item.cncGoods.goodsCode || 'CNC Product'
+        orderCode = item.cncGoods.goodsCode
+        price = item.cncGoods.price || 0
+        businessType = 'order_cnc'
+      } else if (item.plateMetalGoods) {
+        title = item.plateMetalGoods.gerberFile || item.plateMetalGoods.goodsCode || 'Plate Metal Product'
+        orderCode = item.plateMetalGoods.goodsCode
+        price = item.plateMetalGoods.price || 0
+        businessType = 'order_plate_metal'
+      }
+
+      return {
+        title,
+        orderCode,
+        orderAmount: `$${price.toFixed(2)}`,
+        businessType
+      }
+    }).filter(item => item.orderCode) // 过滤掉没有订单编码的项目
   }
 
   /**
@@ -326,7 +446,7 @@ export class SimpleOrderSelector {
     return this.state.cartList.map(item => `
       <div class="simple-order-item" onclick="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${item.orderCode}')">
         <div class="order-image">
-          <img src="${this.getOrderImageUrl(item)}" alt="${item.title}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5Ij5JTUc8L3RleHQ+PC9zdmc+'">
+          <img src="${this.getOrderImageUrl(item)}" alt="${item.title}" onerror="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).handleImageError(this)" loading="lazy">
         </div>
         <div class="simple-order-info">
           <div class="simple-order-name">${item.title}</div>
@@ -356,7 +476,7 @@ export class SimpleOrderSelector {
           ${batch.orderSimpleVOS.map(item => `
             <div class="simple-order-item" onclick="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${item.orderCode}')">
               <div class="order-image">
-                <img src="${this.getOrderImageUrl(item)}" alt="${item.title}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5Ij5JTUc8L3RleHQ+PC9zdmc+'">
+                <img src="${this.getOrderImageUrl(item)}" alt="${item.title}" onerror="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).handleImageError(this)" loading="lazy">
               </div>
               <div class="simple-order-info">
                 <div class="simple-order-name">${item.title}</div>
@@ -494,16 +614,68 @@ export class SimpleOrderSelector {
    * 获取订单图片URL
    */
   private getOrderImageUrl(item: SimpleOrderItem): string {
-    // 根据业务类型返回不同的图片
-    switch (item.businessType) {
-      case 'order_pcb':
-        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNGNhZjUwIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+UENCPC90ZXh0Pjwvc3ZnPg=='
-      case 'order_smt':
-        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZmY5ODAwIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+U01UPC90ZXh0Pjwvc3ZnPg=='
-      case 'order_plate_metal':
-        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNjA3ZDhiIi8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSI+U1RFUDC8L3RleHQ+PC9zdmc+'
-      default:
-        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iMjAiIHk9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5Ij5JTUc8L3RleHQ+PC9zdmc+'
+    console.log(item)
+    return 'https://test.jlcpcb.com/api/overseas-pcb-order/v1/fileCommon/downloadCommonFile?fileAccessId=8667440297175171072'
+    // 尝试获取真实的图片URL，如果没有则返回默认图片
+    const realImageUrl = this.getRealImageUrl(item)
+    if (realImageUrl) {
+      return realImageUrl
+    }
+
+    // 根据业务类型返回不同的默认图片
+    return this.getDefaultImageByType(item.businessType)
+  }
+
+  /**
+   * 获取真实图片URL（这里可以根据实际业务逻辑获取）
+   */
+  private getRealImageUrl(item: SimpleOrderItem): string | null {
+    // 这里可以根据订单编码或其他信息构建真实的图片URL
+    // 例如：return `/api/order-images/${item.orderCode}.jpg`
+    // 暂时返回null，使用默认图片
+    return null
+  }
+
+  /**
+   * 根据业务类型获取默认图片 - 统一使用 JLCPCB 水印样式 09fca30
+   */
+  private getDefaultImageByType(businessType: string): string {
+    // 所有类型都使用相同的 JLCPCB 水印样式
+    return this.getJLCPCBPlaceholder()
+  }
+
+  /**
+   * 获取 JLCPCB 水印占位符图片
+   */
+  private getJLCPCBPlaceholder(): string {
+    return 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="56" height="56" fill="#eef2f6"/>
+        <defs>
+          <pattern id="jlcpcb-pattern" x="0" y="0" width="56" height="56" patternUnits="userSpaceOnUse">
+            <text x="28" y="32" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" font-style="italic" fill="#c0c0c0" opacity="0.6">JLCPCB</text>
+          </pattern>
+        </defs>
+        <rect width="56" height="56" fill="url(#jlcpcb-pattern)"/>
+      </svg>
+    `)
+  }
+
+  /**
+   * 获取加载失败时的占位符图片 - 使用相同的 JLCPCB 水印样式
+   */
+  private getErrorPlaceholder(): string {
+    // 加载失败时也使用相同的 JLCPCB 水印样式
+    return this.getJLCPCBPlaceholder()
+  }
+
+  /**
+   * 处理图片加载错误
+   */
+  handleImageError(imgElement: HTMLImageElement): void {
+    if (imgElement && !imgElement.dataset.errorHandled) {
+      imgElement.dataset.errorHandled = 'true'
+      imgElement.src = this.getErrorPlaceholder()
     }
   }
 
@@ -564,6 +736,7 @@ export class SimpleOrderSelector {
           display: flex;
           align-items: flex-end;
           border-radius: 16px;
+          border-top-left-radius: initial;
         }
 
         @keyframes fadeInBackdrop {
@@ -585,7 +758,7 @@ export class SimpleOrderSelector {
           border: 1px solid #e0e0e0;
           border-radius: 16px 16px 0 0;
           box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2);
-          height: 75%;
+          height: 85%;
           overflow: hidden;
           z-index: 1001;
           animation: slideUpSimple 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -624,7 +797,6 @@ export class SimpleOrderSelector {
           justify-content: space-between;
           align-items: center;
           padding: 20px 16px 12px 16px;
-          border-bottom: 1px solid #f0f0f0;
           background: #fff;
           position: relative;
         }
@@ -637,25 +809,16 @@ export class SimpleOrderSelector {
 
         .simple-order-close {
           cursor: pointer;
-          font-size: 18px;
-          color: #999;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          transition: all 0.2s;
+          font-size: 21px;
+          color: #333;
+          font-weight: bold;
         }
 
         .simple-order-close:hover {
-          background: #e9ecef;
-          color: #666;
         }
 
         .simple-order-search {
-          padding: 12px 16px;
-          border-bottom: 1px solid #e0e0e0;
+          padding: 0 12px;
         }
 
         .search-wrapper {
@@ -752,6 +915,8 @@ export class SimpleOrderSelector {
         .simple-order-tabs {
           display: flex;
           border-bottom: 1px solid #e0e0e0;
+          margin: 0 12px;
+          margin-bottom: 15px;
         }
 
         .tab-item {
@@ -784,6 +949,7 @@ export class SimpleOrderSelector {
           overflow-y: auto;
           transition: opacity 0.2s ease;
           flex: 1;
+          padding: 0 12px;
         }
 
         .simple-order-list.updating {
@@ -794,10 +960,9 @@ export class SimpleOrderSelector {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 12px 16px;
           cursor: pointer;
           transition: background-color 0.2s;
-          border-bottom: 1px solid #f0f0f0;
+          margin-bottom: 15px;
         }
 
         .simple-order-item:hover {
@@ -814,39 +979,40 @@ export class SimpleOrderSelector {
         }
 
         .simple-order-name {
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 500;
           color: #333;
-          margin-bottom: 2px;
+          margin-bottom: 6px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
         .simple-order-code {
-          font-size: 11px;
+          font-size: 14px;
           color: #666;
+          margin-bottom: 6px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .simple-order-amount {
-          font-size: 13px;
-          font-weight: 600;
-          color: #007bff;
+          font-size: 14px;
+          color: #666;
         }
 
         .order-batch {
-          margin-bottom: 16px;
         }
 
         .batch-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 8px 16px;
-          background: #f8f9fa;
           border-bottom: 1px solid #e0e0e0;
           font-size: 14px;
-          font-weight: 600;
+          margin-bottom: 8px;
+          padding-bottom: 5px;
         }
 
         .batch-num {
@@ -866,13 +1032,58 @@ export class SimpleOrderSelector {
         .order-image {
           flex-shrink: 0;
           margin-right: 12px;
+          position: relative;
+          overflow: hidden;
+          border-radius: 0px;
+          background: #eef2f6;
+          border: 1px solid #e9ecef;
         }
 
         .order-image img {
-          width: 40px;
-          height: 40px;
-          border-radius: 4px;
+          width: 56px;
+          height: 56px;
           object-fit: cover;
+          display: block;
+          transition: transform 0.2s ease, opacity 0.2s ease;
+          border-radius: 0px;
+        }
+
+        .order-image img:hover {
+          transform: scale(1.05);
+        }
+
+        .order-image img[data-error-handled="true"] {
+          object-fit: contain;
+          background: #f5f5f5;
+        }
+
+        /* 图片加载状态 */
+        .order-image::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+          z-index: 1;
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        .order-image img:not([src*="data:image"]):not([complete]) + ::before {
+          opacity: 1;
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
         }
 
         .send-btn {

@@ -1,0 +1,68 @@
+{
+  "conversationType": 1,
+  "receiverId": "8877917899339652329",
+  "senderId": "8450618431280783642",
+  "fromClientType": "32",
+  "fromNick": "",
+  "createTime": 1730088237163,
+  "messageType": 100,
+  "attachment": {
+    "raw": {
+      "bizType": "allocation",
+      "content": {
+        "workStatus": true,
+        "askNum": 1,
+        "employeeName": "样板工程师",
+        "trace_id": "4974099d6bcf47138fb7f3714b742ada",
+        "closingPhrase": "样板结束为你服务",
+        "employeeAccessId": "10da65c1a49f4c68a4fd39f77f9cfd2e",
+        "deleteVersion": 289020985553715200,
+        "employeeEnName": "Hana",
+        "deleteFlag": false,
+        "upgradeCount": 0,
+        "createBy": "测试1",
+        "workNum": 101,
+        "openFlag": true,
+        "employeeKeyId": 289020985553715200,
+        "createTime": 1709909232000,
+        "employeeErpUserId": 1,
+        "afterSalesNum": 0,
+        "employScheduleAccessId": "6c19ea650bf14167a4230c635f15d116",
+        "employeeErpAccount": "adminkwt",
+        "forwardCount": 5,
+        "firstServedPhrase": "样板为你服务"
+      }
+    }
+  },
+  "messageClientId": "0b031cee-413c-4dd5-9662-d5a699f6df8c",
+  "messageServerId": "9384151125357",
+  "userUpdateTime": 1727589444266,
+  "serverExtension": {
+    "cid": "0A1A27D200095674CD4D8DA27E960CCD",
+    "ck": "aaa"
+  },
+  "antispamConfig": {
+    "antispamEnabled": true
+  },
+  "messageConfig": {
+    "lastMessageUpdateEnabled": true,
+    "historyEnabled": true,
+    "roamingEnabled": false,
+    "onlineSyncEnabled": true,
+    "offlineEnabled": true,
+    "unreadEnabled": true
+  },
+  "routeConfig": {
+    "routeEnabled": false
+  },
+  "pushConfig": {
+    "pushEnabled": true,
+    "pushNickEnabled": true
+  },
+  "conversationId": "8877917899339652329|1|8450618431280783642",
+  "isSelf": false,
+  "sendingState": 1,
+  "messageStatus": {
+    "errorCode": 200
+  }
+}
