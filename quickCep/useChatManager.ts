@@ -381,6 +381,64 @@ export class ChatManager {
    * Handle operator list changes
    */
   private handleOperatorListChange(data: any): void {
+    data = [
+      {
+        "operatorId": "1942107108466016257",
+        "profilePhoto": "https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png",
+        "profilePhotoColor": "#36CFC9",
+        "firstName": "覃安",
+        "lastName": "",
+        "nickName": null,
+        "onlineStatus": 1,
+        "name": "覃安"
+      }, {
+        "operatorId": "1938524999731687426",
+        "profilePhoto": "https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png",
+        "profilePhotoColor": "#36CFC9",
+        "firstName": "覃安",
+        "lastName": "",
+        "nickName": null,
+        "onlineStatus": 1,
+        "name": "覃安"
+      }, 
+      {
+        "operatorId": "1942407035945005058",
+        "profilePhoto": "https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png",
+        "profilePhotoColor": "#36CFC9",
+        "firstName": "覃安",
+        "lastName": "",
+        "nickName": null,
+        "onlineStatus": 1,
+        "name": "覃安"
+      }, {
+        "operatorId": "1938144757068906498",
+        "profilePhoto": "https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png",
+        "profilePhotoColor": "#36CFC9",
+        "firstName": "覃安",
+        "lastName": "",
+        "nickName": null,
+        "onlineStatus": 1,
+        "name": "覃安"
+      }, {
+        "operatorId": "1946056607741292545",
+        "profilePhoto": "https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png",
+        "profilePhotoColor": "#36CFC9",
+        "firstName": "覃安",
+        "lastName": "",
+        "nickName": null,
+        "onlineStatus": 1,
+        "name": "覃安"
+      }, {
+        "operatorId": "1938475369237098497",
+        "profilePhoto": "https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png",
+        "profilePhotoColor": "#36CFC9",
+        "firstName": "覃安",
+        "lastName": "",
+        "nickName": null,
+        "onlineStatus": 1,
+        "name": "覃安"
+      },
+    ]
     if (!this.chatUI) return
     // Handle operator list changes
     if (data && Array.isArray(data) && data.length > 0) {
@@ -411,6 +469,9 @@ export class ChatManager {
       // 更新当前聊天客服
       this.chatUI.state.currentChatAgent = matchedAgent
 
+      // 将 newData 传递给 ChatCustomUI，用于头部多客服渲染
+      this.chatUI.setOperatorListData(newData)
+
       // 注意：客服的在线状态应该通过 'chat.operator.status' 事件的 data.operatorUserIdStatus 来更新
       // 这里不直接更新状态，而是依赖 chat.operator.status 事件来更新客服状态
       console.log('座席列表变化，当前操作员信息:', matchedAgent)
@@ -436,6 +497,8 @@ export class ChatManager {
     } else if (data && Array.isArray(data) && data.length === 0) {
       // 如果座席列表为空，可能是会话结束或没有分配座席
       console.log('当前会话没有分配座席')
+      // 清空操作员列表数据
+      this.chatUI.setOperatorListData([])
       this.resetToDefaultAgent()
     }
   }
@@ -920,13 +983,9 @@ export class ChatManager {
       // Check current agent status
       checkCurrentAgentStatus: () => {
         if (!this.chatUI) return
-        const result = this.chatUI.checkCurrentAgentStatus()
-        if (result) {
-          console.log('Current agent went offline, automatically restored to default state')
-        } else {
-          console.log('Current agent status is normal or no current agent')
-        }
-        return result
+        // 方法已被注释，直接返回 false
+        console.log('checkCurrentAgentStatus method is disabled')
+        return false
       },
 
       // Test restoring previously selected agent

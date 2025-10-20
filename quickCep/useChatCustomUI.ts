@@ -15,6 +15,7 @@ interface UIState {
   isLeftBarForceShown: boolean // Whether user forced to show the left sidebar
   currentChatAgent: CustomerServiceAgent | null
   customerServiceData: CustomerServiceAgent[]
+  operatorListData: CustomerServiceAgent[] // 来自 handleOperatorListChange 的数据
   containers: {
     header: HTMLElement | null
     leftBar: HTMLElement | null
@@ -47,6 +48,7 @@ export class ChatCustomUI {
       isLeftBarForceShown: false,
       currentChatAgent: null,
       customerServiceData: customerServiceData || [],
+      operatorListData: [], // 初始化为空数组
       containers: {
         header: null,
         leftBar: null,
@@ -86,6 +88,13 @@ export class ChatCustomUI {
   setCustomerServiceData(customerServiceData: CustomerServiceAgent[]): void {
     this.state.customerServiceData = customerServiceData
     this.dataManager.setDataFromArray(customerServiceData)
+  }
+
+  /**
+   * 设置操作员列表数据（来自 handleOperatorListChange）
+   */
+  setOperatorListData(operatorListData: CustomerServiceAgent[]): void {
+    this.state.operatorListData = operatorListData
   }
 
   /**
@@ -170,6 +179,39 @@ export class ChatCustomUI {
 
     // 如果有在线客服且左侧栏不显示，则显示头部客服
     return true
+  }
+
+  /**
+   * 判断是否应该在头部显示操作员客服（基于 operatorListData）
+   */
+  shouldShowOperatorAgents(): boolean {
+    // 只与 operatorListData 的长度有关系，与左侧自定义区域是否显示无关
+    return this.state.operatorListData.length > 1
+  }
+
+  /**
+   * 获取要在头部显示的操作员客服（除第一个元素外的其余部分）
+   */
+  getOperatorAgentsToShow(): CustomerServiceAgent[] {
+    if (this.state.operatorListData.length <= 1) {
+      return []
+    }
+    // 返回除第一个元素外的其余部分数据，最多3个
+    return this.state.operatorListData.slice(1, 4)
+  }
+
+  /**
+   * 判断是否需要显示省略号（当操作员客服超过3个时）
+   */
+  shouldShowOperatorMoreIndicator(): boolean {
+    return this.state.operatorListData.length > 4 // 除第一个外还有超过3个
+  }
+
+  /**
+   * 获取操作员客服的总数量（用于省略号显示）
+   */
+  getOperatorAgentsCount(): number {
+    return Math.max(0, this.state.operatorListData.length - 1) // 除第一个外的数量
   }
 
   /**
@@ -399,33 +441,33 @@ export class ChatCustomUI {
    * Check current agent status, automatically restore to default if offline
    */
   // checkCurrentAgentStatus(): boolean {
-    // if (!this.state.currentChatAgent) {
-    //   return false // No current agent, no need to check
-    // }
+  // if (!this.state.currentChatAgent) {
+  //   return false // No current agent, no need to check
+  // }
 
-    // // Find current agent from latest agent data
-    // const currentAgent = this.state.customerServiceData.find(
-    //   (agent) => agent.quickCepId === this.state.currentChatAgent!.quickCepId
-    // )
+  // // Find current agent from latest agent data
+  // const currentAgent = this.state.customerServiceData.find(
+  //   (agent) => agent.quickCepId === this.state.currentChatAgent!.quickCepId
+  // )
 
-    // if (!currentAgent || !currentAgent.isOnline) {
-    //   this.state.currentChatAgent = null
+  // if (!currentAgent || !currentAgent.isOnline) {
+  //   this.state.currentChatAgent = null
 
-    //   // 清除本地存储的客服选择
-    //   this.saveSelectedAgent(null)
+  //   // 清除本地存储的客服选择
+  //   this.saveSelectedAgent(null)
 
-    //   this.refreshUI()
+  //   this.refreshUI()
 
-    //   // Emit agent offline event
-    //   this.emitCustomEvent('currentAgentWentOffline', {
-    //     previousAgent: currentAgent || this.state.currentChatAgent,
-    //     timestamp: new Date().toISOString()
-    //   })
+  //   // Emit agent offline event
+  //   this.emitCustomEvent('currentAgentWentOffline', {
+  //     previousAgent: currentAgent || this.state.currentChatAgent,
+  //     timestamp: new Date().toISOString()
+  //   })
 
-    //   return true // Return true indicates current agent went offline and was cleared
-    // }
+  //   return true // Return true indicates current agent went offline and was cleared
+  // }
 
-    // return false // Return false indicates current agent is still online
+  // return false // Return false indicates current agent is still online
   // }
 
   /**
@@ -482,7 +524,7 @@ export class ChatCustomUI {
 
     if (typeof window !== 'undefined' && (window as any).quickChatApi && (window as any).quickChatApi.switchChat) {
       try {
-          (window as any).quickChatApi.switchChat(quickCepId)
+        (window as any).quickChatApi.switchChat(quickCepId)
       } catch (error) {
         console.error('切换客服失败:', error)
         // 如果API调用失败，清除待切换的座席ID
@@ -665,28 +707,22 @@ export class ChatCustomUI {
    */
   generateHeaderHTML(): string {
     const onlineAgents = this.state.customerServiceData.filter((agent) => agent.isOnline)
-    // If there's a current agent, exclude it from online agents list
-    const availableAgents = onlineAgents.filter(
-      (agent) => !this.state.currentChatAgent || agent.quickCepId !== this.state.currentChatAgent.quickCepId
-    )
 
-    const shouldShowHeaderAgents = this.shouldShowHeaderAgents()
+    // 基于 operatorListData 的新渲染逻辑
+    const shouldShowOperatorAgents = this.shouldShowOperatorAgents()
+    const operatorAgentsToShow = this.getOperatorAgentsToShow()
+    const shouldShowOperatorMoreIndicator = this.shouldShowOperatorMoreIndicator()
+    const operatorAgentsCount = this.getOperatorAgentsCount()
+
     const shouldShowOpenIcon = this.shouldShowOpenLeftBarIcon()
-    const availableCount = this.getAvailableAgentsCount()
-
-    // 根据显示规则决定显示的客服数量
-    const displayAgents = shouldShowHeaderAgents ? availableAgents.slice(0, 3) : []
-
-    // 决定是否显示更多客服指示器
-    const shouldShowMoreIndicator = shouldShowHeaderAgents && availableCount > 3
 
     return `
       ${ChatStyles.generateHeaderStyles()}
       <div class="chat-header">
         <div class="chat-header-agents">
           ${this.renderCurrentAgent()}
-          ${shouldShowHeaderAgents ? this.renderOnlineAgents(displayAgents) : ''}
-          ${shouldShowMoreIndicator ? this.renderMoreAgentsIndicator(availableCount) : ''}
+          ${shouldShowOperatorAgents ? this.renderOperatorAgents(operatorAgentsToShow) : ''}
+          ${shouldShowOperatorMoreIndicator ? this.renderOperatorMoreAgentsIndicator(operatorAgentsCount) : ''}
           ${shouldShowOpenIcon ? this.renderOpenLeftBarIcon() : ''}
           ${onlineAgents.length === 0 && !this.state.currentChatAgent
         ? `<div class="no-agents"></div>` // No agents online
@@ -723,7 +759,10 @@ export class ChatCustomUI {
       this.state.currentChatAgent
 
     return `
-      <div class="current-agent selected" title="Current Chat: ${agent.employeeEnName}">
+      <div class="current-agent selected" 
+           title="Current Chat: ${agent.employeeEnName}"
+           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${agent.employeeEnName}', '${agent.roleNameEn}', '${this.getAvatarUrl(agent.imageFileIndexId)}'); } catch(e) { console.error('Tooltip error:', e); }"
+           onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }">
         <div class="agent-avatar-wrapper">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                class="agent-avatar current"
@@ -761,6 +800,36 @@ export class ChatCustomUI {
       `
       )
       .join('')
+  }
+
+  /**
+   * 渲染操作员客服（不可点击切换）
+   */
+  private renderOperatorAgents(operatorAgents: CustomerServiceAgent[]): string {
+    return operatorAgents
+      .map(
+        (agent) => `
+        <div class="operator-agent" title="${agent.employeeEnName} - ${agent.roleNameEn}">
+          <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
+               class="agent-avatar operator"
+               onerror="this.src='${this.getDefaultAvatar(28)}'">
+          <div class="status-indicator" style="background: ${this.getStatusColor(agent.status)};"></div>
+        </div>
+      `
+      )
+      .join('')
+  }
+
+  /**
+   * 渲染操作员更多客服指示器
+   */
+  private renderOperatorMoreAgentsIndicator(totalCount: number): string {
+    const displayCount = totalCount - 3 // 显示的数量减去已显示的3个
+    return `
+      <div class="operator-more-agents">
+        •••
+      </div>
+    `
   }
 
   /**

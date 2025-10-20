@@ -37,7 +37,7 @@ export class ChatStyles {
           display: flex;
           align-items: center;
           gap: 8px;
-          margin-right: 12px;
+          margin-right: 4px;
         }
 
         .agent-avatar-wrapper {
@@ -56,6 +56,9 @@ export class ChatStyles {
           font-weight: 500;
           color: #444;
           white-space: nowrap;
+          width: 83px;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .online-agent:not(:first-child) {
@@ -64,6 +67,22 @@ export class ChatStyles {
 
         .online-agent:hover {
           transform: scale(1.05);
+        }
+
+        .operator-agent {
+          position: relative;
+          cursor: default; /* 不可点击，使用默认光标 */
+          transition: transform 0.2s ease;
+          z-index: 1;
+          opacity: 0.8; /* 稍微降低透明度以区分 */
+          cursor: pointer;
+        }
+
+        .operator-agent:not(:first-child) {
+          margin-left: -5px;
+        }
+
+        .operator-agent:hover {
         }
 
         .agent-avatar {
@@ -81,6 +100,12 @@ export class ChatStyles {
         .agent-avatar.online {
           width: 25px;
           height: 25px;
+        }
+
+        .agent-avatar.operator {
+          width: 23px;
+          height: 23px;
+          border-color: #fff; /* 使用灰色边框以区分 */
         }
 
         .status-indicator {
@@ -114,6 +139,29 @@ export class ChatStyles {
 
         .more-agents:hover {
           background: #5a6268;
+        }
+
+        .operator-more-agents {
+          width: 23px;
+          height: 23px;
+          border-radius: 50%;
+          background: #e6eaec;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 12px;
+          cursor: default; /* 不可点击 */
+          transition: background-color 0.2s ease;
+          opacity: 0.8; /* 与操作员客服保持一致的透明度 */
+          border: 1px solid #fff;
+          margin-left: -5px;
+          color: #999;
+          font-size: 9px;
+          cursor: pointer;
+        }
+
+        .operator-more-agents:hover {
         }
 
         .open-leftbar-icon {
@@ -219,6 +267,42 @@ export class ChatStyles {
           border-right: 16px solid transparent !important;
           border-top: 16px solid rgba(255, 255, 255, 0.1) !important;
           z-index: 10000 !important;
+          display: block !important;
+        }
+
+        .full-agent-tooltip {
+          position: absolute !important;
+          background: rgba(45, 45, 45, 0.95) !important;
+          color: white !important;
+          padding: 12px 16px !important;
+          border-radius: 12px !important;
+          font-size: 13px !important;
+          font-weight: 500 !important;
+          line-height: 1.3 !important;
+          z-index: 10000 !important;
+          display: none !important;
+          pointer-events: none !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+          max-width: 280px !important;
+          min-width: 160px !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          backdrop-filter: blur(8px) !important;
+          -webkit-backdrop-filter: blur(8px) !important;
+        }
+
+        .full-agent-tooltip::before {
+          content: '' !important;
+          position: absolute !important;
+          top: 100% !important;
+          left: 22% !important;
+          transform: translateX(-50%) !important;
+          width: 0 !important;
+          height: 0 !important;
+          border-left: 10px solid transparent !important;
+          border-right: 10px solid transparent !important;
+          border-top: 10px solid rgba(45, 45, 45, 0.95) !important;
+          z-index: 10001 !important;
           display: block !important;
         }
 
