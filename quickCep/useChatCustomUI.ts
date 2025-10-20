@@ -16,6 +16,7 @@ interface UIState {
   currentChatAgent: CustomerServiceAgent | null
   customerServiceData: CustomerServiceAgent[]
   operatorListData: CustomerServiceAgent[] // 来自 handleOperatorListChange 的数据
+  isOperatorModalVisible: boolean // 操作员弹框显示状态
   containers: {
     header: HTMLElement | null
     leftBar: HTMLElement | null
@@ -49,6 +50,7 @@ export class ChatCustomUI {
       currentChatAgent: null,
       customerServiceData: customerServiceData || [],
       operatorListData: [], // 初始化为空数组
+      isOperatorModalVisible: false, // 初始化操作员弹框状态
       containers: {
         header: null,
         leftBar: null,
@@ -344,8 +346,8 @@ export class ChatCustomUI {
    */
   getStatusText(status: number): string {
     const texts: Record<number, string> = {
-      2: 'Online Available',
-      3: 'Online Busy'
+      2: 'Online',
+      3: 'Online'
     }
     return texts[status] || 'Offline'
   }
@@ -356,6 +358,19 @@ export class ChatCustomUI {
   getAvatarUrl(imageFileIndexId: string): string {
     const imgUrl = imFileDownloadFile(imageFileIndexId)
     return imgUrl
+  }
+
+  /**
+   * 工具函数：获取默认头像
+   */
+  getDefaultAvatar(size: number): string {
+    return `data:image/svg+xml;base64,${btoa(`
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#e0e0e0"/>
+        <circle cx="${size / 2}" cy="${size * 0.35}" r="${size * 0.15}" fill="#999"/>
+        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${size * 0.75} ${size * 0.75}" stroke="#999" stroke-width="2" fill="none"/>
+      </svg>
+    `)}`
   }
 
   /**
@@ -608,6 +623,22 @@ export class ChatCustomUI {
   }
 
   /**
+   * 显示操作员弹框
+   */
+  showOperatorModal(): void {
+    this.state.isOperatorModalVisible = true
+    this.renderOperatorModal()
+  }
+
+  /**
+   * 隐藏操作员弹框
+   */
+  hideOperatorModal(): void {
+    this.state.isOperatorModalVisible = false
+    this.removeOperatorModal()
+  }
+
+  /**
    * 处理订单按钮点击事件
    */
   handleOrderButtonClick(): void {
@@ -685,6 +716,281 @@ export class ChatCustomUI {
     if (typeof window !== 'undefined') {
       ; (window as any).handleOrderButtonClick = () => this.handleOrderButtonClick()
     }
+  }
+
+  /**
+   * 渲染操作员弹框
+   */
+  private renderOperatorModal(): void {
+    // 查找或创建弹框容器
+    let modalContainer = document.getElementById('operator-modal-container')
+    if (!modalContainer) {
+      modalContainer = document.createElement('div')
+      modalContainer.id = 'operator-modal-container'
+      modalContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10000;
+        pointer-events: auto;
+      `
+      document.body.appendChild(modalContainer)
+    }
+
+    modalContainer.innerHTML = `
+      ${this.generateOperatorModalStyles()}
+      <div class="operator-modal-backdrop" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).hideOperatorModal()">
+        <div class="operator-modal-popup" onclick="event.stopPropagation()">
+          <div class="operator-modal-header">
+            <span class="operator-modal-title">Group</span>
+            <span class="operator-modal-close" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).hideOperatorModal()">×</span>
+          </div>
+          <div class="operator-modal-list">
+            ${this.renderOperatorModalList()}
+          </div>
+        </div>
+      </div>
+    `
+  }
+
+  /**
+   * 移除操作员弹框
+   */
+  private removeOperatorModal(): void {
+    const modalContainer = document.getElementById('operator-modal-container')
+    if (modalContainer) {
+      modalContainer.remove()
+    }
+  }
+
+  /**
+   * 渲染操作员弹框列表
+   */
+  private renderOperatorModalList(): string {
+    if (this.state.operatorListData.length === 0) {
+      return '<div class="no-operators">No operators available</div>'
+    }
+
+    return this.state.operatorListData
+      .map(
+        (agent, index) => {
+          // 检查是否是当前聊天的操作员（第一个通常是当前的）
+          const isCurrentAgent = index === 0 || (this.state.currentChatAgent && agent.quickCepId === this.state.currentChatAgent.quickCepId)
+
+          return `
+            <div class="operator-modal-item ${isCurrentAgent ? 'current-operator' : ''}">
+              <div class="operator-avatar-wrapper">
+                <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
+                     class="operator-avatar"
+                     onerror="this.src='${this.getDefaultAvatar(40)}'">
+                <div class="operator-status-indicator" style="background: ${this.getStatusColor(agent.status)};"></div>
+              </div>
+              <div class="operator-info">
+                <div class="operator-name">${agent.employeeEnName}</div>
+                <div class="operator-status-text" style="color: ${this.getStatusColor(agent.status)};">
+                  ${this.getStatusText(agent.status)}
+                </div>
+              </div>
+            </div>
+          `
+        }
+      )
+      .join('')
+  }
+
+  /**
+   * 生成操作员弹框样式
+   */
+  private generateOperatorModalStyles(): string {
+    return `
+      <style>
+        .operator-modal-backdrop {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(2px);
+          -webkit-backdrop-filter: blur(2px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeInBackdrop 0.3s ease-out;
+        }
+
+        @keyframes fadeInBackdrop {
+          from {
+            opacity: 0;
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+          }
+          to {
+            opacity: 1;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+          }
+        }
+
+        .operator-modal-popup {
+          background: white;
+          border-radius: 12px;
+          width: 90%;
+          max-width: 400px;
+          max-height: 80vh;
+          overflow: hidden;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+          animation: slideInModal 0.3s ease-out;
+        }
+
+        @keyframes slideInModal {
+          from {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        .operator-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px 20px;
+          border-bottom: 1px solid #eee;
+          background: #f8f9fa;
+        }
+
+        .operator-modal-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #333;
+        }
+
+        .operator-modal-close {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #f0f0f0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 16px;
+          color: #666;
+          transition: all 0.2s ease;
+        }
+
+        .operator-modal-close:hover {
+          background: #e0e0e0;
+          color: #333;
+        }
+
+        .operator-modal-list {
+          max-height: 60vh;
+          overflow-y: auto;
+          padding: 8px 0;
+        }
+
+        .operator-modal-item {
+          display: flex;
+          align-items: center;
+          padding: 12px 20px;
+          transition: all 0.2s ease;
+          border-bottom: 1px solid #f0f0f0;
+          position: relative;
+        }
+
+        .operator-modal-item:last-child {
+          border-bottom: none;
+        }
+
+        .operator-modal-item:hover {
+          background-color: #f8f9fa;
+        }
+
+        .operator-modal-item.current-operator {
+          background-color: #f0f8ff;
+          border: 2px dashed #007bff;
+          border-radius: 8px;
+          margin: 4px 12px;
+          padding: 10px 16px;
+        }
+
+        .operator-modal-item.current-operator:hover {
+          background-color: #e6f3ff;
+        }
+
+        .operator-avatar-wrapper {
+          position: relative;
+          margin-right: 12px;
+        }
+
+        .operator-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid #e0e0e0;
+        }
+
+        .operator-status-indicator {
+          position: absolute;
+          bottom: 2px;
+          right: 2px;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          border: 2px solid white;
+        }
+
+        .operator-info {
+          flex: 1;
+        }
+
+        .operator-name {
+          font-size: 16px;
+          font-weight: 500;
+          color: #333;
+          margin-bottom: 4px;
+        }
+
+        .operator-status-text {
+          font-size: 14px;
+          font-weight: 400;
+        }
+
+        .no-operators {
+          text-align: center;
+          padding: 40px 20px;
+          color: #999;
+          font-size: 14px;
+        }
+
+        /* 滚动条样式 */
+        .operator-modal-list::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .operator-modal-list::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+
+        .operator-modal-list::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 3px;
+        }
+
+        .operator-modal-list::-webkit-scrollbar-thumb:hover {
+          background: #a8a8a8;
+        }
+      </style>
+    `
   }
 
   /**
@@ -803,13 +1109,15 @@ export class ChatCustomUI {
   }
 
   /**
-   * 渲染操作员客服（不可点击切换）
+   * 渲染操作员客服（可点击展示弹框）
    */
   private renderOperatorAgents(operatorAgents: CustomerServiceAgent[]): string {
     return operatorAgents
       .map(
         (agent) => `
-        <div class="operator-agent" title="${agent.employeeEnName} - ${agent.roleNameEn}">
+        <div class="operator-agent" 
+             title="${agent.employeeEnName} - ${agent.roleNameEn}"
+             onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).showOperatorModal()">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                class="agent-avatar operator"
                onerror="this.src='${this.getDefaultAvatar(28)}'">
@@ -821,12 +1129,14 @@ export class ChatCustomUI {
   }
 
   /**
-   * 渲染操作员更多客服指示器
+   * 渲染操作员更多客服指示器（可点击展示弹框）
    */
   private renderOperatorMoreAgentsIndicator(totalCount: number): string {
     const displayCount = totalCount - 3 // 显示的数量减去已显示的3个
     return `
-      <div class="operator-more-agents">
+      <div class="operator-more-agents"
+           onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).showOperatorModal()"
+           title="View All Operators (${totalCount} total)">
         •••
       </div>
     `
@@ -958,22 +1268,7 @@ export class ChatCustomUI {
     `
   }
 
-  /**
-   * 获取默认头像
-   */
-  private getDefaultAvatar(size: number): string {
-    return `data:image/svg+xml;base64,${btoa(`
-      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#e9ecef"/>
-        <path d="M${size / 2} ${size * 0.625}C${size * 0.375} ${size * 0.625} ${size * 0.3125} ${size * 0.46875} ${size * 0.3125
-      } ${size * 0.4375}S${size * 0.375} ${size * 0.25} ${size / 2} ${size * 0.25}S${size * 0.6875} ${size * 0.3125} ${size * 0.6875
-      } ${size * 0.4375}S${size * 0.625} ${size * 0.625} ${size / 2} ${size * 0.625}ZM${size / 2} ${size * 0.75}C${size * 0.65625
-      } ${size * 0.75} ${size * 0.75} ${size * 0.65625} ${size * 0.75} ${size * 0.5}S${size * 0.65625} ${size * 0.25} ${size / 2
-      } ${size * 0.25}S${size * 0.25} ${size * 0.34375} ${size * 0.25} ${size * 0.5}S${size * 0.34375} ${size * 0.75} ${size / 2
-      } ${size * 0.75}Z" fill="#d8d8d8"/>
-      </svg>
-    `)}`
-  }
+
 
   // 事件处理方法
   showTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
