@@ -21,7 +21,6 @@ export class ChatManager {
   private customerServiceData?: CustomerServiceAgent[]
   private iframeResizeObserver: ResizeObserver | null = null
   private operatorStatusReceived = false
-  private pendingOperatorListChange: any = null
 
   constructor(customerServiceData?: CustomerServiceAgent[]) {
     this.customerServiceData = customerServiceData
@@ -186,7 +185,6 @@ export class ChatManager {
 
     // 监听客服状态更新
     window.quickEmitter.on('chat.operator.status', (data: any) => {
-      console.log('chat.operator.status', data)
       if (data && data.operatorUserIdStatus && this.chatUI) {
         // 标记已接收到客服状态数据
         this.operatorStatusReceived = true
@@ -205,12 +203,7 @@ export class ChatManager {
           }, 500)
         }
 
-        // 如果有待处理的座席列表变化，现在处理它
-        if (this.pendingOperatorListChange) {
-          console.log('处理待处理的座席列表变化')
-          this.handleOperatorListChange(this.pendingOperatorListChange)
-          this.pendingOperatorListChange = null
-        }
+
       }
     })
 
@@ -246,15 +239,8 @@ export class ChatManager {
     window.quickEmitter.on('chat.operatorList.change', (data: any) => {
       console.log('chat.operatorList.change', data)
 
-      // 检查是否已接收到客服状态数据
-      if (this.operatorStatusReceived) {
-        // 如果已接收到状态数据，立即处理
-        this.handleOperatorListChange(data)
-      } else {
-        // 如果还没有接收到状态数据，暂存待处理
-        console.log('Waiting for chat.operator.status event to trigger before processing operator list changes')
-        this.pendingOperatorListChange = data
-      }
+      // 直接处理座席列表变化，不再等待 chat.operator.status 事件
+      this.handleOperatorListChange(data)
     })
 
     // 监听其他可能的切换客服事件
@@ -310,7 +296,6 @@ export class ChatManager {
       this.iframeResizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const { width, height } = entry.contentRect
-          console.log(`iframe 尺寸变化: ${width}px x ${height}px`)
 
           // 只有当 iframe 高度大于 350px 时才执行宽度修改逻辑
           if (height > 350) {
@@ -324,9 +309,6 @@ export class ChatManager {
                   const chatWrapWidth = chatWrap.offsetWidth
                   const diyLeftBarWidth = diyLeftBar ? diyLeftBar.offsetWidth : 0
                   const newIframeWidth = chatWrapWidth + diyLeftBarWidth + 60
-
-                  console.log(`iframe 高度 ${height}px > 350px，chat-wrap 宽度: ${chatWrapWidth}px，DIY-LEFT-BAR 宽度: ${diyLeftBarWidth}px，设置 iframe 宽度为: ${newIframeWidth}px`)
-
                   // 设置 iframe 的宽度
                   iframe.style.width = `${newIframeWidth}px`
                 } else {
@@ -344,7 +326,6 @@ export class ChatManager {
 
       // 开始观察 iframe
       this.iframeResizeObserver.observe(iframe)
-      console.log('✅ 开始监听 iframe 宽度变化')
     }
 
     // 立即尝试设置监听
@@ -401,50 +382,57 @@ export class ChatManager {
    */
   private handleOperatorListChange(data: any): void {
     if (!this.chatUI) return
-
     // Handle operator list changes
     if (data && Array.isArray(data) && data.length > 0) {
-      // Get first operator info (usually current session has only one operator)
-      const currentOperator = data[0]
-      const operatorId = currentOperator.operatorId
-
-      if (operatorId) {
+      const customerServiceData = this.chatUI.state.customerServiceData
+      const newData: CustomerServiceAgent[] = []
+      data.forEach(item => {
+        const operatorId = item.operatorId
         // 根据 operatorId 查找对应的客服信息
-        const matchedAgent = this.chatUI.state.customerServiceData.find(
+        const matchedAgent = customerServiceData.find(
           (agent) => agent.quickCepId === operatorId
         )
 
         if (matchedAgent) {
-          console.log('找到匹配的客服:', matchedAgent.employeeEnName)
-
-          // 更新当前聊天客服
-          this.chatUI.state.currentChatAgent = matchedAgent
-
-          // 注意：客服的在线状态应该通过 'chat.operator.status' 事件的 data.operatorUserIdStatus 来更新
-          // 这里不直接更新状态，而是依赖 chat.operator.status 事件来更新客服状态
-          console.log('座席列表变化，当前操作员信息:', currentOperator)
-
-          // Refresh UI display
-          this.chatUI.refreshUI()
-
-          // 保存当前选择的客服到本地存储
-          this.chatUI.saveSelectedAgent(matchedAgent)
-
-          // 触发获取最新的客服状态，确保状态是最新的
-          setTimeout(() => {
-            this.fetchAgentStatus()
-          }, 100)
-
-          console.log('已更新当前会话客服为:', {
-            name: matchedAgent.employeeEnName,
-            quickCepId: matchedAgent.quickCepId,
-            status: matchedAgent.status,
-            isOnline: matchedAgent.isOnline
+          newData.push({
+            ...matchedAgent,
+            "isOnline": true,
+            "status": 2
           })
         } else {
           console.warn('未找到匹配的客服，operatorId:', operatorId)
         }
-      }
+      })
+
+      const matchedAgent = newData[0]
+
+      console.log('找到匹配的客服:', matchedAgent)
+
+      // 更新当前聊天客服
+      this.chatUI.state.currentChatAgent = matchedAgent
+
+      // 注意：客服的在线状态应该通过 'chat.operator.status' 事件的 data.operatorUserIdStatus 来更新
+      // 这里不直接更新状态，而是依赖 chat.operator.status 事件来更新客服状态
+      console.log('座席列表变化，当前操作员信息:', matchedAgent)
+
+      // Refresh UI display
+      this.chatUI.refreshUI()
+
+      // 保存当前选择的客服到本地存储
+      this.chatUI.saveSelectedAgent(matchedAgent)
+
+      // 触发获取最新的客服状态，确保状态是最新的
+      setTimeout(() => {
+        this.fetchAgentStatus()
+      }, 100)
+
+      console.log('已更新当前会话客服为:', {
+        name: matchedAgent.employeeEnName,
+        quickCepId: matchedAgent.quickCepId,
+        status: matchedAgent.status,
+        isOnline: matchedAgent.isOnline
+      })
+
     } else if (data && Array.isArray(data) && data.length === 0) {
       // 如果座席列表为空，可能是会话结束或没有分配座席
       console.log('当前会话没有分配座席')
@@ -1291,20 +1279,14 @@ Type: ${this.getBusinessTypeName(orderItem.businessType)}`
     if (!this.chatUI) {
       return
     }
-
-    console.log('Session closed, restoring agent info to default state')
-
     // Reset status flags
     this.operatorStatusReceived = false
-    this.pendingOperatorListChange = null
 
     // 调用ChatCustomUI的重置方法
     this.chatUI.resetToDefaultAgent()
 
     // Update left sidebar visibility
     this.updateLeftBarVisibility()
-
-    console.log('已恢复为默认客服状态')
   }
 
   /**

@@ -449,7 +449,6 @@ export class SimpleOrderSelector {
             this.state.cartList = tempCartList // 恢复当前显示的数据
           }
           this.state.dataLoaded[otherTab] = true
-          console.log(`Preloaded ${otherTab} data in background`)
         }, 1000) // 1秒后开始预加载
       } catch (error) {
         console.log(`Background preload failed for ${otherTab}:`, error)

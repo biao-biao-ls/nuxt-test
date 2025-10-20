@@ -398,35 +398,35 @@ export class ChatCustomUI {
   /**
    * Check current agent status, automatically restore to default if offline
    */
-  checkCurrentAgentStatus(): boolean {
-    if (!this.state.currentChatAgent) {
-      return false // No current agent, no need to check
-    }
+  // checkCurrentAgentStatus(): boolean {
+    // if (!this.state.currentChatAgent) {
+    //   return false // No current agent, no need to check
+    // }
 
-    // Find current agent from latest agent data
-    const currentAgent = this.state.customerServiceData.find(
-      (agent) => agent.quickCepId === this.state.currentChatAgent!.quickCepId
-    )
+    // // Find current agent from latest agent data
+    // const currentAgent = this.state.customerServiceData.find(
+    //   (agent) => agent.quickCepId === this.state.currentChatAgent!.quickCepId
+    // )
 
-    if (!currentAgent || !currentAgent.isOnline) {
-      this.state.currentChatAgent = null
+    // if (!currentAgent || !currentAgent.isOnline) {
+    //   this.state.currentChatAgent = null
 
-      // 清除本地存储的客服选择
-      this.saveSelectedAgent(null)
+    //   // 清除本地存储的客服选择
+    //   this.saveSelectedAgent(null)
 
-      this.refreshUI()
+    //   this.refreshUI()
 
-      // Emit agent offline event
-      this.emitCustomEvent('currentAgentWentOffline', {
-        previousAgent: currentAgent || this.state.currentChatAgent,
-        timestamp: new Date().toISOString()
-      })
+    //   // Emit agent offline event
+    //   this.emitCustomEvent('currentAgentWentOffline', {
+    //     previousAgent: currentAgent || this.state.currentChatAgent,
+    //     timestamp: new Date().toISOString()
+    //   })
 
-      return true // Return true indicates current agent went offline and was cleared
-    }
+    //   return true // Return true indicates current agent went offline and was cleared
+    // }
 
-    return false // Return false indicates current agent is still online
-  }
+    // return false // Return false indicates current agent is still online
+  // }
 
   /**
    * 发射自定义事件
@@ -442,7 +442,6 @@ export class ChatCustomUI {
    * Clear currently selected agent and update local storage
    */
   resetToDefaultAgent(): void {
-    console.log('Resetting to default agent status')
 
     // 清除当前选择的客服
     this.state.currentChatAgent = null
@@ -452,8 +451,6 @@ export class ChatCustomUI {
 
     // Refresh UI display
     this.refreshUI()
-
-    console.log('Reset to default agent status completed')
   }
 
   // 记住待切换的座席ID
@@ -485,8 +482,7 @@ export class ChatCustomUI {
 
     if (typeof window !== 'undefined' && (window as any).quickChatApi && (window as any).quickChatApi.switchChat) {
       try {
-        console.log('Switching agent', quickCepId)
-          ; (window as any).quickChatApi.switchChat(quickCepId)
+          (window as any).quickChatApi.switchChat(quickCepId)
       } catch (error) {
         console.error('切换客服失败:', error)
         // 如果API调用失败，清除待切换的座席ID
@@ -522,8 +518,6 @@ export class ChatCustomUI {
       this.pendingSwitchAgentId = null
       return
     }
-
-    console.log('Agent switch successful, updating agent info:', agent.employeeEnName)
 
     // 更新当前聊天客服
     this.state.currentChatAgent = agent
@@ -618,7 +612,7 @@ export class ChatCustomUI {
    */
   refreshUI(): void {
     // Before refreshing UI, check if current agent is still online
-    this.checkCurrentAgentStatus()
+    // this.checkCurrentAgentStatus()
 
     // 更新头部
     if (this.state.containers.header) {
@@ -914,13 +908,12 @@ export class ChatCustomUI {
 
   // 事件处理方法
   showTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
-    console.log('showTooltip called:', { name, role, avatarUrl })
+
     const currentDoc = this.getCurrentDocument()
     let tooltip = currentDoc.getElementById('agent-tooltip')
 
     if (!tooltip) {
       tooltip = this.createTooltipElement(currentDoc, 'agent-tooltip', 'agent-tooltip')
-      console.log('Created new tooltip element:', tooltip)
     }
 
     if (tooltip) {
@@ -931,7 +924,6 @@ export class ChatCustomUI {
           <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); font-weight: 500; line-height: 1.2;">${role}</div>
         </div>
       `
-      console.log('Tooltip content set, no avatar displayed')
 
       // 简化定位逻辑，确保 tooltip 可见且有箭头效果
       tooltip.style.position = 'absolute'
@@ -939,8 +931,6 @@ export class ChatCustomUI {
       tooltip.style.zIndex = '99999'
       tooltip.style.left = event.clientX + 15 + 'px'
       tooltip.style.top = event.clientY - 80 + 'px'
-
-      console.log('Tooltip positioned with arrow effect')
     } else {
       console.error('无法创建或找到 tooltip 元素')
     }
@@ -953,13 +943,11 @@ export class ChatCustomUI {
   }
 
   showFullTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
-    console.log('showFullTooltip called:', { name, role, avatarUrl })
     const currentDoc = this.getCurrentDocument()
     let tooltip = currentDoc.getElementById('full-agent-tooltip')
 
     if (!tooltip) {
       tooltip = this.createTooltipElement(currentDoc, 'full-agent-tooltip', 'full-agent-tooltip')
-      console.log('Created new full tooltip element:', tooltip)
     }
 
     if (tooltip) {
@@ -970,14 +958,11 @@ export class ChatCustomUI {
           <div style="font-size: 12px; color: rgba(255, 255, 255, 0.9); font-weight: 500; line-height: 1.2;">${role}</div>
         </div>
       `
-      console.log('Full tooltip content set, no avatar displayed')
 
       // 简化定位逻辑，确保 tooltip 可见且有箭头效果
       tooltip.style.display = 'block'
       tooltip.style.left = event.clientX - Math.floor(tooltip.clientWidth / 4) + 'px'
       tooltip.style.top = event.clientY - 70 + 'px'
-
-      console.log('Full tooltip positioned with arrow effect')
     }
   }
 
