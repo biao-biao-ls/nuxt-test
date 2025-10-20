@@ -376,15 +376,12 @@ export class ChatCustomUI {
   getDefaultAvatar(size: number): string {
     return `data:image/svg+xml;base64,${btoa(`
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${
-      size / 2
-    }" fill="#e0e0e0"/>
-        <circle cx="${size / 2}" cy="${size * 0.35}" r="${
-      size * 0.15
-    }" fill="#999"/>
-        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${
-      size * 0.75
-    } ${size * 0.75}" stroke="#999" stroke-width="2" fill="none"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2
+      }" fill="#e0e0e0"/>
+        <circle cx="${size / 2}" cy="${size * 0.35}" r="${size * 0.15
+      }" fill="#999"/>
+        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${size * 0.75
+      } ${size * 0.75}" stroke="#999" stroke-width="2" fill="none"/>
       </svg>
     `)}`;
   }
@@ -900,29 +897,18 @@ export class ChatCustomUI {
 
     return this.state.operatorListData
       .map((agent, index) => {
-        // 检查是否是当前聊天的操作员（第一个通常是当前的）
-        const isCurrentAgent =
-          index === 0 ||
-          (this.state.currentChatAgent &&
-            agent.quickCepId === this.state.currentChatAgent.quickCepId);
-
         return `
-            <div class="operator-modal-item ${
-              isCurrentAgent ? "current-operator" : ""
-            }">
+            <div class="operator-modal-item">
               <div class="operator-avatar-wrapper">
                 <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                      class="operator-avatar"
-                     onerror="this.src='${this.getDefaultAvatar(40)}'">
-                <div class="operator-status-indicator" style="background: ${this.getStatusColor(
-                  agent.status
-                )};"></div>
+                     onerror="this.src='${this.getDefaultAvatar(48)}'">
               </div>
               <div class="operator-info">
                 <div class="operator-name">${agent.employeeEnName}</div>
                 <div class="operator-status-text" style="color: ${this.getStatusColor(
-                  agent.status
-                )};">
+          agent.status
+        )};">
                   ${this.getStatusText(agent.status)}
                 </div>
               </div>
@@ -968,9 +954,9 @@ export class ChatCustomUI {
 
         .operator-modal-popup {
           background: white;
-          border-radius: 12px 12px 0 0;
+          border-radius: 16px 16px 0 0;
           width: 100%;
-          max-width: 400px;
+          max-width: 380px;
           max-height: 80vh;
           overflow: hidden;
           box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
@@ -993,108 +979,83 @@ export class ChatCustomUI {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 16px 20px;
-          border-bottom: 1px solid #eee;
-          background: #f8f9fa;
+          padding: 20px 12px 7px 12px;
+          background: white;
         }
 
         .operator-modal-title {
-          font-size: 18px;
+          font-size: 16px;
           font-weight: 600;
           color: #333;
+
         }
 
         .operator-modal-close {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #f0f0f0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
           cursor: pointer;
-          font-size: 16px;
-          color: #666;
-          transition: all 0.2s ease;
-        }
-
-        .operator-modal-close:hover {
-          background: #e0e0e0;
+          font-size: 18px;
           color: #333;
+          font-weight: bold;
+          font-size: 28px;
+          position: relative;
+          left: -6px;
+          top: -9px;
         }
 
         .operator-modal-list {
           max-height: 60vh;
           overflow-y: auto;
-          padding: 8px 0;
+          padding: 0;
         }
 
         .operator-modal-item {
           display: flex;
           align-items: center;
-          padding: 12px 20px;
-          transition: all 0.2s ease;
-          border-bottom: 1px solid #f0f0f0;
-          position: relative;
-        }
-
-        .operator-modal-item:last-child {
-          border-bottom: none;
-        }
-
-        .operator-modal-item:hover {
-          background-color: #f8f9fa;
-        }
-
-        .operator-modal-item.current-operator {
-          background-color: #f0f8ff;
-          border: 2px dashed #007bff;
-          border-radius: 8px;
-          margin: 4px 12px;
-          padding: 10px 16px;
-        }
-
-        .operator-modal-item.current-operator:hover {
-          background-color: #e6f3ff;
+          padding: 7px 12px;
         }
 
         .operator-avatar-wrapper {
           position: relative;
-          margin-right: 12px;
+          margin-right: 16px;
         }
 
         .operator-avatar {
-          width: 40px;
-          height: 40px;
+          width: 42px;
+          height: 42px;
           border-radius: 50%;
+          border: none;
           object-fit: cover;
-          border: 2px solid #e0e0e0;
-        }
-
-        .operator-status-indicator {
-          position: absolute;
-          bottom: 2px;
-          right: 2px;
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          border: 2px solid white;
         }
 
         .operator-info {
           flex: 1;
+          display: flex;
+          align-items: center;
         }
 
         .operator-name {
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 500;
           color: #333;
-          margin-bottom: 4px;
+          width: 110px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .operator-status-text {
-          font-size: 14px;
+          font-size: 16px;
           font-weight: 400;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .operator-status-text::before {
+          content: '';
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #48DE8C;
         }
 
         .no-operators {
@@ -1163,22 +1124,19 @@ export class ChatCustomUI {
       <div class="chat-header">
         <div class="chat-header-agents">
           ${this.renderCurrentAgent()}
-          ${
-            shouldShowOperatorAgents
-              ? this.renderOperatorAgents(operatorAgentsToShow)
-              : ""
-          }
-          ${
-            shouldShowOperatorMoreIndicator
-              ? this.renderOperatorMoreAgentsIndicator(operatorAgentsCount)
-              : ""
-          }
+          ${shouldShowOperatorAgents
+        ? this.renderOperatorAgents(operatorAgentsToShow)
+        : ""
+      }
+          ${shouldShowOperatorMoreIndicator
+        ? this.renderOperatorMoreAgentsIndicator(operatorAgentsCount)
+        : ""
+      }
           ${shouldShowOpenIcon ? this.renderOpenLeftBarIcon() : ""}
-          ${
-            onlineAgents.length === 0 && !this.state.currentChatAgent
-              ? `<div class="no-agents"></div>` // No agents online
-              : ""
-          }
+          ${onlineAgents.length === 0 && !this.state.currentChatAgent
+        ? `<div class="no-agents"></div>` // No agents online
+        : ""
+      }
         </div>
       </div>
       <div id="agent-tooltip" class="agent-tooltip"></div>
@@ -1213,11 +1171,10 @@ export class ChatCustomUI {
     return `
       <div class="current-agent selected" 
            title="Current Chat: ${agent.employeeEnName}"
-           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
-             agent.employeeEnName
-           }', '${agent.roleNameEn}', '${this.getAvatarUrl(
-      agent.imageFileIndexId
-    )}'); } catch(e) { console.error('Tooltip error:', e); }"
+           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${agent.employeeEnName
+      }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+        agent.imageFileIndexId
+      )}'); } catch(e) { console.error('Tooltip error:', e); }"
            onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }">
         <div class="agent-avatar-wrapper">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
@@ -1225,8 +1182,8 @@ export class ChatCustomUI {
                style="border-color: ${agent.isOnline ? "#007bff" : "#d8d8d8"};"
                onerror="this.src='${this.getDefaultAvatar(36)}'">
           <div class="status-indicator" style="background: ${this.getStatusColor(
-            agent.status
-          )};"></div>
+        agent.status
+      )};"></div>
         </div>
         <div class="agent-name-display">${agent.employeeEnName}</div>
       </div>
@@ -1246,14 +1203,12 @@ export class ChatCustomUI {
       .map(
         (agent) => `
         <div class="online-agent"
-             onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${
-               agent.quickCepId
-             }')"
-             onmouseover="try { (window.chatUI || window.parent.chatUI).showTooltip(event, '${
-               agent.employeeEnName
-             }', '${agent.roleNameEn}', '${this.getAvatarUrl(
-          agent.imageFileIndexId
-        )}'); } catch(e) { console.error('Tooltip error:', e); }"
+             onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId
+          }')"
+             onmouseover="try { (window.chatUI || window.parent.chatUI).showTooltip(event, '${agent.employeeEnName
+          }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+            agent.imageFileIndexId
+          )}'); } catch(e) { console.error('Tooltip error:', e); }"
              onmouseout="try { (window.chatUI || window.parent.chatUI).hideTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }"
              title="${agent.employeeEnName} - ${agent.roleNameEn}">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
@@ -1282,8 +1237,8 @@ export class ChatCustomUI {
                class="agent-avatar operator"
                onerror="this.src='${this.getDefaultAvatar(28)}'">
           <div class="status-indicator" style="background: ${this.getStatusColor(
-            agent.status
-          )};"></div>
+          agent.status
+        )};"></div>
         </div>
       `
       )
@@ -1347,10 +1302,10 @@ export class ChatCustomUI {
       <div class="left-bar">
         <div class="left-bar-content">
           ${Object.entries(groupedAgents)
-            .map(([businessLine, agents]) =>
-              this.renderBusinessLineGroup(businessLine, agents)
-            )
-            .join("")}
+        .map(([businessLine, agents]) =>
+          this.renderBusinessLineGroup(businessLine, agents)
+        )
+        .join("")}
         </div>
         <div class="left-bar-footer">
             <svg onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()" t="1758522231178" class="expand-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
@@ -1391,19 +1346,16 @@ export class ChatCustomUI {
     const canClick = isOnline;
 
     return `
-      <div class="agent-item ${isCurrentChat ? "current" : ""} ${
-      isOnline ? "online" : "offline"
-    }"
-           ${
-             canClick
-               ? `onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId}')"`
-               : ""
-           }
-           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
-             agent.employeeEnName
-           }', '${agent.roleNameEn}', '${this.getAvatarUrl(
-      agent.imageFileIndexId
-    )}'); } catch(e) { console.error('Full tooltip error:', e); }"
+      <div class="agent-item ${isCurrentChat ? "current" : ""} ${isOnline ? "online" : "offline"
+      }"
+           ${canClick
+        ? `onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId}')"`
+        : ""
+      }
+           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${agent.employeeEnName
+      }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+        agent.imageFileIndexId
+      )}'); } catch(e) { console.error('Full tooltip error:', e); }"
            onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide full tooltip error:', e); }">
 
         <div class="agent-avatar-container">
@@ -1411,19 +1363,19 @@ export class ChatCustomUI {
                class="agent-avatar"
                onerror="this.src='${this.getDefaultAvatar(32)}'">
           <div class="status-indicator" style="background: ${this.getStatusColor(
-            agent.status
-          )};"></div>
+        agent.status
+      )};"></div>
         </div>
 
         <div class="agent-info">
           <div class="agent-name">${this.truncateText(
-            agent.employeeEnName,
-            8
-          )}</div>
+        agent.employeeEnName,
+        8
+      )}</div>
           <div class="agent-role">${this.truncateText(
-            agent.roleNameEn,
-            12
-          )}</div>
+        agent.roleNameEn,
+        12
+      )}</div>
         </div>
       </div>
     `;
