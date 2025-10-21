@@ -838,6 +838,16 @@ export class ChatManager {
           z-index: 10001;
           display: block;
         }
+        /* 移动端样式 */
+        @media (max-width: 559px) {
+           #DIY-LEFT-BAR {
+            width: 100% !important;
+            left: 100% !important;
+            display: none;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0.7) 100%)  !important;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+          }
       `
 
       // 注入到 iframe 的 head 中
@@ -1286,6 +1296,53 @@ export class ChatManager {
         this.autoOpenChatOnMobile()
       },
 
+      // 测试隐藏关闭按钮功能
+      testHideCloseBox: () => {
+        console.log('手动测试隐藏关闭按钮功能')
+        this.hideCloseBoxOnMobile()
+      },
+
+      // 强制隐藏关闭按钮（无论是否为移动端）
+      forceHideCloseBox: () => {
+        console.log('强制隐藏关闭按钮')
+        this.hideCloseBoxWithRetry(0)
+      },
+
+      // 检查关闭按钮状态
+      checkCloseBoxStatus: () => {
+        try {
+          const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+          if (!iframe || !iframe.contentDocument) {
+            console.log('❌ 无法访问 iframe')
+            return { accessible: false, reason: '无法访问 iframe' }
+          }
+
+          const closeBox = iframe.contentDocument.querySelector('.closeBox') as HTMLElement
+          if (closeBox) {
+            const isHidden = closeBox.style.display === 'none' ||
+              window.getComputedStyle(closeBox).display === 'none'
+            console.log('✅ 找到关闭按钮:', {
+              exists: true,
+              isHidden,
+              displayStyle: closeBox.style.display,
+              computedDisplay: window.getComputedStyle(closeBox).display
+            })
+            return {
+              exists: true,
+              isHidden,
+              displayStyle: closeBox.style.display,
+              computedDisplay: window.getComputedStyle(closeBox).display
+            }
+          } else {
+            console.log('❌ 未找到 .closeBox 元素')
+            return { exists: false, reason: '未找到 .closeBox 元素' }
+          }
+        } catch (error) {
+          console.error('检查关闭按钮状态失败:', error)
+          return { error: error instanceof Error ? error.message : String(error) }
+        }
+      },
+
       // 强制打开聊天窗口（无论是否为移动端）
       forceOpenChat: () => {
         if (typeof window !== 'undefined' && window.quickChatApi?.open) {
@@ -1697,6 +1754,9 @@ Type: ${this.getBusinessTypeName(orderItem.businessType)}`
         try {
           window.quickChatApi.openSandBox()
           console.log('✅ 移动端聊天窗口已自动打开')
+
+          // 在移动端打开聊天窗口后，隐藏关闭按钮
+          this.hideCloseBoxOnMobile()
         } catch (error) {
           console.error('❌ 自动打开聊天窗口失败:', error)
         }
@@ -1704,6 +1764,67 @@ Type: ${this.getBusinessTypeName(orderItem.businessType)}`
         console.warn('⚠️ quickChatApi.open 方法不可用，无法自动打开聊天窗口')
       }
     }, 10) // 延迟1秒确保初始化完成
+  }
+
+  /**
+   * 在移动端隐藏关闭按钮
+   */
+  private hideCloseBoxOnMobile(): void {
+    if (!this.isMobileDevice()) {
+      return
+    }
+
+    console.log('移动端环境，准备隐藏关闭按钮')
+
+    // 使用重试机制确保能够访问到 iframe 内的元素
+    this.hideCloseBoxWithRetry(0)
+  }
+
+  /**
+   * 带重试机制的关闭按钮隐藏
+   */
+  private hideCloseBoxWithRetry(retryCount: number): void {
+    const maxRetries = 10
+    const retryDelay = 500 // 500ms
+
+    try {
+      const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+      if (!iframe) {
+        console.warn(`隐藏关闭按钮重试 ${retryCount + 1}/${maxRetries}: iframe 不存在`)
+        if (retryCount < maxRetries) {
+          setTimeout(() => this.hideCloseBoxWithRetry(retryCount + 1), retryDelay)
+        }
+        return
+      }
+
+      if (!iframe.contentDocument) {
+        console.warn(`隐藏关闭按钮重试 ${retryCount + 1}/${maxRetries}: 无法访问 iframe.contentDocument`)
+        if (retryCount < maxRetries) {
+          setTimeout(() => this.hideCloseBoxWithRetry(retryCount + 1), retryDelay)
+        }
+        return
+      }
+
+      // 查找 .closeBox 元素
+      const closeBox = iframe.contentDocument.querySelector('.closeBox') as HTMLElement
+      if (closeBox) {
+        closeBox.style.display = 'none'
+        console.log('✅ 移动端关闭按钮已隐藏')
+        return
+      } else {
+        console.warn(`隐藏关闭按钮重试 ${retryCount + 1}/${maxRetries}: 未找到 .closeBox 元素`)
+        if (retryCount < maxRetries) {
+          setTimeout(() => this.hideCloseBoxWithRetry(retryCount + 1), retryDelay)
+        } else {
+          console.error('❌ 达到最大重试次数，无法找到 .closeBox 元素')
+        }
+      }
+    } catch (error) {
+      console.error(`隐藏关闭按钮重试 ${retryCount + 1}/${maxRetries} 失败:`, error)
+      if (retryCount < maxRetries) {
+        setTimeout(() => this.hideCloseBoxWithRetry(retryCount + 1), retryDelay)
+      }
+    }
   }
 
   /**

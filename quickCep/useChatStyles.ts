@@ -325,6 +325,13 @@ export class ChatStyles {
           flex-direction: column;
           padding: 24px 0;
           background: #f1f3f6;
+          position: relative;
+        }
+
+        @media (max-width: 559px) {
+          .left-bar {
+            width: 220px;
+          }
         }
 
         .left-bar-content {
@@ -347,6 +354,36 @@ export class ChatStyles {
         .left-bar-footer .expand-icon{
           transform: rotate(180deg);
           cursor: pointer;
+        }
+
+        @media (max-width: 559px) {
+          .left-bar-footer {
+            display: none;
+          }
+        }
+
+        .left-bar-close-btn {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+          background: rgba(0, 0, 0, 0.05);
+        }
+
+        .left-bar-close-btn:hover {
+          background: rgba(0, 0, 0, 0.1);
+          transform: scale(1.05);
+        }
+
+        .left-bar-close-btn:hover svg path {
+          stroke: #333;
         }
 
         .left-bar-header {

@@ -135,6 +135,33 @@ export class ChatCustomUI {
   }
 
   /**
+   * 检测是否为移动端设备
+   */
+  private isMobileDevice(): boolean {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return false;
+    }
+
+    // 检测用户代理字符串
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobileKeywords = [
+      'android', 'webos', 'iphone', 'ipad', 'ipod',
+      'blackberry', 'windows phone', 'mobile', 'opera mini'
+    ];
+
+    const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
+
+    // 检测屏幕尺寸（宽度小于768px认为是移动端）
+    const isMobileScreen = window.innerWidth <= 768;
+
+    // 检测触摸支持
+    const hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    // 综合判断：用户代理包含移动设备关键词，或者屏幕宽度小于768px且支持触摸
+    return isMobileUA || (isMobileScreen && hasTouchSupport);
+  }
+
+  /**
    * 判断是否应该显示左侧栏
    * 根据复杂的业务规则来决定
    */
@@ -159,7 +186,12 @@ export class ChatCustomUI {
       return true;
     }
 
-    // 只要有在线客服，不管是否选中过，都显示左侧自定义区域
+    // 移动端时，即使有客服在线，也不默认展开左侧自定义区域，需要手动触发
+    if (this.isMobileDevice()) {
+      return false;
+    }
+
+    // 桌面端：只要有在线客服，不管是否选中过，都显示左侧自定义区域
     return onlineCount > 0;
   }
 
@@ -390,10 +422,7 @@ export class ChatCustomUI {
    * 工具函数：截断文本
    */
   truncateText(text: string, maxLength: number): string {
-    if (!text) return "";
-    return text.length > maxLength
-      ? text.substring(0, maxLength) + "..."
-      : text;
+    return text
   }
 
   /**
@@ -626,6 +655,13 @@ export class ChatCustomUI {
     const currentlyShowingLeftBar = this.shouldShowLeftBar();
 
     if (currentlyShowingLeftBar) {
+      if (this.isMobileDevice()) {
+        const currentDoc = this.getCurrentDocument();
+        const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+        if (leftBarParent) {
+          leftBarParent.style.display = 'none'
+        }
+      }
       // 当前左侧栏显示，点击后隐藏
       this.state.isLeftBarManuallyHidden = true;
       this.state.isLeftBarForceShown = false;
@@ -634,6 +670,20 @@ export class ChatCustomUI {
       // 由于 .open-leftbar-icon 显示的前提是有在线客服，所以直接显示即可
       this.state.isLeftBarManuallyHidden = false;
       this.state.isLeftBarForceShown = true;
+      if (this.isMobileDevice()) {
+        const currentDoc = this.getCurrentDocument();
+        const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+
+        if (leftBarParent) {
+          leftBarParent.style.display = 'block'
+        }
+      }
+
+    }
+
+    // 在移动端立即更新定位
+    if (this.isMobileDevice()) {
+      this.updateMobileLeftBarPosition();
     }
 
     // Notify manager to update left sidebar visibility
@@ -1313,6 +1363,11 @@ export class ChatCustomUI {
               <path d="M749.056 862.848V938.666667H274.986667v-75.818667h474.026666z m113.792-113.792V274.944a113.792 113.792 0 0 0-113.792-113.792H274.986667a113.792 113.792 0 0 0-113.792 113.792v474.112a113.792 113.792 0 0 0 113.792 113.792V938.666667l-9.770667-0.256a189.653333 189.653333 0 0 1-179.626667-179.626667L85.333333 749.056V274.944a189.653333 189.653333 0 0 1 179.882667-189.354667L274.986667 85.333333h474.026666l9.813334 0.256A189.610667 189.610667 0 0 1 938.666667 274.944v474.112l-0.256 9.728a189.653333 189.653333 0 0 1-179.626667 179.626667l-9.728 0.256v-75.818667a113.834667 113.834667 0 0 0 113.792-113.792z" fill="#999" p-id="15575"></path>
             </svg>
         </div>
+        <div class="left-bar-close-btn" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4L4 12M4 4L12 12" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
       </div>
       <div id="full-agent-tooltip" class="full-agent-tooltip"></div>
     `;
@@ -1585,9 +1640,71 @@ export class ChatCustomUI {
 
         // 设置白色背景
         leftBarParent.style.background = "white";
+
+        // 移动端特殊定位处理
+        if (this.isMobileDevice()) {
+          this.setMobileLeftBarPosition(leftBarParent);
+        }
       }
     } catch (error) {
       console.error("设置左侧父元素样式时出错:", error);
+    }
+  }
+
+  /**
+   * 设置移动端左侧栏的定位
+   */
+  private setMobileLeftBarPosition(leftBarParent: HTMLElement): void {
+    try {
+      // 获取左侧栏的宽度
+      const leftBarWidth = leftBarParent.offsetWidth || 180; // 默认宽度180px
+
+      // 在移动端，确保左侧栏的左边定位在屏幕的左边
+      // 通过设置 right 属性来实现从右向左的展开效果
+      leftBarParent.style.position = "absolute";
+      leftBarParent.style.right = `${leftBarWidth}px`; // 初始状态隐藏在右侧
+      leftBarParent.style.left = "auto"; // 清除可能的 left 定位
+
+      // 当需要显示时，调整 right 值
+      if (this.shouldShowLeftBar()) {
+        leftBarParent.style.right = "0px"; // 显示时贴右边
+      }
+
+      // 确保在移动端有合适的宽度
+      if (window.innerWidth <= 768) {
+        const maxWidth = Math.min(leftBarWidth, window.innerWidth * 0.8); // 最大占屏幕80%
+        leftBarParent.style.width = `${maxWidth}px`;
+      }
+
+      // 添加过渡动画
+      leftBarParent.style.transition = "right 0.3s ease-in-out";
+
+    } catch (error) {
+      console.error("设置移动端左侧栏定位时出错:", error);
+    }
+  }
+
+  /**
+   * 更新移动端左侧栏位置（用于切换显示/隐藏时调用）
+   */
+  private updateMobileLeftBarPosition(): void {
+    try {
+      const currentDoc = this.getCurrentDocument();
+      const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+
+      if (leftBarParent) {
+        const leftBarWidth = leftBarParent.offsetWidth || 180;
+
+        if (this.shouldShowLeftBar()) {
+          // 显示：从右侧滑入到可视区域
+          leftBarParent.style.right = "0px";
+        } else {
+          // 隐藏：滑出到右侧不可视区域
+          leftBarParent.style.right = `${leftBarWidth}px`;
+        }
+      }
+    } catch (error) {
+      console.error("更新移动端左侧栏位置时出错:", error);
     }
   }
 
