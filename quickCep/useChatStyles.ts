@@ -328,10 +328,10 @@ export class ChatStyles {
           position: relative;
         }
 
-        @media (max-width: 559px) {
-          .left-bar {
-            width: 220px;
-          }
+        /* 移动端样式 - 通过 JavaScript 动态添加 mobile-device 类名 */
+        .mobile.left-bar {
+          width: 220px;
+          background: #fff;
         }
 
         .left-bar-content {
@@ -356,10 +356,8 @@ export class ChatStyles {
           cursor: pointer;
         }
 
-        @media (max-width: 559px) {
-          .left-bar-footer {
-            display: none;
-          }
+        .mobile.left-bar-footer {
+          display: none;
         }
 
         .left-bar-close-btn {
@@ -374,7 +372,11 @@ export class ChatStyles {
           cursor: pointer;
           border-radius: 6px;
           transition: all 0.2s ease;
-          background: rgba(0, 0, 0, 0.05);
+          display: none;
+        }
+
+        .mobile.left-bar-close-btn {
+          display: flex;
         }
 
         .left-bar-close-btn:hover {
@@ -599,12 +601,10 @@ export class ChatStyles {
           color: rgba(0, 0, 0, 0.45);
         }
 
-        /* 移动端样式 */
-        @media (max-width: 559px) {
-          .footer-btn.add-btn svg {
-            width: 24px;
-            height: 24px;
-          }
+        /* 移动端样式 - 通过 JavaScript 动态添加 mobile-device 类名 */
+        .footer-actions.mobile .footer-btn.add-btn svg {
+          width: 24px;
+          height: 24px;
         }
 
         .footer-btn.order-btn {

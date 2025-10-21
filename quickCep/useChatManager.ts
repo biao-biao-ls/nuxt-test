@@ -95,6 +95,9 @@ export class ChatManager {
       // Setup debug tools
       this.setupDebugTools()
 
+      // 为主页面添加移动端类名
+      this.addMobileClassToMainPage()
+
       this.isInitialized = true
 
       // 在移动端自动打开聊天窗口
@@ -264,6 +267,15 @@ export class ChatManager {
     // 监听页面焦点事件
     window.addEventListener('focus', () => {
       setTimeout(() => this.fetchAgentStatus(), 500)
+    })
+
+    // 监听窗口大小变化，动态更新移动端类名
+    window.addEventListener('resize', () => {
+      // 延迟执行，避免频繁触发
+      setTimeout(() => {
+        this.addMobileClassToMainPage()
+        this.addMobileClassToIframe()
+      }, 300)
     })
 
     // 监听来自 iframe 的消息
@@ -729,6 +741,9 @@ export class ChatManager {
     // Inject custom styles into iframe
     this.injectCustomStyles()
 
+    // 添加移动端类名到 iframe
+    this.addMobileClassToIframe()
+
     // 初始化头部的在线客服和打开左侧栏图标
     if (this.chatUI.state.containers.header) {
       this.chatUI.state.containers.header.innerHTML = this.chatUI.generateHeaderHTML()
@@ -760,6 +775,62 @@ export class ChatManager {
    */
   private injectCustomStyles(): void {
     this.injectCustomStylesWithRetry(0)
+  }
+
+  /**
+   * 动态添加移动端 className 到 iframe 的 body 元素
+   */
+  private addMobileClassToIframe(): void {
+    try {
+      const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+      if (!iframe || !iframe.contentDocument) {
+        return
+      }
+
+      const iframeBody = iframe.contentDocument.body
+      if (iframeBody) {
+        if (this.isMobileDevice()) {
+          // 添加移动端类名
+          if (!iframeBody.classList.contains('mobile-device')) {
+            iframeBody.classList.add('mobile-device')
+            console.log('✅ 已为 iframe body 添加 mobile-device 类名')
+          }
+        } else {
+          // 移除移动端类名（如果存在）
+          if (iframeBody.classList.contains('mobile-device')) {
+            iframeBody.classList.remove('mobile-device')
+            console.log('✅ 已从 iframe body 移除 mobile-device 类名')
+          }
+        }
+      }
+    } catch (error) {
+      console.error('添加移动端类名到 iframe 时出错:', error)
+    }
+  }
+
+  /**
+   * 动态添加移动端 className 到主页面的 body 元素
+   */
+  private addMobileClassToMainPage(): void {
+    try {
+      if (typeof document !== 'undefined' && document.body) {
+        if (this.isMobileDevice()) {
+          // 添加移动端类名
+          if (!document.body.classList.contains('mobile-device')) {
+            document.body.classList.add('mobile-device')
+            console.log('✅ 已为主页面 body 添加 mobile-device 类名')
+          }
+        } else {
+          // 移除移动端类名（如果存在）
+          if (document.body.classList.contains('mobile-device')) {
+            document.body.classList.remove('mobile-device')
+            console.log('✅ 已从主页面 body 移除 mobile-device 类名')
+          }
+        }
+      }
+    } catch (error) {
+      console.error('添加移动端类名到主页面时出错:', error)
+    }
   }
 
   /**
@@ -838,21 +909,23 @@ export class ChatManager {
           z-index: 10001;
           display: block;
         }
-        /* 移动端样式 */
-        @media (max-width: 559px) {
-           #DIY-LEFT-BAR {
-            width: 100% !important;
-            left: 100% !important;
-            display: none;
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0.7) 100%)  !important;
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
-          }
+        /* 移动端样式 - 通过 JavaScript 动态添加 mobile-device 类名 */
+        .mobile-device #DIY-LEFT-BAR {
+          width: 100% !important;
+          left: 100% !important;
+          display: none;
+          background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0.7) 100%)  !important;
+          backdrop-filter: blur(2px);
+          -webkit-backdrop-filter: blur(2px);
+        }
       `
 
       // 注入到 iframe 的 head 中
       if (iframe.contentDocument.head) {
         iframe.contentDocument.head.appendChild(customStyle)
+
+        // 同时添加移动端类名到 body
+        this.addMobileClassToIframe()
       } else {
         console.warn(`样式注入重试 ${retryCount + 1}/${maxRetries}: iframe head 不存在`)
         if (retryCount < maxRetries) {
@@ -1300,6 +1373,27 @@ export class ChatManager {
       testHideCloseBox: () => {
         console.log('手动测试隐藏关闭按钮功能')
         this.hideCloseBoxOnMobile()
+      },
+
+      // 测试移动端类名添加
+      testMobileClassName: () => {
+        console.log('手动测试移动端类名添加功能')
+        this.addMobileClassToMainPage()
+        this.addMobileClassToIframe()
+
+        // 检查结果
+        const mainPageHasMobile = document.body?.classList.contains('mobile-device')
+        console.log('主页面是否有 mobile-device 类名:', mainPageHasMobile)
+
+        try {
+          const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+          if (iframe && iframe.contentDocument) {
+            const iframeHasMobile = iframe.contentDocument.body?.classList.contains('mobile-device')
+            console.log('iframe 是否有 mobile-device 类名:', iframeHasMobile)
+          }
+        } catch (error) {
+          console.warn('无法检查 iframe 类名:', error)
+        }
       },
 
       // 强制隐藏关闭按钮（无论是否为移动端）

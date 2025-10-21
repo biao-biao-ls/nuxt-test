@@ -1006,7 +1006,6 @@ export class ChatCustomUI {
           background: white;
           border-radius: 16px 16px 0 0;
           width: 100%;
-          max-width: 380px;
           max-height: 80vh;
           overflow: hidden;
           box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
@@ -1349,7 +1348,7 @@ export class ChatCustomUI {
 
     return `
       ${ChatStyles.generateLeftBarStyles()}
-      <div class="left-bar">
+      <div class="left-bar${this.isMobileDevice() ? ' mobile' : ''}">
         <div class="left-bar-content">
           ${Object.entries(groupedAgents)
         .map(([businessLine, agents]) =>
@@ -1357,15 +1356,15 @@ export class ChatCustomUI {
         )
         .join("")}
         </div>
-        <div class="left-bar-footer">
+        <div class="left-bar-footer${this.isMobileDevice() ? ' mobile' : ''}">
             <svg onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()" t="1758522231178" class="expand-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
               <path d="M636.501333 383.658667a37.973333 37.973333 0 0 1 41.898667 62.762666l-3.157333 2.304-99.925334 66.645334 103.210667 86.016a37.930667 37.930667 0 1 1-48.554667 58.24l-142.250666-118.485334a37.973333 37.973333 0 0 1 3.242666-60.714666L633.173333 385.706667l3.328-2.005334zM308.181333 891.306667V156.416a37.930667 37.930667 0 1 1 75.818667 0v734.805333a37.930667 37.930667 0 0 1-75.818667 0z" fill="#999" p-id="15574"></path>
               <path d="M749.056 862.848V938.666667H274.986667v-75.818667h474.026666z m113.792-113.792V274.944a113.792 113.792 0 0 0-113.792-113.792H274.986667a113.792 113.792 0 0 0-113.792 113.792v474.112a113.792 113.792 0 0 0 113.792 113.792V938.666667l-9.770667-0.256a189.653333 189.653333 0 0 1-179.626667-179.626667L85.333333 749.056V274.944a189.653333 189.653333 0 0 1 179.882667-189.354667L274.986667 85.333333h474.026666l9.813334 0.256A189.610667 189.610667 0 0 1 938.666667 274.944v474.112l-0.256 9.728a189.653333 189.653333 0 0 1-179.626667 179.626667l-9.728 0.256v-75.818667a113.834667 113.834667 0 0 0 113.792-113.792z" fill="#999" p-id="15575"></path>
             </svg>
         </div>
-        <div class="left-bar-close-btn" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 4L4 12M4 4L12 12" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <div class="left-bar-close-btn${this.isMobileDevice() ? ' mobile' : ''}" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()">
+          <svg width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4L4 12M4 4L12 12" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
       </div>
@@ -1443,7 +1442,7 @@ export class ChatCustomUI {
     return `
       ${ChatStyles.generateFooterStyles()}
       <div class="chat-footer">
-        <div class="footer-actions">
+        <div class="footer-actions${this.isMobileDevice() ? ' mobile' : ''}">
           <button class="footer-btn add-btn" title="send order" onclick="if(window.handleOrderButtonClick) window.handleOrderButtonClick(); else if(window.parent && window.parent.postMessage) window.parent.postMessage({type:'TOGGLE_ORDER_SELECTOR'},'*');">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M13.1116 4.91628H5.46284L5.46647 2.90638C5.46647 2.37896 5.89556 1.94987 6.42298 1.94987H7.41064C7.76377 1.2467 8.48817 0.790769 9.29087 0.790769C10.0936 0.790769 10.818 1.2467 11.1711 1.94987H12.1587C12.6862 1.94987 13.1153 2.37896 13.1153 2.90638L13.1116 4.91628ZM6.22871 4.15041H12.3458L12.3494 2.90638C12.3494 2.80126 12.2639 2.71574 12.1588 2.71574H10.6449L10.5558 2.45774C10.3698 1.91876 9.86146 1.55664 9.29087 1.55664C8.72027 1.55664 8.21192 1.91876 8.02589 2.45774L7.93684 2.71574H6.42298C6.31786 2.71574 6.23234 2.80126 6.23234 2.90638L6.22871 4.15041Z" fill="#999999"/>
