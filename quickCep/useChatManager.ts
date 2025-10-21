@@ -96,6 +96,9 @@ export class ChatManager {
       this.setupDebugTools()
 
       this.isInitialized = true
+
+      // 在移动端自动打开聊天窗口
+      this.autoOpenChatOnMobile()
     } catch (error) {
       console.error('Chat system initialization failed:', error)
       throw error
@@ -400,7 +403,7 @@ export class ChatManager {
         "nickName": null,
         "onlineStatus": 1,
         "name": "覃安"
-      }, 
+      },
       {
         "operatorId": "1942407035945005058",
         "profilePhoto": "https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png",
@@ -756,10 +759,31 @@ export class ChatManager {
    * Modify native element styles in QuickChat iframe
    */
   private injectCustomStyles(): void {
+    this.injectCustomStylesWithRetry(0)
+  }
+
+  /**
+   * 带重试机制的样式注入
+   */
+  private injectCustomStylesWithRetry(retryCount: number): void {
+    const maxRetries = 5
+    const retryDelay = 1000 // 1秒
+
     try {
       const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
-      if (!iframe || !iframe.contentDocument) {
-        console.warn('无法访问 iframe，跳过样式注入')
+      if (!iframe) {
+        console.warn(`样式注入重试 ${retryCount + 1}/${maxRetries}: iframe 不存在`)
+        if (retryCount < maxRetries) {
+          setTimeout(() => this.injectCustomStylesWithRetry(retryCount + 1), retryDelay)
+        }
+        return
+      }
+
+      if (!iframe.contentDocument) {
+        console.warn(`样式注入重试 ${retryCount + 1}/${maxRetries}: 无法访问 iframe.contentDocument`)
+        if (retryCount < maxRetries) {
+          setTimeout(() => this.injectCustomStylesWithRetry(retryCount + 1), retryDelay)
+        }
         return
       }
 
@@ -819,12 +843,17 @@ export class ChatManager {
       // 注入到 iframe 的 head 中
       if (iframe.contentDocument.head) {
         iframe.contentDocument.head.appendChild(customStyle)
-        console.log('✅ Successfully injected custom styles into QuickChat iframe')
       } else {
-        console.warn('iframe head does not exist, cannot inject styles')
+        console.warn(`样式注入重试 ${retryCount + 1}/${maxRetries}: iframe head 不存在`)
+        if (retryCount < maxRetries) {
+          setTimeout(() => this.injectCustomStylesWithRetry(retryCount + 1), retryDelay)
+        }
       }
     } catch (error) {
-      console.error('Failed to inject custom styles:', error)
+      console.error(`样式注入重试 ${retryCount + 1}/${maxRetries} 失败:`, error)
+      if (retryCount < maxRetries) {
+        setTimeout(() => this.injectCustomStylesWithRetry(retryCount + 1), retryDelay)
+      }
     }
   }
 
@@ -1130,7 +1159,39 @@ export class ChatManager {
 
       // Test style injection
       testStyleInjection: () => {
+        console.log('🧪 手动触发样式注入测试')
         this.injectCustomStyles()
+      },
+
+      // 手动重新注入样式（清除后重新注入）
+      manualReinjectStyles: () => {
+        try {
+          const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+          if (iframe && iframe.contentDocument) {
+            console.log('🔄 手动重新注入样式...')
+
+            // 先移除现有样式
+            const existingStyle = iframe.contentDocument.getElementById('quickchat-custom-styles')
+            if (existingStyle) {
+              existingStyle.remove()
+              console.log('✅ 已移除现有样式')
+            }
+
+            // 重新注入
+            this.injectCustomStyles()
+
+            // 等待一下再检查
+            setTimeout(() => {
+              if (typeof window !== 'undefined' && (window as any).debugQuickChat) {
+                (window as any).debugQuickChat.checkStyleInjection()
+              }
+            }, 1000)
+          } else {
+            console.warn('⚠️ 无法访问 iframe')
+          }
+        } catch (error) {
+          console.error('手动重新注入样式失败:', error)
+        }
       },
 
       // 强制重新注入样式（先移除再注入）
@@ -1147,6 +1208,243 @@ export class ChatManager {
           }
         } catch (error) {
           console.error('强制重新注入样式失败:', error)
+        }
+      },
+
+      // 检查样式注入状态
+      checkStyleInjection: () => {
+        try {
+          const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
+          if (!iframe) {
+            console.error('❌ iframe 不存在')
+            return { success: false, reason: 'iframe 不存在' }
+          }
+
+          if (!iframe.contentDocument) {
+            console.error('❌ 无法访问 iframe.contentDocument')
+            return { success: false, reason: '无法访问 iframe.contentDocument' }
+          }
+
+          console.log('=== 样式注入状态检查 ===')
+
+          // 检查样式元素是否存在
+          const styleElement = iframe.contentDocument.getElementById('quickchat-custom-styles')
+          console.log('样式元素存在:', !!styleElement)
+
+          if (styleElement) {
+            console.log('样式元素标签:', styleElement.tagName)
+            console.log('样式元素ID:', styleElement.id)
+            console.log('样式内容长度:', styleElement.textContent?.length || 0)
+            console.log('样式内容预览:', styleElement.textContent?.substring(0, 200) + '...')
+
+            // 检查所有样式元素
+            const allStyles = iframe.contentDocument.querySelectorAll('style')
+            console.log('iframe中总样式元素数量:', allStyles.length)
+
+
+            return {
+              success: true,
+              styleExists: true,
+              totalStyles: allStyles.length
+            }
+          } else {
+            console.warn('⚠️ 自定义样式元素不存在')
+
+            // 检查是否有其他样式元素
+            const allStyles = iframe.contentDocument.querySelectorAll('style')
+            console.log('iframe中总样式元素数量:', allStyles.length)
+
+            return {
+              success: false,
+              styleExists: false,
+              totalStyles: allStyles.length
+            }
+          }
+        } catch (error) {
+          console.error('检查样式注入状态失败:', error)
+          return { success: false, error: error instanceof Error ? error.message : String(error) }
+        } finally {
+          console.log('========================')
+        }
+      },
+
+      // 测试移动端检测
+      testMobileDetection: () => {
+        const isMobile = this.isMobileDevice()
+        console.log('移动端检测结果:', {
+          isMobile,
+          userAgent: navigator.userAgent,
+          screenWidth: window.innerWidth,
+          hasTouchSupport: 'ontouchstart' in window || navigator.maxTouchPoints > 0
+        })
+        return isMobile
+      },
+
+      // 手动触发移动端自动打开聊天窗口
+      testAutoOpenChat: () => {
+        console.log('手动测试自动打开聊天窗口功能')
+        this.autoOpenChatOnMobile()
+      },
+
+      // 强制打开聊天窗口（无论是否为移动端）
+      forceOpenChat: () => {
+        if (typeof window !== 'undefined' && window.quickChatApi?.open) {
+          try {
+            window.quickChatApi.openSandBox()
+            console.log('✅ 聊天窗口已强制打开')
+          } catch (error) {
+            console.error('❌ 强制打开聊天窗口失败:', error)
+          }
+        } else {
+          console.warn('⚠️ quickChatApi.open 方法不可用')
+        }
+      },
+
+      // 查看 quickChatApi 对象结构
+      inspectQuickChatApi: () => {
+        if (typeof window !== 'undefined' && window.quickChatApi) {
+          console.log('=== QuickChat API 对象结构 ===')
+
+          // 配置属性
+          console.log('📋 配置属性:', {
+            eventPrefix: window.quickChatApi.eventPrefix,
+            readyEventWasFired: window.quickChatApi.readyEventWasFired,
+            widgetAuto: window.quickChatApi.widgetAuto,
+            openConditionFn: typeof window.quickChatApi.openConditionFn
+          })
+
+          // 基础聊天功能
+          const chatMethods = ['open', 'close', 'chat', 'openSandBox', 'sendBotSandBox', 'sendMesSandBox']
+          console.log('💬 基础聊天功能:', chatMethods.filter(method =>
+            typeof window.quickChatApi![method] === 'function'
+          ))
+
+          // 消息相关方法
+          const messageMethods = ['sendMessage', 'setInInputValue', 'messageFromOperator', 'messageFromVisitor', 'clearCurrentMessageListFn']
+          console.log('📨 消息相关方法:', messageMethods.filter(method =>
+            typeof window.quickChatApi![method] === 'function'
+          ))
+
+          // 用户管理方法
+          const userMethods = ['getUserUUID', 'identify', 'setVisitorData', 'setContactProperties', 'setCustomParameters', 'addVisitorTags']
+          console.log('👤 用户管理方法:', userMethods.filter(method =>
+            typeof window.quickChatApi![method] === 'function'
+          ))
+
+          // 座席管理方法
+          const operatorMethods = ['emitGetAllOperatorStatus', 'switchChat']
+          console.log('🎧 座席管理方法:', operatorMethods.filter(method =>
+            typeof window.quickChatApi![method] === 'function'
+          ))
+
+          // 界面控制方法
+          const uiMethods = ['changeZoom', 'switchLanguage', 'cancelTemporarilyHide']
+          console.log('🎨 界面控制方法:', uiMethods.filter(method =>
+            typeof window.quickChatApi![method] === 'function'
+          ))
+
+          // 事件系统方法
+          const eventMethods = ['on', 'track', 'triggerFlowbot']
+          console.log('⚡ 事件系统方法:', eventMethods.filter(method =>
+            typeof window.quickChatApi![method] === 'function'
+          ))
+
+          // 自定义组件对象
+          console.log('🔧 自定义组件对象:', {
+            bottomCustomDrawer: Object.keys(window.quickChatApi.bottomCustomDrawer || {}),
+            leftCustomDrawer: Object.keys(window.quickChatApi.leftCustomDrawer || {}),
+            customHeader: Object.keys(window.quickChatApi.customHeader || {}),
+            customFooter: Object.keys(window.quickChatApi.customFooter || {}),
+            customLeftBar: Object.keys(window.quickChatApi.customLeftBar || {})
+          })
+
+          // 所有可用方法
+          const allMethods = Object.keys(window.quickChatApi).filter(key =>
+            typeof window.quickChatApi![key] === 'function'
+          )
+          console.log('🔍 所有可用方法 (' + allMethods.length + '个):', allMethods.sort())
+
+          console.log('📦 完整对象:', window.quickChatApi)
+          console.log('========================')
+
+          return window.quickChatApi
+        } else {
+          console.warn('⚠️ quickChatApi 不可用')
+          return null
+        }
+      },
+
+      // 测试特定的 API 方法
+      testApiMethods: () => {
+        if (typeof window !== 'undefined' && window.quickChatApi) {
+          console.log('=== 测试 QuickChat API 方法 ===')
+
+          // 测试获取用户 UUID
+          try {
+            if (typeof window.quickChatApi.getUserUUID === 'function') {
+              const uuid = window.quickChatApi.getUserUUID()
+              console.log('✅ getUserUUID():', uuid)
+            }
+          } catch (error) {
+            console.error('❌ getUserUUID() 失败:', error)
+          }
+
+          // 测试事件前缀
+          console.log('📋 eventPrefix:', window.quickChatApi.eventPrefix)
+
+          // 测试就绪状态
+          console.log('🔄 readyEventWasFired:', window.quickChatApi.readyEventWasFired)
+
+          // 测试自动小部件状态
+          console.log('🤖 widgetAuto:', window.quickChatApi.widgetAuto)
+
+          // 测试开放条件函数
+          try {
+            if (typeof window.quickChatApi.openConditionFn === 'function') {
+              const canOpen = window.quickChatApi.openConditionFn()
+              console.log('✅ openConditionFn():', canOpen)
+            }
+          } catch (error) {
+            console.error('❌ openConditionFn() 失败:', error)
+          }
+
+          console.log('========================')
+        } else {
+          console.warn('⚠️ quickChatApi 不可用')
+        }
+      },
+
+      // 测试沙盒功能
+      testSandboxMethods: () => {
+        if (typeof window !== 'undefined' && window.quickChatApi) {
+          console.log('=== 测试沙盒功能 ===')
+
+          // 测试打开沙盒
+          if (typeof window.quickChatApi.openSandBox === 'function') {
+            console.log('✅ openSandBox 方法可用')
+            // 可以在这里添加实际的测试调用
+            // window.quickChatApi.openSandBox()
+          } else {
+            console.warn('⚠️ openSandBox 方法不可用')
+          }
+
+          // 测试沙盒消息发送
+          if (typeof window.quickChatApi.sendMesSandBox === 'function') {
+            console.log('✅ sendMesSandBox 方法可用')
+          } else {
+            console.warn('⚠️ sendMesSandBox 方法不可用')
+          }
+
+          // 测试沙盒机器人消息
+          if (typeof window.quickChatApi.sendBotSandBox === 'function') {
+            console.log('✅ sendBotSandBox 方法可用')
+          } else {
+            console.warn('⚠️ sendBotSandBox 方法不可用')
+          }
+
+          console.log('========================')
+        } else {
+          console.warn('⚠️ quickChatApi 不可用')
         }
       },
 
@@ -1289,17 +1587,24 @@ export class ChatManager {
   /**
    * Send simplified order message
    */
-  private sendSimpleOrderMessage(orderItem: any): void {
-    if (typeof window !== 'undefined' && window.quickChatApi?.sendMessage) {
+  private async sendSimpleOrderMessage(orderItem: any): Promise<void> {
+    if (typeof window !== 'undefined' && window.quickChatApi) {
       const orderMessage = this.formatSimpleOrderMessage(orderItem)
       try {
-        window.quickChatApi.sendMessage(orderMessage)
-        console.log('Order message sent:', orderMessage)
+        // 先设置输入框内容
+        if (window.quickChatApi.setInInputValue) {
+          window.quickChatApi.setInInputValue(orderMessage)
+        }
+        // 然后发送消息
+        if (window.quickChatApi.sendMessage) {
+          await window.quickChatApi.sendMessage()
+          console.log('Order message sent:', orderMessage)
+        }
       } catch (error) {
         console.error('Failed to send order message:', error)
       }
     } else {
-      console.error('quickChatApi.sendMessage 方法不可用')
+      console.error('quickChatApi 方法不可用')
     }
   }
 
@@ -1346,6 +1651,59 @@ Type: ${this.getBusinessTypeName(orderItem.businessType)}`
 
     // Update left sidebar visibility
     this.updateLeftBarVisibility()
+  }
+
+  /**
+   * 检测是否为移动端设备
+   */
+  private isMobileDevice(): boolean {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return false
+    }
+
+    // 检测用户代理字符串
+    const userAgent = navigator.userAgent.toLowerCase()
+    const mobileKeywords = [
+      'android', 'webos', 'iphone', 'ipad', 'ipod',
+      'blackberry', 'windows phone', 'mobile', 'opera mini'
+    ]
+
+    const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword))
+
+    // 检测屏幕尺寸（宽度小于768px认为是移动端）
+    const isMobileScreen = window.innerWidth <= 768
+
+    // 检测触摸支持
+    const hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+    // 综合判断：用户代理包含移动设备关键词，或者屏幕宽度小于768px且支持触摸
+    return isMobileUA || (isMobileScreen && hasTouchSupport)
+  }
+
+  /**
+   * 在移动端自动打开聊天窗口
+   */
+  private autoOpenChatOnMobile(): void {
+    if (!this.isMobileDevice()) {
+      console.log('非移动端设备，跳过自动打开聊天窗口')
+      return
+    }
+
+    console.log('检测到移动端设备，准备自动打开聊天窗口')
+
+    // 延迟一段时间确保所有组件都已初始化完成
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.quickChatApi?.open) {
+        try {
+          window.quickChatApi.openSandBox()
+          console.log('✅ 移动端聊天窗口已自动打开')
+        } catch (error) {
+          console.error('❌ 自动打开聊天窗口失败:', error)
+        }
+      } else {
+        console.warn('⚠️ quickChatApi.open 方法不可用，无法自动打开聊天窗口')
+      }
+    }, 10) // 延迟1秒确保初始化完成
   }
 
   /**

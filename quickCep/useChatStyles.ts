@@ -562,6 +562,14 @@ export class ChatStyles {
           color: rgba(0, 0, 0, 0.45);
         }
 
+        /* 移动端样式 */
+        @media (max-width: 559px) {
+          .footer-btn.add-btn svg {
+            width: 24px;
+            height: 24px;
+          }
+        }
+
         .footer-btn.order-btn {
           background: #007bff;
           color: white;
