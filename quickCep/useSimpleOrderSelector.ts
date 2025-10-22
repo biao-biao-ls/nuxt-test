@@ -29,6 +29,23 @@ interface SimpleOrderSelectorState {
     Orders: SimpleOrderBatch[]
     Cart: SimpleOrderItem[]
   }
+  // 分页状态
+  pagination: {
+    Orders: {
+      currentPage: number
+      pageSize: number
+      hasMore: boolean
+      total: number
+    }
+    Cart: {
+      currentPage: number
+      pageSize: number
+      hasMore: boolean
+      total: number
+    }
+  }
+  // 加载更多状态
+  loadingMore: boolean
 }
 
 interface SimpleOrderBatch {
@@ -59,7 +76,23 @@ export class SimpleOrderSelector {
       cachedData: {
         Orders: [],
         Cart: []
-      }
+      },
+      // 初始化分页状态
+      pagination: {
+        Orders: {
+          currentPage: 1,
+          pageSize: 20,
+          hasMore: true,
+          total: 0
+        },
+        Cart: {
+          currentPage: 1,
+          pageSize: 20,
+          hasMore: true,
+          total: 0
+        }
+      },
+      loadingMore: false
     }
 
     // Bind global methods
@@ -140,6 +173,28 @@ export class SimpleOrderSelector {
       Orders: [],
       Cart: []
     }
+    // 重置分页状态
+    this.resetPagination()
+  }
+
+  /**
+   * 重置分页状态
+   */
+  private resetPagination(): void {
+    this.state.pagination = {
+      Orders: {
+        currentPage: 1,
+        pageSize: 20,
+        hasMore: true,
+        total: 0
+      },
+      Cart: {
+        currentPage: 1,
+        pageSize: 20,
+        hasMore: true,
+        total: 0
+      }
+    }
   }
 
   /**
@@ -149,6 +204,11 @@ export class SimpleOrderSelector {
     // 清除当前标签页缓存
     this.state.dataLoaded[this.state.activeName] = false
     this.state.cachedData[this.state.activeName] = this.state.activeName === 'Orders' ? [] : []
+
+    // 重置分页状态
+    this.state.pagination[this.state.activeName].currentPage = 1
+    this.state.pagination[this.state.activeName].hasMore = true
+    this.state.pagination[this.state.activeName].total = 0
 
     // 重新加载
     await this.lazyLoadCurrentTab()
@@ -200,7 +260,7 @@ export class SimpleOrderSelector {
                    onclick="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).switchTab('Cart')">Cart</div>
             </div>
             
-            <div class="simple-order-list">
+            <div class="simple-order-list" onscroll="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).handleScroll(event)">
               <div class="loading">Loading...</div>
             </div>
           </div>
@@ -357,6 +417,11 @@ export class SimpleOrderSelector {
     // 搜索时清除当前标签页的缓存，强制重新加载
     this.state.dataLoaded[this.state.activeName] = false
     this.state.cachedData[this.state.activeName] = this.state.activeName === 'Orders' ? [] : []
+    
+    // 重置分页状态
+    this.state.pagination[this.state.activeName].currentPage = 1
+    this.state.pagination[this.state.activeName].hasMore = true
+    this.state.pagination[this.state.activeName].total = 0
 
     this.state.loading = true
     this.updateOrderList() // 显示加载状态
@@ -364,6 +429,83 @@ export class SimpleOrderSelector {
     // 添加短暂延迟提升用户体验
     await new Promise(resolve => setTimeout(resolve, 200))
     await this.lazyLoadCurrentTab()
+  }
+
+  /**
+   * 处理滚动事件，实现分页加载
+   */
+  handleScroll(event: Event): void {
+    const target = event.target as HTMLElement
+    if (!target) return
+
+    const { scrollTop, scrollHeight, clientHeight } = target
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight
+
+    // 当滚动到底部附近时（90%），触发加载更多
+    if (scrollPercentage > 0.9 && !this.state.loadingMore && this.state.pagination[this.state.activeName].hasMore) {
+      this.loadMore()
+    }
+  }
+
+  /**
+   * 加载更多数据
+   */
+  private async loadMore(): Promise<void> {
+    if (this.state.loadingMore || !this.state.pagination[this.state.activeName].hasMore) {
+      return
+    }
+
+    this.state.loadingMore = true
+    this.state.pagination[this.state.activeName].currentPage += 1
+
+    // 显示加载更多指示器
+    this.showLoadMoreIndicator()
+
+    try {
+      if (this.state.activeName === 'Orders') {
+        await this.loadOrdersData(true) // true 表示追加模式
+      } else {
+        await this.loadCartData(true) // true 表示追加模式
+      }
+    } catch (error) {
+      console.error('Failed to load more data:', error)
+      // 加载失败时回退页码
+      this.state.pagination[this.state.activeName].currentPage -= 1
+    } finally {
+      this.state.loadingMore = false
+      this.hideLoadMoreIndicator()
+      this.updateOrderList()
+    }
+  }
+
+  /**
+   * 显示加载更多指示器
+   */
+  private showLoadMoreIndicator(): void {
+    const orderListContainer = this.container?.querySelector('.simple-order-list') as HTMLElement
+    if (orderListContainer) {
+      let loadMoreIndicator = orderListContainer.querySelector('.load-more-indicator') as HTMLElement
+      if (!loadMoreIndicator) {
+        loadMoreIndicator = document.createElement('div')
+        loadMoreIndicator.className = 'load-more-indicator'
+        loadMoreIndicator.innerHTML = `
+          <div class="loading-spinner"></div>
+          <span>Loading more...</span>
+        `
+        orderListContainer.appendChild(loadMoreIndicator)
+      }
+      loadMoreIndicator.style.display = 'flex'
+    }
+  }
+
+  /**
+   * 隐藏加载更多指示器
+   */
+  private hideLoadMoreIndicator(): void {
+    const loadMoreIndicator = this.container?.querySelector('.load-more-indicator') as HTMLElement
+    if (loadMoreIndicator) {
+      loadMoreIndicator.style.display = 'none'
+    }
   }
 
   /**
@@ -396,6 +538,13 @@ export class SimpleOrderSelector {
       return
     }
 
+    // 重置当前标签页的分页状态（如果是新的搜索或切换标签页）
+    if (!this.state.dataLoaded[currentTab] || this.hasSearchChanged()) {
+      this.state.pagination[currentTab].currentPage = 1
+      this.state.pagination[currentTab].hasMore = true
+      this.state.pagination[currentTab].total = 0
+    }
+
     // 显示加载状态
     this.state.loading = true
     this.updateOrderList()
@@ -403,11 +552,9 @@ export class SimpleOrderSelector {
     try {
       // 根据当前标签页加载对应数据
       if (currentTab === 'Orders') {
-        await this.loadOrdersData()
-        this.state.cachedData.Orders = [...this.state.orderList]
+        await this.loadOrdersData(false) // false 表示替换模式
       } else {
-        await this.loadCartData()
-        this.state.cachedData.Cart = [...this.state.cartList]
+        await this.loadCartData(false) // false 表示替换模式
       }
 
       // 标记数据已加载
@@ -523,19 +670,36 @@ export class SimpleOrderSelector {
   /**
    * 加载订单数据
    */
-  private async loadOrdersData(): Promise<void> {
+  private async loadOrdersData(append: boolean = false): Promise<void> {
+    const pagination = this.state.pagination.Orders
     const params = new URLSearchParams()
+    
     if (this.state.keyword) {
       params.append('keyword', this.state.keyword)
     }
-    params.append('pageNum', '1')
-    params.append('pageSize', '20')
+    params.append('pageNum', pagination.currentPage.toString())
+    params.append('pageSize', pagination.pageSize.toString())
 
     const response = await fetch(`/api/simple-orders?${params.toString()}`)
     const result = await response.json()
 
     if (result.success && result.data && result.data.list) {
-      this.state.orderList = this.transformOrdersData(result.data.list)
+      const newData = this.transformOrdersData(result.data.list)
+      
+      if (append) {
+        // 追加模式：合并新数据到现有数据
+        this.state.orderList = [...this.state.orderList, ...newData]
+        this.state.cachedData.Orders = [...this.state.cachedData.Orders, ...newData]
+      } else {
+        // 替换模式：替换所有数据
+        this.state.orderList = newData
+        this.state.cachedData.Orders = [...newData]
+      }
+
+      // 更新分页信息
+      pagination.total = result.data.total || 0
+      pagination.hasMore = newData.length === pagination.pageSize && 
+                          (pagination.currentPage * pagination.pageSize) < pagination.total
     } else {
       throw new Error('Invalid orders data format')
     }
@@ -544,17 +708,36 @@ export class SimpleOrderSelector {
   /**
    * 加载购物车数据
    */
-  private async loadCartData(): Promise<void> {
+  private async loadCartData(append: boolean = false): Promise<void> {
+    const pagination = this.state.pagination.Cart
     const params = new URLSearchParams()
+    
     if (this.state.keyword) {
       params.append('keyword', this.state.keyword)
     }
+    params.append('pageNum', pagination.currentPage.toString())
+    params.append('pageSize', pagination.pageSize.toString())
 
     const response = await fetch(`/api/shopping-cart?${params.toString()}`)
     const result = await response.json()
 
     if (result.code === 200 && result.data && result.data.list) {
-      this.state.cartList = this.transformCartData(result.data.list)
+      const newData = this.transformCartData(result.data.list)
+      
+      if (append) {
+        // 追加模式：合并新数据到现有数据
+        this.state.cartList = [...this.state.cartList, ...newData]
+        this.state.cachedData.Cart = [...this.state.cachedData.Cart, ...newData]
+      } else {
+        // 替换模式：替换所有数据
+        this.state.cartList = newData
+        this.state.cachedData.Cart = [...newData]
+      }
+
+      // 更新分页信息
+      pagination.total = result.data.total || 0
+      pagination.hasMore = newData.length === pagination.pageSize && 
+                          (pagination.currentPage * pagination.pageSize) < pagination.total
     } else {
       throw new Error('Invalid cart data format')
     }
@@ -665,7 +848,7 @@ export class SimpleOrderSelector {
       return '<div class="no-data">No items in cart</div>'
     }
 
-    return this.state.cartList.map(item => `
+    const itemsHtml = this.state.cartList.map(item => `
       <div class="simple-order-item" onclick="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${item.orderCode}')">
         <div class="order-image">
           <img src="${this.getOrderImageUrl(item)}" alt="${item.title}" onerror="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).handleImageError(this)" loading="lazy">
@@ -678,6 +861,11 @@ export class SimpleOrderSelector {
         <button class="send-btn" onclick="event.stopPropagation(); (window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${item.orderCode}')">Send</button>
       </div>
     `).join('')
+
+    // 添加分页状态指示器
+    const paginationInfo = this.renderPaginationInfo('Cart')
+    
+    return itemsHtml + paginationInfo
   }
 
   /**
@@ -688,7 +876,7 @@ export class SimpleOrderSelector {
       return '<div class="no-data">No orders found</div>'
     }
 
-    return this.state.orderList.map(batch => `
+    const batchesHtml = this.state.orderList.map(batch => `
       <div class="order-batch">
         <div class="batch-header">
           <span class="batch-num">${batch.batchNum}</span>
@@ -711,6 +899,48 @@ export class SimpleOrderSelector {
         </div>
       </div>
     `).join('')
+
+    // 添加分页状态指示器
+    const paginationInfo = this.renderPaginationInfo('Orders')
+    
+    return batchesHtml + paginationInfo
+  }
+
+  /**
+   * 渲染分页信息
+   */
+  private renderPaginationInfo(tabName: 'Orders' | 'Cart'): string {
+    const pagination = this.state.pagination[tabName]
+    const currentCount = tabName === 'Orders' ? 
+      this.state.orderList.reduce((sum, batch) => sum + batch.orderSimpleVOS.length, 0) : 
+      this.state.cartList.length
+
+    if (this.state.loadingMore) {
+      return `
+        <div class="load-more-indicator">
+          <div class="loading-spinner"></div>
+          <span>Loading more...</span>
+        </div>
+      `
+    }
+
+    if (!pagination.hasMore && currentCount > 0) {
+      return `
+        <div class="no-more-data">
+          <span>All ${currentCount} items loaded</span>
+        </div>
+      `
+    }
+
+    if (pagination.hasMore && currentCount > 0) {
+      return `
+        <div class="scroll-hint">
+          <span>Scroll down to load more (${currentCount}/${pagination.total})</span>
+        </div>
+      `
+    }
+
+    return ''
   }
 
   /**
@@ -718,60 +948,15 @@ export class SimpleOrderSelector {
    */
   private getMockOrderBatches(): SimpleOrderBatch[] {
     const keyword = this.state.keyword.toLowerCase()
-    const allBatches = [
-      {
-        batchNum: "W2025101311330202",
-        createTime: "2025-10-13",
-        orderSimpleVOS: [
-          {
-            title: "pcbwenjian2(Reorder)_Y11898",
-            orderCode: "Y11898-5011496A",
-            orderAmount: "$15.63",
-            businessType: "order_pcb"
-          },
-          {
-            title: "pcbwenjian2(Reorder)_Y11899",
-            orderCode: "SMT025101360000",
-            orderAmount: "$10071.05",
-            businessType: "order_smt"
-          }
-        ]
-      },
-      {
-        batchNum: "W2025101311230182",
-        createTime: "2025-10-13",
-        orderSimpleVOS: [
-          {
-            title: "1.STEP",
-            orderCode: "SMS2510133000010",
-            orderAmount: "$8.22",
-            businessType: "order_plate_metal"
-          },
-          {
-            title: "3.STEP",
-            orderCode: "SMS2510133000011",
-            orderAmount: "$82.43",
-            businessType: "order_plate_metal"
-          }
-        ]
-      },
-      {
-        batchNum: "W2025101117310524",
-        createTime: "2025-10-11",
-        orderSimpleVOS: [
-          {
-            title: "dan1.STEP",
-            orderCode: "SMS2510113000010",
-            orderAmount: "$27.84",
-            businessType: "order_plate_metal"
-          }
-        ]
-      }
-    ]
+    const pagination = this.state.pagination.Orders
+    
+    // 生成更多模拟数据以测试分页
+    const allBatches = this.generateMockOrderBatches()
 
     // 如果有搜索关键词，进行过滤
+    let filteredBatches = allBatches
     if (keyword) {
-      return allBatches.map(batch => ({
+      filteredBatches = allBatches.map(batch => ({
         ...batch,
         orderSimpleVOS: batch.orderSimpleVOS.filter(order =>
           order.title.toLowerCase().includes(keyword) ||
@@ -780,7 +965,43 @@ export class SimpleOrderSelector {
       })).filter(batch => batch.orderSimpleVOS.length > 0)
     }
 
-    return allBatches
+    // 模拟分页
+    const startIndex = (pagination.currentPage - 1) * pagination.pageSize
+    const endIndex = startIndex + pagination.pageSize
+    const paginatedBatches = filteredBatches.slice(startIndex, endIndex)
+
+    // 更新分页信息
+    pagination.total = filteredBatches.length
+    pagination.hasMore = endIndex < filteredBatches.length
+
+    return paginatedBatches
+  }
+
+  /**
+   * 生成更多模拟订单批次数据
+   */
+  private generateMockOrderBatches(): SimpleOrderBatch[] {
+    const batches: SimpleOrderBatch[] = []
+    const businessTypes = ['order_pcb', 'order_smt', 'order_plate_metal', 'order_steel', 'order_cnc']
+    
+    for (let i = 0; i < 50; i++) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
+      
+      batches.push({
+        batchNum: `W${dateStr}${String(i).padStart(8, '0')}`,
+        createTime: date.toISOString().slice(0, 10),
+        orderSimpleVOS: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, (_, j) => ({
+          title: `Order_${i}_${j}_${Math.random().toString(36).substr(2, 5)}`,
+          orderCode: `ORD${dateStr}${String(i * 10 + j).padStart(6, '0')}`,
+          orderAmount: `$${(Math.random() * 1000 + 10).toFixed(2)}`,
+          businessType: businessTypes[Math.floor(Math.random() * businessTypes.length)]
+        }))
+      })
+    }
+    
+    return batches
   }
 
   /**
@@ -788,48 +1009,53 @@ export class SimpleOrderSelector {
    */
   private getMockCartItems(): SimpleOrderItem[] {
     const keyword = this.state.keyword.toLowerCase()
-    const allItems = [
-      {
-        title: "pcbwenjian2(Reorder)_Y11899",
-        orderCode: "Y11899-5011496A",
-        orderAmount: "$10.53",
-        businessType: "order_pcb"
-      },
-      {
-        title: "DEFdemo1-SO12510116003",
-        orderCode: "SO12510116003",
-        orderAmount: "$12.44",
-        businessType: "order_steel"
-      },
-      {
-        title: "pcbwenjian2(Reorder)_Y11900",
-        orderCode: "SMT025101360001",
-        orderAmount: "$10071.05",
-        businessType: "order_smt"
-      },
-      {
-        title: "PNG.png",
-        orderCode: "FH2025101049500006",
-        orderAmount: "$5.55",
-        businessType: "order_flexheater"
-      },
-      {
-        title: "dan1.STEP",
-        orderCode: "SMS2510113000012",
-        orderAmount: "$27.84",
-        businessType: "order_plate_metal"
-      }
-    ]
+    const pagination = this.state.pagination.Cart
+    
+    // 生成更多模拟数据以测试分页
+    const allItems = this.generateMockCartItems()
 
     // 如果有搜索关键词，进行过滤
+    let filteredItems = allItems
     if (keyword) {
-      return allItems.filter(item =>
+      filteredItems = allItems.filter(item =>
         item.title.toLowerCase().includes(keyword) ||
         item.orderCode.toLowerCase().includes(keyword)
       )
     }
 
-    return allItems
+    // 模拟分页
+    const startIndex = (pagination.currentPage - 1) * pagination.pageSize
+    const endIndex = startIndex + pagination.pageSize
+    const paginatedItems = filteredItems.slice(startIndex, endIndex)
+
+    // 更新分页信息
+    pagination.total = filteredItems.length
+    pagination.hasMore = endIndex < filteredItems.length
+
+    return paginatedItems
+  }
+
+  /**
+   * 生成更多模拟购物车数据
+   */
+  private generateMockCartItems(): SimpleOrderItem[] {
+    const items: SimpleOrderItem[] = []
+    const businessTypes = ['order_pcb', 'order_smt', 'order_plate_metal', 'order_steel', 'order_cnc', 'order_flexheater', 'order_tdp']
+    const fileTypes = ['PCB', 'SMT', 'Steel', 'CNC', 'FlexHeater', '3D Print', 'Plate Metal']
+    
+    for (let i = 0; i < 100; i++) {
+      const businessType = businessTypes[Math.floor(Math.random() * businessTypes.length)]
+      const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)]
+      
+      items.push({
+        title: `${fileType}_Item_${i}_${Math.random().toString(36).substr(2, 5)}`,
+        orderCode: `CART${String(i).padStart(6, '0')}`,
+        orderAmount: `$${(Math.random() * 500 + 5).toFixed(2)}`,
+        businessType
+      })
+    }
+    
+    return items
   }
 
   /**
@@ -1453,6 +1679,48 @@ export class SimpleOrderSelector {
 
         .simple-order-list::-webkit-scrollbar-thumb:hover {
           background: #a8a8a8;
+        }
+
+        /* 分页加载相关样式 */
+        .load-more-indicator {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          color: #666;
+          font-size: 14px;
+          border-top: 1px solid #f0f0f0;
+          margin-top: 10px;
+        }
+
+        .loading-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid #e0e0e0;
+          border-top: 2px solid #007bff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-right: 8px;
+        }
+
+        .no-more-data {
+          text-align: center;
+          padding: 20px;
+          color: #999;
+          font-size: 13px;
+          border-top: 1px solid #f0f0f0;
+          margin-top: 10px;
+          background: #fafafa;
+        }
+
+        .scroll-hint {
+          text-align: center;
+          padding: 15px;
+          color: #999;
+          font-size: 12px;
+          border-top: 1px solid #f0f0f0;
+          margin-top: 10px;
+          background: linear-gradient(to bottom, transparent, #fafafa);
         }
       </style>
     `

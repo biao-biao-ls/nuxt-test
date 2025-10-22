@@ -138,24 +138,34 @@ export class ChatCustomUI {
    * 检测是否为移动端设备
    */
   private isMobileDevice(): boolean {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    if (typeof window === "undefined" || typeof navigator === "undefined") {
       return false;
     }
 
     // 检测用户代理字符串
     const userAgent = navigator.userAgent.toLowerCase();
     const mobileKeywords = [
-      'android', 'webos', 'iphone', 'ipad', 'ipod',
-      'blackberry', 'windows phone', 'mobile', 'opera mini'
+      "android",
+      "webos",
+      "iphone",
+      "ipad",
+      "ipod",
+      "blackberry",
+      "windows phone",
+      "mobile",
+      "opera mini",
     ];
 
-    const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
+    const isMobileUA = mobileKeywords.some((keyword) =>
+      userAgent.includes(keyword)
+    );
 
     // 检测屏幕尺寸（宽度小于768px认为是移动端）
     const isMobileScreen = window.innerWidth <= 768;
 
     // 检测触摸支持
-    const hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const hasTouchSupport =
+      "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
     // 综合判断：用户代理包含移动设备关键词，或者屏幕宽度小于768px且支持触摸
     return isMobileUA || (isMobileScreen && hasTouchSupport);
@@ -408,12 +418,15 @@ export class ChatCustomUI {
   getDefaultAvatar(size: number): string {
     return `data:image/svg+xml;base64,${btoa(`
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2
-      }" fill="#e0e0e0"/>
-        <circle cx="${size / 2}" cy="${size * 0.35}" r="${size * 0.15
-      }" fill="#999"/>
-        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${size * 0.75
-      } ${size * 0.75}" stroke="#999" stroke-width="2" fill="none"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${
+      size / 2
+    }" fill="#e0e0e0"/>
+        <circle cx="${size / 2}" cy="${size * 0.35}" r="${
+      size * 0.15
+    }" fill="#999"/>
+        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${
+      size * 0.75
+    } ${size * 0.75}" stroke="#999" stroke-width="2" fill="none"/>
       </svg>
     `)}`;
   }
@@ -422,7 +435,7 @@ export class ChatCustomUI {
    * 工具函数：截断文本
    */
   truncateText(text: string, maxLength: number): string {
-    return text
+    return text;
   }
 
   /**
@@ -659,7 +672,7 @@ export class ChatCustomUI {
         const currentDoc = this.getCurrentDocument();
         const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
         if (leftBarParent) {
-          leftBarParent.style.display = 'none'
+          leftBarParent.style.display = "none";
         }
       }
       // 当前左侧栏显示，点击后隐藏
@@ -675,10 +688,9 @@ export class ChatCustomUI {
         const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
 
         if (leftBarParent) {
-          leftBarParent.style.display = 'block'
+          leftBarParent.style.display = "block";
         }
       }
-
     }
 
     // 在移动端立即更新定位
@@ -957,8 +969,8 @@ export class ChatCustomUI {
               <div class="operator-info">
                 <div class="operator-name">${agent.employeeEnName}</div>
                 <div class="operator-status-text" style="color: ${this.getStatusColor(
-          agent.status
-        )};">
+                  agent.status
+                )};">
                   ${this.getStatusText(agent.status)}
                 </div>
               </div>
@@ -1173,19 +1185,22 @@ export class ChatCustomUI {
       <div class="chat-header">
         <div class="chat-header-agents">
           ${this.renderCurrentAgent()}
-          ${shouldShowOperatorAgents
-        ? this.renderOperatorAgents(operatorAgentsToShow)
-        : ""
-      }
-          ${shouldShowOperatorMoreIndicator
-        ? this.renderOperatorMoreAgentsIndicator(operatorAgentsCount)
-        : ""
-      }
+          ${
+            shouldShowOperatorAgents
+              ? this.renderOperatorAgents(operatorAgentsToShow)
+              : ""
+          }
+          ${
+            shouldShowOperatorMoreIndicator
+              ? this.renderOperatorMoreAgentsIndicator(operatorAgentsCount)
+              : ""
+          }
           ${shouldShowOpenIcon ? this.renderOpenLeftBarIcon() : ""}
-          ${onlineAgents.length === 0 && !this.state.currentChatAgent
-        ? `<div class="no-agents"></div>` // No agents online
-        : ""
-      }
+          ${
+            onlineAgents.length === 0 && !this.state.currentChatAgent
+              ? `<div class="no-agents"></div>` // No agents online
+              : ""
+          }
         </div>
       </div>
       <div id="agent-tooltip" class="agent-tooltip"></div>
@@ -1220,10 +1235,11 @@ export class ChatCustomUI {
     return `
       <div class="current-agent selected" 
            title="Current Chat: ${agent.employeeEnName}"
-           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${agent.employeeEnName
-      }', '${agent.roleNameEn}', '${this.getAvatarUrl(
-        agent.imageFileIndexId
-      )}'); } catch(e) { console.error('Tooltip error:', e); }"
+           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
+             agent.employeeEnName
+           }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+      agent.imageFileIndexId
+    )}'); } catch(e) { console.error('Tooltip error:', e); }"
            onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }">
         <div class="agent-avatar-wrapper">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
@@ -1231,8 +1247,8 @@ export class ChatCustomUI {
                style="border-color: ${agent.isOnline ? "#007bff" : "#d8d8d8"};"
                onerror="this.src='${this.getDefaultAvatar(36)}'">
           <div class="status-indicator" style="background: ${this.getStatusColor(
-        agent.status
-      )};"></div>
+            agent.status
+          )};"></div>
         </div>
         <div class="agent-name-display">${agent.employeeEnName}</div>
       </div>
@@ -1252,12 +1268,14 @@ export class ChatCustomUI {
       .map(
         (agent) => `
         <div class="online-agent"
-             onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId
-          }')"
-             onmouseover="try { (window.chatUI || window.parent.chatUI).showTooltip(event, '${agent.employeeEnName
-          }', '${agent.roleNameEn}', '${this.getAvatarUrl(
-            agent.imageFileIndexId
-          )}'); } catch(e) { console.error('Tooltip error:', e); }"
+             onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${
+               agent.quickCepId
+             }')"
+             onmouseover="try { (window.chatUI || window.parent.chatUI).showTooltip(event, '${
+               agent.employeeEnName
+             }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+          agent.imageFileIndexId
+        )}'); } catch(e) { console.error('Tooltip error:', e); }"
              onmouseout="try { (window.chatUI || window.parent.chatUI).hideTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }"
              title="${agent.employeeEnName} - ${agent.roleNameEn}">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
@@ -1286,8 +1304,8 @@ export class ChatCustomUI {
                class="agent-avatar operator"
                onerror="this.src='${this.getDefaultAvatar(28)}'">
           <div class="status-indicator" style="background: ${this.getStatusColor(
-          agent.status
-        )};"></div>
+            agent.status
+          )};"></div>
         </div>
       `
       )
@@ -1348,21 +1366,23 @@ export class ChatCustomUI {
 
     return `
       ${ChatStyles.generateLeftBarStyles()}
-      <div class="left-bar${this.isMobileDevice() ? ' mobile' : ''}">
+      <div class="left-bar${this.isMobileDevice() ? " mobile" : ""}">
         <div class="left-bar-content">
           ${Object.entries(groupedAgents)
-        .map(([businessLine, agents]) =>
-          this.renderBusinessLineGroup(businessLine, agents)
-        )
-        .join("")}
+            .map(([businessLine, agents]) =>
+              this.renderBusinessLineGroup(businessLine, agents)
+            )
+            .join("")}
         </div>
-        <div class="left-bar-footer${this.isMobileDevice() ? ' mobile' : ''}">
+        <div class="left-bar-footer${this.isMobileDevice() ? " mobile" : ""}">
             <svg onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()" t="1758522231178" class="expand-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
               <path d="M636.501333 383.658667a37.973333 37.973333 0 0 1 41.898667 62.762666l-3.157333 2.304-99.925334 66.645334 103.210667 86.016a37.930667 37.930667 0 1 1-48.554667 58.24l-142.250666-118.485334a37.973333 37.973333 0 0 1 3.242666-60.714666L633.173333 385.706667l3.328-2.005334zM308.181333 891.306667V156.416a37.930667 37.930667 0 1 1 75.818667 0v734.805333a37.930667 37.930667 0 0 1-75.818667 0z" fill="#999" p-id="15574"></path>
               <path d="M749.056 862.848V938.666667H274.986667v-75.818667h474.026666z m113.792-113.792V274.944a113.792 113.792 0 0 0-113.792-113.792H274.986667a113.792 113.792 0 0 0-113.792 113.792v474.112a113.792 113.792 0 0 0 113.792 113.792V938.666667l-9.770667-0.256a189.653333 189.653333 0 0 1-179.626667-179.626667L85.333333 749.056V274.944a189.653333 189.653333 0 0 1 179.882667-189.354667L274.986667 85.333333h474.026666l9.813334 0.256A189.610667 189.610667 0 0 1 938.666667 274.944v474.112l-0.256 9.728a189.653333 189.653333 0 0 1-179.626667 179.626667l-9.728 0.256v-75.818667a113.834667 113.834667 0 0 0 113.792-113.792z" fill="#999" p-id="15575"></path>
             </svg>
         </div>
-        <div class="left-bar-close-btn${this.isMobileDevice() ? ' mobile' : ''}" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()">
+        <div class="left-bar-close-btn${
+          this.isMobileDevice() ? " mobile" : ""
+        }" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()">
           <svg width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 4L4 12M4 4L12 12" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -1400,16 +1420,19 @@ export class ChatCustomUI {
     const canClick = isOnline;
 
     return `
-      <div class="agent-item ${isCurrentChat ? "current" : ""} ${isOnline ? "online" : "offline"
-      }"
-           ${canClick
-        ? `onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId}')"`
-        : ""
-      }
-           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${agent.employeeEnName
-      }', '${agent.roleNameEn}', '${this.getAvatarUrl(
-        agent.imageFileIndexId
-      )}'); } catch(e) { console.error('Full tooltip error:', e); }"
+      <div class="agent-item ${isCurrentChat ? "current" : ""} ${
+      isOnline ? "online" : "offline"
+    }"
+           ${
+             canClick
+               ? `onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId}')"`
+               : ""
+           }
+           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
+             agent.employeeEnName
+           }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+      agent.imageFileIndexId
+    )}'); } catch(e) { console.error('Full tooltip error:', e); }"
            onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide full tooltip error:', e); }">
 
         <div class="agent-avatar-container">
@@ -1417,19 +1440,19 @@ export class ChatCustomUI {
                class="agent-avatar"
                onerror="this.src='${this.getDefaultAvatar(32)}'">
           <div class="status-indicator" style="background: ${this.getStatusColor(
-        agent.status
-      )};"></div>
+            agent.status
+          )};"></div>
         </div>
 
         <div class="agent-info">
           <div class="agent-name">${this.truncateText(
-        agent.employeeEnName,
-        8
-      )}</div>
+            agent.employeeEnName,
+            8
+          )}</div>
           <div class="agent-role">${this.truncateText(
-        agent.roleNameEn,
-        12
-      )}</div>
+            agent.roleNameEn,
+            12
+          )}</div>
         </div>
       </div>
     `;
@@ -1442,7 +1465,7 @@ export class ChatCustomUI {
     return `
       ${ChatStyles.generateFooterStyles()}
       <div class="chat-footer">
-        <div class="footer-actions${this.isMobileDevice() ? ' mobile' : ''}">
+        <div class="footer-actions${this.isMobileDevice() ? " mobile" : ""}">
           <button class="footer-btn add-btn" title="send order" onclick="if(window.handleOrderButtonClick) window.handleOrderButtonClick(); else if(window.parent && window.parent.postMessage) window.parent.postMessage({type:'TOGGLE_ORDER_SELECTOR'},'*');">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M13.1116 4.91628H5.46284L5.46647 2.90638C5.46647 2.37896 5.89556 1.94987 6.42298 1.94987H7.41064C7.76377 1.2467 8.48817 0.790769 9.29087 0.790769C10.0936 0.790769 10.818 1.2467 11.1711 1.94987H12.1587C12.6862 1.94987 13.1153 2.37896 13.1153 2.90638L13.1116 4.91628ZM6.22871 4.15041H12.3458L12.3494 2.90638C12.3494 2.80126 12.2639 2.71574 12.1588 2.71574H10.6449L10.5558 2.45774C10.3698 1.91876 9.86146 1.55664 9.29087 1.55664C8.72027 1.55664 8.21192 1.91876 8.02589 2.45774L7.93684 2.71574H6.42298C6.31786 2.71574 6.23234 2.80126 6.23234 2.90638L6.22871 4.15041Z" fill="#999999"/>
@@ -1677,7 +1700,6 @@ export class ChatCustomUI {
 
       // 添加过渡动画
       leftBarParent.style.transition = "right 0.3s ease-in-out";
-
     } catch (error) {
       console.error("设置移动端左侧栏定位时出错:", error);
     }
