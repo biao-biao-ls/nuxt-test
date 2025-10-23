@@ -18,6 +18,19 @@ useHead({
 });
 
 onMounted(() => {
+  window.$nuxt  = {
+    $store: {
+      state: {
+        isQuickCepReady: false,
+        user: {
+          info: {
+            customerCode: '9201895A'
+          }
+        }
+      }
+    }
+  }
+  window.$nuxt.$store.state.isQuickCepReady;
   initQuickCep({
     "3D Printing": [
       {

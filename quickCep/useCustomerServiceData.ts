@@ -1,5 +1,6 @@
 // Customer service data management tools
 interface CustomerServiceAgent {
+  employeeNameEn: string
   employeeEnName: string
   quickCepId: string
   imageFileIndexId: string

@@ -3,6 +3,8 @@
  * Display directly in bottom area, does not depend on bottomCustomDrawer API
  */
 
+import { imShoppingCartPage, orderCenterSimpleOrder } from '../../apis'
+
 interface SimpleOrderItem {
   title: string
   orderCode: string
@@ -303,7 +305,7 @@ export class SimpleOrderSelector {
    */
   private updateTabs(): void {
     const tabs = this.container?.querySelectorAll('.tab-item')
-    tabs?.forEach(tab => {
+    tabs?.forEach((tab) => {
       const tabElement = tab as HTMLElement
       const tabName = tabElement.getAttribute('data-tab') as 'Orders' | 'Cart'
 
@@ -315,7 +317,7 @@ export class SimpleOrderSelector {
 
         // 如果当前标签页正在加载数据，显示加载状态
         if (this.state.loading && !this.state.dataLoaded[tabName]) {
-          tabElement.classList.add('loading')
+          // tabElement.classList.add('loading')
         }
       }
     })
@@ -372,7 +374,10 @@ export class SimpleOrderSelector {
    * 渲染骨架屏
    */
   private renderSkeletonScreen(): string {
-    const skeletonItems = Array(3).fill(0).map(() => `
+    const skeletonItems = Array(3)
+      .fill(0)
+      .map(
+        () => `
       <div class="skeleton-item">
         <div class="skeleton-image"></div>
         <div class="skeleton-content">
@@ -382,7 +387,9 @@ export class SimpleOrderSelector {
         </div>
         <div class="skeleton-button"></div>
       </div>
-    `).join('')
+    `
+      )
+      .join('')
 
     return `
       <div class="skeleton-container">
@@ -417,7 +424,7 @@ export class SimpleOrderSelector {
     // 搜索时清除当前标签页的缓存，强制重新加载
     this.state.dataLoaded[this.state.activeName] = false
     this.state.cachedData[this.state.activeName] = this.state.activeName === 'Orders' ? [] : []
-    
+
     // 重置分页状态
     this.state.pagination[this.state.activeName].currentPage = 1
     this.state.pagination[this.state.activeName].hasMore = true
@@ -427,7 +434,7 @@ export class SimpleOrderSelector {
     this.updateOrderList() // 显示加载状态
 
     // 添加短暂延迟提升用户体验
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise((resolve) => setTimeout(resolve, 200))
     await this.lazyLoadCurrentTab()
   }
 
@@ -562,7 +569,6 @@ export class SimpleOrderSelector {
 
       // 启动预加载另一个标签页
       this.preloadOtherTab()
-
     } catch (error) {
       console.error(`Failed to load ${currentTab} data:`, error)
       // 降级到模拟数据
@@ -672,36 +678,35 @@ export class SimpleOrderSelector {
    */
   private async loadOrdersData(append: boolean = false): Promise<void> {
     const pagination = this.state.pagination.Orders
-    const params = new URLSearchParams()
-    
-    if (this.state.keyword) {
-      params.append('keyword', this.state.keyword)
-    }
-    params.append('pageNum', pagination.currentPage.toString())
-    params.append('pageSize', pagination.pageSize.toString())
 
-    const response = await fetch(`/api/simple-orders?${params.toString()}`)
-    const result = await response.json()
+    try {
+      const data = await orderCenterSimpleOrder({
+        pageNum: pagination.currentPage,
+        pageSize: pagination.pageSize,
+        qryCondition: this.state.keyword
+      })
+      if (data.list) {
+        const newData = this.transformOrdersData(data.list)
 
-    if (result.success && result.data && result.data.list) {
-      const newData = this.transformOrdersData(result.data.list)
-      
-      if (append) {
-        // 追加模式：合并新数据到现有数据
-        this.state.orderList = [...this.state.orderList, ...newData]
-        this.state.cachedData.Orders = [...this.state.cachedData.Orders, ...newData]
+        if (append) {
+          // 追加模式：合并新数据到现有数据
+          this.state.orderList = [...this.state.orderList, ...newData]
+          this.state.cachedData.Orders = [...this.state.cachedData.Orders, ...newData]
+        } else {
+          // 替换模式：替换所有数据
+          this.state.orderList = newData
+          this.state.cachedData.Orders = [...newData]
+        }
+
+        // 更新分页信息
+        pagination.total = data.total || 0
+        pagination.hasMore =
+          newData.length === pagination.pageSize && pagination.currentPage * pagination.pageSize < pagination.total
       } else {
-        // 替换模式：替换所有数据
-        this.state.orderList = newData
-        this.state.cachedData.Orders = [...newData]
+        throw new Error('Invalid orders data format')
       }
-
-      // 更新分页信息
-      pagination.total = result.data.total || 0
-      pagination.hasMore = newData.length === pagination.pageSize && 
-                          (pagination.currentPage * pagination.pageSize) < pagination.total
-    } else {
-      throw new Error('Invalid orders data format')
+    } catch (err) {
+      console.log(err)
     }
   }
 
@@ -711,35 +716,43 @@ export class SimpleOrderSelector {
   private async loadCartData(append: boolean = false): Promise<void> {
     const pagination = this.state.pagination.Cart
     const params = new URLSearchParams()
-    
+
     if (this.state.keyword) {
       params.append('keyword', this.state.keyword)
     }
     params.append('pageNum', pagination.currentPage.toString())
     params.append('pageSize', pagination.pageSize.toString())
 
-    const response = await fetch(`/api/shopping-cart?${params.toString()}`)
-    const result = await response.json()
+    try {
+      const data = await imShoppingCartPage({
+        expired: false,
+        pageNum: pagination.currentPage,
+        pageSize: pagination.pageSize,
+        keyWord: this.state.keyword,
+        type: 'ALL'
+      })
+      if (data.list) {
+        const newData = this.transformCartData(data.list)
 
-    if (result.code === 200 && result.data && result.data.list) {
-      const newData = this.transformCartData(result.data.list)
-      
-      if (append) {
-        // 追加模式：合并新数据到现有数据
-        this.state.cartList = [...this.state.cartList, ...newData]
-        this.state.cachedData.Cart = [...this.state.cachedData.Cart, ...newData]
+        if (append) {
+          // 追加模式：合并新数据到现有数据
+          this.state.cartList = [...this.state.cartList, ...newData]
+          this.state.cachedData.Cart = [...this.state.cachedData.Cart, ...newData]
+        } else {
+          // 替换模式：替换所有数据
+          this.state.cartList = newData
+          this.state.cachedData.Cart = [...newData]
+        }
+
+        // 更新分页信息
+        pagination.total = data.total || 0
+        pagination.hasMore =
+          newData.length === pagination.pageSize && pagination.currentPage * pagination.pageSize < pagination.total
       } else {
-        // 替换模式：替换所有数据
-        this.state.cartList = newData
-        this.state.cachedData.Cart = [...newData]
+        throw new Error('Invalid cart data format')
       }
-
-      // 更新分页信息
-      pagination.total = result.data.total || 0
-      pagination.hasMore = newData.length === pagination.pageSize && 
-                          (pagination.currentPage * pagination.pageSize) < pagination.total
-    } else {
-      throw new Error('Invalid cart data format')
+    } catch (err) {
+      console.log(err)
     }
   }
 
@@ -747,7 +760,7 @@ export class SimpleOrderSelector {
    * 转换订单数据格式
    */
   private transformOrdersData(orderBatches: any[]): SimpleOrderBatch[] {
-    return orderBatches.map(batch => ({
+    return orderBatches.map((batch) => ({
       batchNum: batch.batchNum,
       createTime: batch.createTime,
       orderSimpleVOS: batch.orderSimpleVOS.map((order: any) => ({
@@ -765,68 +778,70 @@ export class SimpleOrderSelector {
    * 转换购物车数据格式
    */
   private transformCartData(cartItems: any[]): SimpleOrderItem[] {
-    return cartItems.map(item => {
-      let title = ''
-      let orderCode = ''
-      let price = 0
-      let businessType = ''
+    return cartItems
+      .map((item) => {
+        let title = ''
+        let orderCode = ''
+        let price = 0
+        let businessType = ''
 
-      // Extract data based on different product types
-      let fileAccessId = ''
+        // Extract data based on different product types
+        let fileAccessId = ''
 
-      if (item.pcbGoods) {
-        title = item.pcbGoods.gerberFile || item.pcbGoods.goodsCode || 'PCB Product'
-        orderCode = item.pcbGoods.goodsCode
-        price = item.pcbGoods.price || 0
-        businessType = 'order_pcb'
-        fileAccessId = item.pcbGoods.previewImgAccessId || ''
-      } else if (item.steelmeshGoods) {
-        title = item.steelmeshGoods.gerberFile || item.steelmeshGoods.goodsCode || 'Steel Mesh Product'
-        orderCode = item.steelmeshGoods.goodsCode
-        price = item.steelmeshGoods.price || 0
-        businessType = 'order_steel'
-        fileAccessId = item.steelmeshGoods.previewImgAccessId || ''
-      } else if (item.flexHeaterGoods) {
-        title = item.flexHeaterGoods.gerberFile || item.flexHeaterGoods.goodsCode || 'Flex Heater Product'
-        orderCode = item.flexHeaterGoods.goodsCode
-        price = item.flexHeaterGoods.price || 0
-        businessType = 'order_flexheater'
-        fileAccessId = item.flexHeaterGoods.previewImgAccessId || ''
-      } else if (item.smtGoods) {
-        title = item.smtGoods.gerberFile || item.smtGoods.goodsCode || 'SMT Product'
-        orderCode = item.smtGoods.goodsCode
-        price = item.smtGoods.price || 0
-        businessType = 'order_smt'
-        fileAccessId = item.smtGoods.previewImgAccessId || ''
-      } else if (item.tdpGoods) {
-        title = item.tdpGoods.gerberFile || item.tdpGoods.goodsCode || '3D Printing Product'
-        orderCode = item.tdpGoods.goodsCode
-        price = item.tdpGoods.price || 0
-        businessType = 'order_tdp'
-        fileAccessId = item.tdpGoods.previewImgAccessId || ''
-      } else if (item.cncGoods) {
-        title = item.cncGoods.gerberFile || item.cncGoods.goodsCode || 'CNC Product'
-        orderCode = item.cncGoods.goodsCode
-        price = item.cncGoods.price || 0
-        businessType = 'order_cnc'
-        fileAccessId = item.cncGoods.previewImgAccessId || ''
-      } else if (item.plateMetalGoods) {
-        title = item.plateMetalGoods.gerberFile || item.plateMetalGoods.goodsCode || 'Plate Metal Product'
-        orderCode = item.plateMetalGoods.goodsCode
-        price = item.plateMetalGoods.price || 0
-        businessType = 'order_plate_metal'
-        fileAccessId = item.plateMetalGoods.previewImgAccessId || ''
-      }
+        if (item.pcbGoods) {
+          title = item.pcbGoods.gerberFile || item.pcbGoods.goodsCode || 'PCB Product'
+          orderCode = item.pcbGoods.goodsCode
+          price = item.pcbGoods.price || 0
+          businessType = 'order_pcb'
+          fileAccessId = item.pcbGoods.previewImgAccessId || ''
+        } else if (item.steelmeshGoods) {
+          title = item.steelmeshGoods.gerberFile || item.steelmeshGoods.goodsCode || 'Steel Mesh Product'
+          orderCode = item.steelmeshGoods.goodsCode
+          price = item.steelmeshGoods.price || 0
+          businessType = 'order_steel'
+          fileAccessId = item.steelmeshGoods.previewImgAccessId || ''
+        } else if (item.flexHeaterGoods) {
+          title = item.flexHeaterGoods.gerberFile || item.flexHeaterGoods.goodsCode || 'Flex Heater Product'
+          orderCode = item.flexHeaterGoods.goodsCode
+          price = item.flexHeaterGoods.price || 0
+          businessType = 'order_flexheater'
+          fileAccessId = item.flexHeaterGoods.previewImgAccessId || ''
+        } else if (item.smtGoods) {
+          title = item.smtGoods.gerberFile || item.smtGoods.goodsCode || 'SMT Product'
+          orderCode = item.smtGoods.goodsCode
+          price = item.smtGoods.price || 0
+          businessType = 'order_smt'
+          fileAccessId = item.smtGoods.previewImgAccessId || ''
+        } else if (item.tdpGoods) {
+          title = item.tdpGoods.gerberFile || item.tdpGoods.goodsCode || '3D Printing Product'
+          orderCode = item.tdpGoods.goodsCode
+          price = item.tdpGoods.price || 0
+          businessType = 'order_tdp'
+          fileAccessId = item.tdpGoods.previewImgAccessId || ''
+        } else if (item.cncGoods) {
+          title = item.cncGoods.gerberFile || item.cncGoods.goodsCode || 'CNC Product'
+          orderCode = item.cncGoods.goodsCode
+          price = item.cncGoods.price || 0
+          businessType = 'order_cnc'
+          fileAccessId = item.cncGoods.previewImgAccessId || ''
+        } else if (item.plateMetalGoods) {
+          title = item.plateMetalGoods.gerberFile || item.plateMetalGoods.goodsCode || 'Plate Metal Product'
+          orderCode = item.plateMetalGoods.goodsCode
+          price = item.plateMetalGoods.price || 0
+          businessType = 'order_plate_metal'
+          fileAccessId = item.plateMetalGoods.previewImgAccessId || ''
+        }
 
-      return {
-        title,
-        orderCode,
-        orderAmount: `$${price.toFixed(2)}`,
-        businessType,
-        fileAccessId,
-        imgUrl: fileAccessId ? this.buildImageUrl(fileAccessId) : undefined
-      }
-    }).filter(item => item.orderCode) // Filter out items without order codes
+        return {
+          title,
+          orderCode,
+          orderAmount: `$${price.toFixed(2)}`,
+          businessType,
+          fileAccessId,
+          imgUrl: fileAccessId ? this.buildImageUrl(fileAccessId) : undefined
+        }
+      })
+      .filter((item) => item.orderCode) // Filter out items without order codes
   }
 
   /**
@@ -848,23 +863,33 @@ export class SimpleOrderSelector {
       return '<div class="no-data">No items in cart</div>'
     }
 
-    const itemsHtml = this.state.cartList.map(item => `
-      <div class="simple-order-item" onclick="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${item.orderCode}')">
+    const itemsHtml = this.state.cartList
+      .map(
+        (item) => `
+      <div class="simple-order-item" onclick="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${
+        item.orderCode
+      }')">
         <div class="order-image">
-          <img src="${this.getOrderImageUrl(item)}" alt="${item.title}" onerror="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).handleImageError(this)" loading="lazy">
+          <img src="${this.getOrderImageUrl(item)}" alt="${
+          item.title
+        }" onerror="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).handleImageError(this)" loading="lazy">
         </div>
         <div class="simple-order-info">
           <div class="simple-order-name">${item.title}</div>
           <div class="simple-order-code">Order #: ${item.orderCode}</div>
           <div class="simple-order-amount">${item.orderAmount}</div>
         </div>
-        <button class="send-btn" onclick="event.stopPropagation(); (window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${item.orderCode}')">Send</button>
+        <button class="send-btn" onclick="event.stopPropagation(); (window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${
+          item.orderCode
+        }')">Send</button>
       </div>
-    `).join('')
+    `
+      )
+      .join('')
 
     // 添加分页状态指示器
     const paginationInfo = this.renderPaginationInfo('Cart')
-    
+
     return itemsHtml + paginationInfo
   }
 
@@ -876,33 +901,47 @@ export class SimpleOrderSelector {
       return '<div class="no-data">No orders found</div>'
     }
 
-    const batchesHtml = this.state.orderList.map(batch => `
+    const batchesHtml = this.state.orderList
+      .map(
+        (batch) => `
       <div class="order-batch">
         <div class="batch-header">
           <span class="batch-num">${batch.batchNum}</span>
           <span class="batch-date">${this.getDateByBatchNum(batch.batchNum)}</span>
         </div>
         <div class="batch-orders">
-          ${batch.orderSimpleVOS.map(item => `
-            <div class="simple-order-item" onclick="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${item.orderCode}')">
+          ${batch.orderSimpleVOS
+            .map(
+              (item) => `
+            <div class="simple-order-item" onclick="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${
+              item.orderCode
+            }')">
               <div class="order-image">
-                <img src="${this.getOrderImageUrl(item)}" alt="${item.title}" onerror="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).handleImageError(this)" loading="lazy">
+                <img src="${this.getOrderImageUrl(item)}" alt="${
+                item.title
+              }" onerror="(window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).handleImageError(this)" loading="lazy">
               </div>
               <div class="simple-order-info">
                 <div class="simple-order-name">${item.title}</div>
                 <div class="simple-order-code">Order #: ${item.orderCode}</div>
                 <div class="simple-order-amount">${item.orderAmount}</div>
               </div>
-              <button class="send-btn" onclick="event.stopPropagation(); (window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${item.orderCode}')">Send</button>
+              <button class="send-btn" onclick="event.stopPropagation(); (window.parent && window.parent.simpleOrderSelector ? window.parent.simpleOrderSelector : window.simpleOrderSelector).selectOrder('${
+                item.orderCode
+              }')">Send</button>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
-    `).join('')
+    `
+      )
+      .join('')
 
     // 添加分页状态指示器
     const paginationInfo = this.renderPaginationInfo('Orders')
-    
+
     return batchesHtml + paginationInfo
   }
 
@@ -911,9 +950,10 @@ export class SimpleOrderSelector {
    */
   private renderPaginationInfo(tabName: 'Orders' | 'Cart'): string {
     const pagination = this.state.pagination[tabName]
-    const currentCount = tabName === 'Orders' ? 
-      this.state.orderList.reduce((sum, batch) => sum + batch.orderSimpleVOS.length, 0) : 
-      this.state.cartList.length
+    const currentCount =
+      tabName === 'Orders'
+        ? this.state.orderList.reduce((sum, batch) => sum + batch.orderSimpleVOS.length, 0)
+        : this.state.cartList.length
 
     if (this.state.loadingMore) {
       return `
@@ -949,20 +989,21 @@ export class SimpleOrderSelector {
   private getMockOrderBatches(): SimpleOrderBatch[] {
     const keyword = this.state.keyword.toLowerCase()
     const pagination = this.state.pagination.Orders
-    
+
     // 生成更多模拟数据以测试分页
     const allBatches = this.generateMockOrderBatches()
 
     // 如果有搜索关键词，进行过滤
     let filteredBatches = allBatches
     if (keyword) {
-      filteredBatches = allBatches.map(batch => ({
-        ...batch,
-        orderSimpleVOS: batch.orderSimpleVOS.filter(order =>
-          order.title.toLowerCase().includes(keyword) ||
-          order.orderCode.toLowerCase().includes(keyword)
-        )
-      })).filter(batch => batch.orderSimpleVOS.length > 0)
+      filteredBatches = allBatches
+        .map((batch) => ({
+          ...batch,
+          orderSimpleVOS: batch.orderSimpleVOS.filter(
+            (order) => order.title.toLowerCase().includes(keyword) || order.orderCode.toLowerCase().includes(keyword)
+          )
+        }))
+        .filter((batch) => batch.orderSimpleVOS.length > 0)
     }
 
     // 模拟分页
@@ -983,12 +1024,12 @@ export class SimpleOrderSelector {
   private generateMockOrderBatches(): SimpleOrderBatch[] {
     const batches: SimpleOrderBatch[] = []
     const businessTypes = ['order_pcb', 'order_smt', 'order_plate_metal', 'order_steel', 'order_cnc']
-    
+
     for (let i = 0; i < 50; i++) {
       const date = new Date()
       date.setDate(date.getDate() - i)
       const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
-      
+
       batches.push({
         batchNum: `W${dateStr}${String(i).padStart(8, '0')}`,
         createTime: date.toISOString().slice(0, 10),
@@ -1000,7 +1041,7 @@ export class SimpleOrderSelector {
         }))
       })
     }
-    
+
     return batches
   }
 
@@ -1010,16 +1051,15 @@ export class SimpleOrderSelector {
   private getMockCartItems(): SimpleOrderItem[] {
     const keyword = this.state.keyword.toLowerCase()
     const pagination = this.state.pagination.Cart
-    
+
     // 生成更多模拟数据以测试分页
     const allItems = this.generateMockCartItems()
 
     // 如果有搜索关键词，进行过滤
     let filteredItems = allItems
     if (keyword) {
-      filteredItems = allItems.filter(item =>
-        item.title.toLowerCase().includes(keyword) ||
-        item.orderCode.toLowerCase().includes(keyword)
+      filteredItems = allItems.filter(
+        (item) => item.title.toLowerCase().includes(keyword) || item.orderCode.toLowerCase().includes(keyword)
       )
     }
 
@@ -1040,13 +1080,21 @@ export class SimpleOrderSelector {
    */
   private generateMockCartItems(): SimpleOrderItem[] {
     const items: SimpleOrderItem[] = []
-    const businessTypes = ['order_pcb', 'order_smt', 'order_plate_metal', 'order_steel', 'order_cnc', 'order_flexheater', 'order_tdp']
+    const businessTypes = [
+      'order_pcb',
+      'order_smt',
+      'order_plate_metal',
+      'order_steel',
+      'order_cnc',
+      'order_flexheater',
+      'order_tdp'
+    ]
     const fileTypes = ['PCB', 'SMT', 'Steel', 'CNC', 'FlexHeater', '3D Print', 'Plate Metal']
-    
+
     for (let i = 0; i < 100; i++) {
       const businessType = businessTypes[Math.floor(Math.random() * businessTypes.length)]
       const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)]
-      
+
       items.push({
         title: `${fileType}_Item_${i}_${Math.random().toString(36).substr(2, 5)}`,
         orderCode: `CART${String(i).padStart(6, '0')}`,
@@ -1054,7 +1102,7 @@ export class SimpleOrderSelector {
         businessType
       })
     }
-    
+
     return items
   }
 
@@ -1105,7 +1153,9 @@ export class SimpleOrderSelector {
    * 获取 JLCPCB 水印占位符图片
    */
   private getJLCPCBPlaceholder(): string {
-    return 'data:image/svg+xml;base64,' + btoa(`
+    return (
+      'data:image/svg+xml;base64,' +
+      btoa(`
       <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect width="56" height="56" fill="#eef2f6"/>
         <defs>
@@ -1116,6 +1166,7 @@ export class SimpleOrderSelector {
         <rect width="56" height="56" fill="url(#jlcpcb-pattern)"/>
       </svg>
     `)
+    )
   }
 
   /**
@@ -1153,11 +1204,11 @@ export class SimpleOrderSelector {
     let selectedOrder: SimpleOrderItem | undefined
 
     if (this.state.activeName === 'Cart') {
-      selectedOrder = this.state.cartList.find(order => order.orderCode === orderCode)
+      selectedOrder = this.state.cartList.find((order) => order.orderCode === orderCode)
     } else {
       // Search in order batches
       for (const batch of this.state.orderList) {
-        selectedOrder = batch.orderSimpleVOS.find(order => order.orderCode === orderCode)
+        selectedOrder = batch.orderSimpleVOS.find((order) => order.orderCode === orderCode)
         if (selectedOrder) break
       }
     }

@@ -1,34 +1,33 @@
-// import { imFileDownloadFile } from '../../apis'
-import { ChatStyles } from "./useChatStyles";
+import { ChatStyles } from './useChatStyles'
 import {
   CustomerServiceDataManager,
   type CustomerServiceAgent,
-  type GroupedCustomerServiceData,
-} from "./useCustomerServiceData";
+  type GroupedCustomerServiceData
+} from './useCustomerServiceData'
 
 const imFileDownloadFile = (fileSystemAccessId: string) =>
-  `https://test-im.jlcpcb.com/api/overseas-im-platform/file/downloadFile?fileSystemAccessId=${fileSystemAccessId}`;
+  `https://test-im.jlcpcb.com/api/overseas-im-platform/file/downloadFile?fileSystemAccessId=${fileSystemAccessId}`
 
 interface UIState {
-  isLeftBarExpanded: boolean;
-  isLeftBarManuallyHidden: boolean; // Whether user manually hid the left sidebar
-  isLeftBarForceShown: boolean; // Whether user forced to show the left sidebar
-  currentChatAgent: CustomerServiceAgent | null;
-  customerServiceData: CustomerServiceAgent[];
-  operatorListData: CustomerServiceAgent[]; // 来自 handleOperatorListChange 的数据
-  isOperatorModalVisible: boolean; // 操作员弹框显示状态
+  isLeftBarExpanded: boolean
+  isLeftBarManuallyHidden: boolean // Whether user manually hid the left sidebar
+  isLeftBarForceShown: boolean // Whether user forced to show the left sidebar
+  currentChatAgent: CustomerServiceAgent | null
+  customerServiceData: CustomerServiceAgent[]
+  operatorListData: CustomerServiceAgent[] // 来自 handleOperatorListChange 的数据
+  isOperatorModalVisible: boolean // 操作员弹框显示状态
   containers: {
-    header: HTMLElement | null;
-    leftBar: HTMLElement | null;
-    footer: HTMLElement | null;
-  };
+    header: HTMLElement | null
+    leftBar: HTMLElement | null
+    footer: HTMLElement | null
+  }
 }
 
 interface UIConfig {
-  leftBarWidth: number;
-  originalIframeWidth: number;
-  refreshInterval: number;
-  maxRetryAttempts: number;
+  leftBarWidth: number
+  originalIframeWidth: number
+  refreshInterval: number
+  maxRetryAttempts: number
 }
 
 /**
@@ -36,11 +35,11 @@ interface UIConfig {
  * 提供模块化的客服聊天界面自定义功能
  */
 export class ChatCustomUI {
-  public state: UIState;
-  public config: UIConfig;
-  private eventHandlers: Map<string, Function>;
-  private onAgentStatusChangeCallback?: () => void;
-  private dataManager: CustomerServiceDataManager;
+  public state: UIState
+  public config: UIConfig
+  private eventHandlers: Map<string, Function>
+  private onAgentStatusChangeCallback?: () => void
+  private dataManager: CustomerServiceDataManager
 
   constructor(customerServiceData?: CustomerServiceAgent[]) {
     this.state = {
@@ -54,26 +53,26 @@ export class ChatCustomUI {
       containers: {
         header: null,
         leftBar: null,
-        footer: null,
-      },
-    };
+        footer: null
+      }
+    }
 
     this.config = {
       leftBarWidth: 180,
       originalIframeWidth: 450,
       refreshInterval: 30000,
-      maxRetryAttempts: 20,
-    };
+      maxRetryAttempts: 20
+    }
 
-    this.eventHandlers = new Map();
-    this.dataManager = new CustomerServiceDataManager();
+    this.eventHandlers = new Map()
+    this.dataManager = new CustomerServiceDataManager()
 
     // 如果传入了客服数据，设置到数据管理器中
     if (customerServiceData && customerServiceData.length > 0) {
-      this.dataManager.setDataFromArray(customerServiceData);
-      this.state.customerServiceData = customerServiceData;
+      this.dataManager.setDataFromArray(customerServiceData)
+      this.state.customerServiceData = customerServiceData
     } else {
-      this.initDefaultCustomerServiceData();
+      this.initDefaultCustomerServiceData()
     }
   }
 
@@ -81,94 +80,91 @@ export class ChatCustomUI {
    * 初始化默认客服数据（当没有传入客服数据时使用）
    */
   private initDefaultCustomerServiceData(): void {
-    this.state.customerServiceData = [];
+    this.state.customerServiceData = []
   }
 
   /**
    * Set customer service data
    */
   setCustomerServiceData(customerServiceData: CustomerServiceAgent[]): void {
-    this.state.customerServiceData = customerServiceData;
-    this.dataManager.setDataFromArray(customerServiceData);
+    this.state.customerServiceData = customerServiceData
+    this.dataManager.setDataFromArray(customerServiceData)
   }
 
   /**
    * 设置操作员列表数据（来自 handleOperatorListChange）
    */
   setOperatorListData(operatorListData: CustomerServiceAgent[]): void {
-    this.state.operatorListData = operatorListData;
+    this.state.operatorListData = operatorListData
   }
 
   /**
    * 获取数据管理器实例
    */
   getDataManager(): CustomerServiceDataManager {
-    return this.dataManager;
+    return this.dataManager
   }
 
   /**
    * 获取按业务线分组的数据
    */
   getGroupedData(): GroupedCustomerServiceData {
-    return this.dataManager.getGroupedData();
+    return this.dataManager.getGroupedData()
   }
 
   /**
    * 工具函数：根据状态码判断是否在线
    */
   isAgentOnline(status: number): boolean {
-    return status === 2; // Only available status counts as online, busy status counts as offline
+    return status === 2 // Only available status counts as online, busy status counts as offline
   }
 
   /**
    * 检查是否有客服在线
    */
   hasOnlineAgents(): boolean {
-    return this.state.customerServiceData.some((agent) => agent.isOnline);
+    return this.state.customerServiceData.some((agent) => agent.isOnline)
   }
 
   /**
    * 设置客服状态变化回调
    */
   setOnAgentStatusChangeCallback(callback: () => void): void {
-    this.onAgentStatusChangeCallback = callback;
+    this.onAgentStatusChangeCallback = callback
   }
 
   /**
    * 检测是否为移动端设备
    */
   private isMobileDevice(): boolean {
-    if (typeof window === "undefined" || typeof navigator === "undefined") {
-      return false;
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return false
     }
 
     // 检测用户代理字符串
-    const userAgent = navigator.userAgent.toLowerCase();
+    const userAgent = navigator.userAgent.toLowerCase()
     const mobileKeywords = [
-      "android",
-      "webos",
-      "iphone",
-      "ipad",
-      "ipod",
-      "blackberry",
-      "windows phone",
-      "mobile",
-      "opera mini",
-    ];
+      'android',
+      'webos',
+      'iphone',
+      'ipad',
+      'ipod',
+      'blackberry',
+      'windows phone',
+      'mobile',
+      'opera mini'
+    ]
 
-    const isMobileUA = mobileKeywords.some((keyword) =>
-      userAgent.includes(keyword)
-    );
+    const isMobileUA = mobileKeywords.some((keyword) => userAgent.includes(keyword))
 
     // 检测屏幕尺寸（宽度小于768px认为是移动端）
-    const isMobileScreen = window.innerWidth <= 768;
+    const isMobileScreen = window.innerWidth <= 768
 
     // 检测触摸支持
-    const hasTouchSupport =
-      "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    const hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
     // 综合判断：用户代理包含移动设备关键词，或者屏幕宽度小于768px且支持触摸
-    return isMobileUA || (isMobileScreen && hasTouchSupport);
+    return isMobileUA || (isMobileScreen && hasTouchSupport)
   }
 
   /**
@@ -176,33 +172,31 @@ export class ChatCustomUI {
    * 根据复杂的业务规则来决定
    */
   shouldShowLeftBar(): boolean {
-    const onlineAgents = this.state.customerServiceData.filter(
-      (agent) => agent.isOnline
-    );
-    const onlineCount = onlineAgents.length;
+    const onlineAgents = this.state.customerServiceData.filter((agent) => agent.isOnline)
+    const onlineCount = onlineAgents.length
 
     // 如果用户手动隐藏了左侧栏，则不显示
     if (this.state.isLeftBarManuallyHidden) {
-      return false;
+      return false
     }
 
     // 如果没有在线客服，不显示左侧栏
     if (onlineCount === 0) {
-      return false;
+      return false
     }
 
     // 如果用户强制显示了左侧栏，则显示
     if (this.state.isLeftBarForceShown) {
-      return true;
+      return true
     }
 
     // 移动端时，即使有客服在线，也不默认展开左侧自定义区域，需要手动触发
     if (this.isMobileDevice()) {
-      return false;
+      return false
     }
 
     // 桌面端：只要有在线客服，不管是否选中过，都显示左侧自定义区域
-    return onlineCount > 0;
+    return onlineCount > 0
   }
 
   /**
@@ -211,22 +205,20 @@ export class ChatCustomUI {
   shouldShowHeaderAgents(): boolean {
     // 如果左侧栏正在显示，不显示头部客服
     if (this.shouldShowLeftBar()) {
-      return false;
+      return false
     }
 
-    const onlineAgents = this.state.customerServiceData.filter(
-      (agent) => agent.isOnline
-    );
-    const onlineCount = onlineAgents.length;
-    const hasCurrentAgent = !!this.state.currentChatAgent;
+    const onlineAgents = this.state.customerServiceData.filter((agent) => agent.isOnline)
+    const onlineCount = onlineAgents.length
+    const hasCurrentAgent = !!this.state.currentChatAgent
 
     // 如果没有在线客服，不显示头部客服
     if (onlineCount === 0) {
-      return false;
+      return false
     }
 
     // 如果有在线客服且左侧栏不显示，则显示头部客服
-    return true;
+    return true
   }
 
   /**
@@ -234,7 +226,7 @@ export class ChatCustomUI {
    */
   shouldShowOperatorAgents(): boolean {
     // 只与 operatorListData 的长度有关系，与左侧自定义区域是否显示无关
-    return this.state.operatorListData.length > 1;
+    return this.state.operatorListData.length > 1
   }
 
   /**
@@ -242,40 +234,36 @@ export class ChatCustomUI {
    */
   getOperatorAgentsToShow(): CustomerServiceAgent[] {
     if (this.state.operatorListData.length <= 1) {
-      return [];
+      return []
     }
     // 返回除第一个元素外的其余部分数据，最多3个
-    return this.state.operatorListData.slice(1, 4);
+    return this.state.operatorListData.slice(1, 4)
   }
 
   /**
    * 判断是否需要显示省略号（当操作员客服超过3个时）
    */
   shouldShowOperatorMoreIndicator(): boolean {
-    return this.state.operatorListData.length > 4; // 除第一个外还有超过3个
+    return this.state.operatorListData.length > 4 // 除第一个外还有超过3个
   }
 
   /**
    * 获取操作员客服的总数量（用于省略号显示）
    */
   getOperatorAgentsCount(): number {
-    return Math.max(0, this.state.operatorListData.length - 1); // 除第一个外的数量
+    return Math.max(0, this.state.operatorListData.length - 1) // 除第一个外的数量
   }
 
   /**
    * 获取可选择的客服数量（排除当前选中的客服）
    */
   getAvailableAgentsCount(): number {
-    const onlineAgents = this.state.customerServiceData.filter(
-      (agent) => agent.isOnline
-    );
+    const onlineAgents = this.state.customerServiceData.filter((agent) => agent.isOnline)
     if (!this.state.currentChatAgent) {
-      return onlineAgents.length;
+      return onlineAgents.length
     }
     // 排除当前选中的客服
-    return onlineAgents.filter(
-      (agent) => agent.quickCepId !== this.state.currentChatAgent!.quickCepId
-    ).length;
+    return onlineAgents.filter((agent) => agent.quickCepId !== this.state.currentChatAgent!.quickCepId).length
   }
 
   /**
@@ -283,22 +271,22 @@ export class ChatCustomUI {
    * 只要有客服在线且左侧不显示的情况就需要显示这个图标
    */
   shouldShowOpenLeftBarIcon(): boolean {
-    const hasOnline = this.hasOnlineAgents();
-    const shouldShowLeft = this.shouldShowLeftBar();
+    const hasOnline = this.hasOnlineAgents()
+    const shouldShowLeft = this.shouldShowLeftBar()
 
     // 如果没有在线客服，不显示图标
     if (!hasOnline) {
-      return false;
+      return false
     }
 
     // 如果左侧栏已经显示，不需要显示打开图标
     if (shouldShowLeft) {
-      return false;
+      return false
     }
 
     // 只要有客服在线且左侧栏不显示，就显示打开图标
     // 包括只有一个客服在线且该客服已被选中的情况
-    return true;
+    return true
   }
 
   /**
@@ -306,21 +294,21 @@ export class ChatCustomUI {
    */
   public saveSelectedAgent(agent: CustomerServiceAgent | null): void {
     try {
-      if (typeof localStorage !== "undefined") {
-        const storageKey = "quickchat_selected_agent";
+      if (typeof localStorage !== 'undefined') {
+        const storageKey = 'quickchat_selected_agent'
         if (agent) {
           const agentData = {
             quickCepId: agent.quickCepId,
             employeeEnName: agent.employeeEnName,
-            timestamp: Date.now(),
-          };
-          localStorage.setItem(storageKey, JSON.stringify(agentData));
+            timestamp: Date.now()
+          }
+          localStorage.setItem(storageKey, JSON.stringify(agentData))
         } else {
-          localStorage.removeItem(storageKey);
+          localStorage.removeItem(storageKey)
         }
       }
     } catch (error) {
-      console.warn("Failed to save agent selection to local storage:", error);
+      console.warn('Failed to save agent selection to local storage:', error)
     }
   }
 
@@ -328,30 +316,30 @@ export class ChatCustomUI {
    * Get previously selected agent from local storage
    */
   private getStoredSelectedAgent(): {
-    quickCepId: string;
-    employeeEnName: string;
-    timestamp: number;
+    quickCepId: string
+    employeeEnName: string
+    timestamp: number
   } | null {
     try {
-      if (typeof localStorage !== "undefined") {
-        const storageKey = "quickchat_selected_agent";
-        const storedData = localStorage.getItem(storageKey);
+      if (typeof localStorage !== 'undefined') {
+        const storageKey = 'quickchat_selected_agent'
+        const storedData = localStorage.getItem(storageKey)
         if (storedData) {
-          const agentData = JSON.parse(storedData);
+          const agentData = JSON.parse(storedData)
           // 检查数据是否在24小时内（可选的过期机制）
-          const maxAge = 24 * 60 * 60 * 1000; // 24小时
+          const maxAge = 24 * 60 * 60 * 1000 // 24小时
           if (Date.now() - agentData.timestamp < maxAge) {
-            return agentData;
+            return agentData
           } else {
             // 数据过期，清除
-            localStorage.removeItem(storageKey);
+            localStorage.removeItem(storageKey)
           }
         }
       }
     } catch (error) {
-      console.warn("Failed to get agent selection from local storage:", error);
+      console.warn('Failed to get agent selection from local storage:', error)
     }
-    return null;
+    return null
   }
 
   /**
@@ -359,23 +347,21 @@ export class ChatCustomUI {
    * 如果该客服仍在线，则自动切换到该客服
    */
   restorePreviousSelectedAgent(): void {
-    const storedAgent = this.getStoredSelectedAgent();
+    const storedAgent = this.getStoredSelectedAgent()
     if (!storedAgent) {
-      return;
+      return
     }
 
     // 查找该客服是否存在且在线
-    const agent = this.state.customerServiceData.find(
-      (a) => a.quickCepId === storedAgent.quickCepId
-    );
+    const agent = this.state.customerServiceData.find((a) => a.quickCepId === storedAgent.quickCepId)
 
     if (!agent) {
-      this.saveSelectedAgent(null); // 清除无效的存储
-      return;
+      this.saveSelectedAgent(null) // 清除无效的存储
+      return
     }
 
     if (!agent.isOnline) {
-      return;
+      return
     }
 
     // 如果客服在线，自动切换到该客服
@@ -387,10 +373,10 @@ export class ChatCustomUI {
    */
   getStatusColor(status: number): string {
     const colors: Record<number, string> = {
-      2: "#48DE8C", // Online Available - Green
-      3: "#ffc107", // Online Busy - Yellow
-    };
-    return colors[status] || "#d8d8d8"; // Offline - Gray
+      2: '#48DE8C', // Online Available - Green
+      3: '#ffc107' // Online Busy - Yellow
+    }
+    return colors[status] || '#d8d8d8' // Offline - Gray
   }
 
   /**
@@ -398,18 +384,18 @@ export class ChatCustomUI {
    */
   getStatusText(status: number): string {
     const texts: Record<number, string> = {
-      2: "Online",
-      3: "Online",
-    };
-    return texts[status] || "Offline";
+      2: 'Online',
+      3: 'Online'
+    }
+    return texts[status] || 'Offline'
   }
 
   /**
    * 工具函数：获取头像URL
    */
   getAvatarUrl(imageFileIndexId: string): string {
-    const imgUrl = imFileDownloadFile(imageFileIndexId);
-    return imgUrl;
+    const imgUrl = imFileDownloadFile(imageFileIndexId)
+    return imgUrl
   }
 
   /**
@@ -418,60 +404,54 @@ export class ChatCustomUI {
   getDefaultAvatar(size: number): string {
     return `data:image/svg+xml;base64,${btoa(`
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${
-      size / 2
-    }" fill="#e0e0e0"/>
-        <circle cx="${size / 2}" cy="${size * 0.35}" r="${
-      size * 0.15
-    }" fill="#999"/>
-        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${
+        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#e0e0e0"/>
+        <circle cx="${size / 2}" cy="${size * 0.35}" r="${size * 0.15}" fill="#999"/>
+        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${size * 0.75} ${
       size * 0.75
-    } ${size * 0.75}" stroke="#999" stroke-width="2" fill="none"/>
+    }" stroke="#999" stroke-width="2" fill="none"/>
       </svg>
-    `)}`;
+    `)}`
   }
 
   /**
    * 工具函数：截断文本
    */
   truncateText(text: string, maxLength: number): string {
-    return text;
+    return text
   }
 
   /**
    * 工具函数：按业务线分组客服
    */
-  groupByBusinessLine(
-    agents: CustomerServiceAgent[]
-  ): Record<string, CustomerServiceAgent[]> {
+  groupByBusinessLine(agents: CustomerServiceAgent[]): Record<string, CustomerServiceAgent[]> {
     return agents.reduce((grouped, agent) => {
       if (!grouped[agent.businessLine]) {
-        grouped[agent.businessLine] = [];
+        grouped[agent.businessLine] = []
       }
-      grouped[agent.businessLine].push(agent);
-      return grouped;
-    }, {} as Record<string, CustomerServiceAgent[]>);
+      grouped[agent.businessLine].push(agent)
+      return grouped
+    }, {} as Record<string, CustomerServiceAgent[]>)
   }
 
   /**
    * 更新客服状态
    */
   updateAgentStatus(operatorUserIdStatus: Record<string, number>): void {
-    let hasStatusChanged = false;
-    let currentAgentWentOffline = false;
+    let hasStatusChanged = false
+    let currentAgentWentOffline = false
 
     this.state.customerServiceData.forEach((agent, index) => {
       if (operatorUserIdStatus.hasOwnProperty(agent.quickCepId)) {
-        const newStatus = operatorUserIdStatus[agent.quickCepId];
-        const oldStatus = agent.status;
-        const oldOnlineStatus = agent.isOnline;
-        const newOnlineStatus = this.isAgentOnline(newStatus);
+        const newStatus = operatorUserIdStatus[agent.quickCepId]
+        const oldStatus = agent.status
+        const oldOnlineStatus = agent.isOnline
+        const newOnlineStatus = this.isAgentOnline(newStatus)
 
         // 只有当状态真正发生变化时才更新
         if (oldStatus !== newStatus || oldOnlineStatus !== newOnlineStatus) {
-          agent.status = newStatus;
-          agent.isOnline = newOnlineStatus;
-          hasStatusChanged = true;
+          agent.status = newStatus
+          agent.isOnline = newOnlineStatus
+          hasStatusChanged = true
 
           // Check if the currently selected agent went offline
           if (
@@ -479,37 +459,35 @@ export class ChatCustomUI {
             this.state.currentChatAgent.quickCepId === agent.quickCepId &&
             !newOnlineStatus
           ) {
-            currentAgentWentOffline = true;
+            currentAgentWentOffline = true
           }
         }
       }
-    });
+    })
 
     // If current agent went offline, clear current agent status
     if (currentAgentWentOffline) {
-      this.state.currentChatAgent = null;
+      this.state.currentChatAgent = null
     }
 
     // 如果客服状态发生变化，只在特定情况下重置手动控制状态
     if (hasStatusChanged) {
       // Only reset manual control status when all agents are offline
-      const hasAnyOnlineAgents = this.state.customerServiceData.some(
-        (agent) => agent.isOnline
-      );
+      const hasAnyOnlineAgents = this.state.customerServiceData.some((agent) => agent.isOnline)
       if (!hasAnyOnlineAgents) {
-        this.state.isLeftBarManuallyHidden = false;
-        this.state.isLeftBarForceShown = false;
+        this.state.isLeftBarManuallyHidden = false
+        this.state.isLeftBarForceShown = false
       }
     }
 
     // 只有当状态真正发生变化时才更新UI
     if (hasStatusChanged) {
-      this.refreshUI();
-      this.emitCustomEvent("agentStatusUpdated", {
+      this.refreshUI()
+      this.emitCustomEvent('agentStatusUpdated', {
         updatedAgents: this.state.customerServiceData,
         changedStatuses: operatorUserIdStatus,
-        currentAgentWentOffline,
-      });
+        currentAgentWentOffline
+      })
     }
   }
 
@@ -550,8 +528,8 @@ export class ChatCustomUI {
    * 发射自定义事件
    */
   private emitCustomEvent(eventName: string, detail: any): void {
-    if (typeof window !== "undefined" && window.dispatchEvent) {
-      window.dispatchEvent(new CustomEvent(eventName, { detail }));
+    if (typeof window !== 'undefined' && window.dispatchEvent) {
+      window.dispatchEvent(new CustomEvent(eventName, { detail }))
     }
   }
 
@@ -561,17 +539,17 @@ export class ChatCustomUI {
    */
   resetToDefaultAgent(): void {
     // 清除当前选择的客服
-    this.state.currentChatAgent = null;
+    this.state.currentChatAgent = null
 
     // 清除本地存储的客服选择
-    this.saveSelectedAgent(null);
+    this.saveSelectedAgent(null)
 
     // Refresh UI display
-    this.refreshUI();
+    this.refreshUI()
   }
 
   // 记住待切换的座席ID
-  private pendingSwitchAgentId: string | null = null;
+  private pendingSwitchAgentId: string | null = null
 
   /**
    * 选择客服
@@ -579,45 +557,36 @@ export class ChatCustomUI {
    * @param saveToStorage 是否保存到本地存储，默认为true
    */
   selectAgent(quickCepId: string, saveToStorage = true): void {
-    const agent = this.state.customerServiceData.find(
-      (a) => a.quickCepId === quickCepId
-    );
+    const agent = this.state.customerServiceData.find((a) => a.quickCepId === quickCepId)
 
     if (!agent) {
-      console.error(`未找到客服 ID: ${quickCepId}`);
-      return;
+      console.error(`未找到客服 ID: ${quickCepId}`)
+      return
     }
 
     if (!agent.isOnline) {
-      return;
+      return
     }
 
-    if (
-      this.state.currentChatAgent &&
-      this.state.currentChatAgent.quickCepId === quickCepId
-    ) {
-      return;
+    if (this.state.currentChatAgent && this.state.currentChatAgent.quickCepId === quickCepId) {
+      return
     }
 
     // 记住待切换的座席ID，等待 chat.switch.operator.success 事件
-    this.pendingSwitchAgentId = quickCepId;
+    this.pendingSwitchAgentId = quickCepId
 
-    if (
-      typeof window !== "undefined" &&
-      (window as any).quickChatApi &&
-      (window as any).quickChatApi.switchChat
-    ) {
+    if (typeof window !== 'undefined' && (window as any).quickChatApi && (window as any).quickChatApi.switchChat) {
       try {
-        (window as any).quickChatApi.switchChat(quickCepId);
+        ;(window as any).quickChatApi.switchChat(quickCepId)
       } catch (error) {
-        console.error("切换客服失败:", error);
+        console.error('切换客服失败:', error)
         // 如果API调用失败，清除待切换的座席ID
-        this.pendingSwitchAgentId = null;
+        this.pendingSwitchAgentId = null
       }
     } else {
-      console.error("quickChatApi.switchChat 方法不可用");
+      console.error('quickChatApi.switchChat 方法不可用')
       // 如果API不可用，清除待切换的座席ID
-      this.pendingSwitchAgentId = null;
+      this.pendingSwitchAgentId = null
     }
   }
 
@@ -627,37 +596,35 @@ export class ChatCustomUI {
    */
   handleSwitchOperatorSuccess(): void {
     if (!this.pendingSwitchAgentId) {
-      return;
+      return
     }
 
-    const quickCepId = this.pendingSwitchAgentId;
-    const agent = this.state.customerServiceData.find(
-      (a) => a.quickCepId === quickCepId
-    );
+    const quickCepId = this.pendingSwitchAgentId
+    const agent = this.state.customerServiceData.find((a) => a.quickCepId === quickCepId)
 
     if (!agent) {
-      console.error(`未找到客服 ID: ${quickCepId}`);
-      this.pendingSwitchAgentId = null;
-      return;
+      console.error(`未找到客服 ID: ${quickCepId}`)
+      this.pendingSwitchAgentId = null
+      return
     }
 
     if (!agent.isOnline) {
-      console.warn(`Agent ${agent.employeeEnName} is offline, cannot switch`);
-      this.pendingSwitchAgentId = null;
-      return;
+      console.warn(`Agent ${agent.employeeEnName} is offline, cannot switch`)
+      this.pendingSwitchAgentId = null
+      return
     }
 
     // 更新当前聊天客服
-    this.state.currentChatAgent = agent;
+    this.state.currentChatAgent = agent
 
     // 保存到本地存储
-    this.saveSelectedAgent(agent);
+    this.saveSelectedAgent(agent)
 
     // Refresh UI
-    this.refreshUI();
+    this.refreshUI()
 
     // 清除待切换的座席ID
-    this.pendingSwitchAgentId = null;
+    this.pendingSwitchAgentId = null
   }
 
   /**
@@ -665,68 +632,68 @@ export class ChatCustomUI {
    * 当点击左侧 .expand-icon 或头部 .open-leftbar-icon 时调用
    */
   toggleLeftBar(): void {
-    const currentlyShowingLeftBar = this.shouldShowLeftBar();
+    const currentlyShowingLeftBar = this.shouldShowLeftBar()
 
     if (currentlyShowingLeftBar) {
       if (this.isMobileDevice()) {
-        const currentDoc = this.getCurrentDocument();
-        const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+        const currentDoc = this.getCurrentDocument()
+        const leftBarParent = currentDoc.getElementById('DIY-LEFT-BAR')
         if (leftBarParent) {
-          leftBarParent.style.display = "none";
+          leftBarParent.style.display = 'none'
         }
       }
       // 当前左侧栏显示，点击后隐藏
-      this.state.isLeftBarManuallyHidden = true;
-      this.state.isLeftBarForceShown = false;
+      this.state.isLeftBarManuallyHidden = true
+      this.state.isLeftBarForceShown = false
     } else {
       // 当前左侧栏不显示，点击后强制显示
       // 由于 .open-leftbar-icon 显示的前提是有在线客服，所以直接显示即可
-      this.state.isLeftBarManuallyHidden = false;
-      this.state.isLeftBarForceShown = true;
+      this.state.isLeftBarManuallyHidden = false
+      this.state.isLeftBarForceShown = true
       if (this.isMobileDevice()) {
-        const currentDoc = this.getCurrentDocument();
-        const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+        const currentDoc = this.getCurrentDocument()
+        const leftBarParent = currentDoc.getElementById('DIY-LEFT-BAR')
 
         if (leftBarParent) {
-          leftBarParent.style.display = "block";
+          leftBarParent.style.display = 'block'
         }
       }
     }
 
     // 在移动端立即更新定位
     if (this.isMobileDevice()) {
-      this.updateMobileLeftBarPosition();
+      this.updateMobileLeftBarPosition()
     }
 
     // Notify manager to update left sidebar visibility
     if (this.onAgentStatusChangeCallback) {
-      this.onAgentStatusChangeCallback();
+      this.onAgentStatusChangeCallback()
     }
 
-    this.refreshUI();
+    this.refreshUI()
   }
 
   /**
    * Force refresh UI (for debugging)
    */
   forceRefreshUI(): void {
-    this.refreshUI();
+    this.refreshUI()
   }
 
   /**
    * 显示操作员弹框
    */
   showOperatorModal(): void {
-    this.state.isOperatorModalVisible = true;
-    this.renderOperatorModal();
+    this.state.isOperatorModalVisible = true
+    this.renderOperatorModal()
   }
 
   /**
    * 隐藏操作员弹框
    */
   hideOperatorModal(): void {
-    this.state.isOperatorModalVisible = false;
-    this.removeOperatorModal();
+    this.state.isOperatorModalVisible = false
+    this.removeOperatorModal()
   }
 
   /**
@@ -735,49 +702,38 @@ export class ChatCustomUI {
   handleOrderButtonClick(): void {
     try {
       // 尝试在当前窗口中查找
-      if (
-        typeof window !== "undefined" &&
-        (window as any).simpleOrderSelector
-      ) {
-        (window as any).simpleOrderSelector.toggle();
-        return;
+      if (typeof window !== 'undefined' && (window as any).simpleOrderSelector) {
+        ;(window as any).simpleOrderSelector.toggle()
+        return
       }
 
       // 尝试在父窗口中查找
-      if (
-        typeof window !== "undefined" &&
-        window.parent &&
-        (window.parent as any).simpleOrderSelector
-      ) {
-        (window.parent as any).simpleOrderSelector.toggle();
-        return;
+      if (typeof window !== 'undefined' && window.parent && (window.parent as any).simpleOrderSelector) {
+        ;(window.parent as any).simpleOrderSelector.toggle()
+        return
       }
 
       // 尝试在顶级窗口中查找
-      if (
-        typeof window !== "undefined" &&
-        window.top &&
-        (window.top as any).simpleOrderSelector
-      ) {
-        (window.top as any).simpleOrderSelector.toggle();
-        return;
+      if (typeof window !== 'undefined' && window.top && (window.top as any).simpleOrderSelector) {
+        ;(window.top as any).simpleOrderSelector.toggle()
+        return
       }
 
       // 使用 postMessage 通信
-      if (typeof window !== "undefined" && window.parent !== window) {
-        window.parent.postMessage({ type: "TOGGLE_ORDER_SELECTOR" }, "*");
+      if (typeof window !== 'undefined' && window.parent !== window) {
+        window.parent.postMessage({ type: 'TOGGLE_ORDER_SELECTOR' }, '*')
       }
 
-      console.warn("无法找到 simpleOrderSelector 实例");
+      console.warn('无法找到 simpleOrderSelector 实例')
     } catch (error) {
-      console.error("处理订单按钮点击时出错:", error);
+      console.error('处理订单按钮点击时出错:', error)
       // 降级处理：使用 postMessage
       try {
-        if (typeof window !== "undefined" && window.parent !== window) {
-          window.parent.postMessage({ type: "TOGGLE_ORDER_SELECTOR" }, "*");
+        if (typeof window !== 'undefined' && window.parent !== window) {
+          window.parent.postMessage({ type: 'TOGGLE_ORDER_SELECTOR' }, '*')
         }
       } catch (e) {
-        console.error("postMessage 也失败了:", e);
+        console.error('postMessage 也失败了:', e)
       }
     }
   }
@@ -791,23 +747,23 @@ export class ChatCustomUI {
 
     // 更新头部
     if (this.state.containers.header) {
-      this.state.containers.header.innerHTML = this.generateHeaderHTML();
+      this.state.containers.header.innerHTML = this.generateHeaderHTML()
     }
 
     // 更新左侧栏
     if (this.state.containers.leftBar) {
-      this.state.containers.leftBar.innerHTML = this.generateLeftBarHTML();
+      this.state.containers.leftBar.innerHTML = this.generateLeftBarHTML()
     }
 
     // 确保左侧父元素的z-index设置正确
-    this.setLeftBarParentZIndex();
+    this.setLeftBarParentZIndex()
 
     // 绑定全局事件处理器
-    this.bindGlobalEventHandlers();
+    this.bindGlobalEventHandlers()
 
     // Notify manager to update left sidebar visibility
     if (this.onAgentStatusChangeCallback) {
-      this.onAgentStatusChangeCallback();
+      this.onAgentStatusChangeCallback()
     }
   }
 
@@ -815,9 +771,8 @@ export class ChatCustomUI {
    * 绑定全局事件处理器
    */
   private bindGlobalEventHandlers(): void {
-    if (typeof window !== "undefined") {
-      (window as any).handleOrderButtonClick = () =>
-        this.handleOrderButtonClick();
+    if (typeof window !== 'undefined') {
+      ;(window as any).handleOrderButtonClick = () => this.handleOrderButtonClick()
     }
   }
 
@@ -828,18 +783,14 @@ export class ChatCustomUI {
     // 尝试在 iframe 内部的 chat-wrap 元素中创建容器
     const tryCreateInIframe = () => {
       try {
-        const iframe = document.getElementById(
-          "quick-chat-iframe"
-        ) as HTMLIFrameElement;
+        const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
         if (iframe && iframe.contentDocument) {
-          const chatWrap = iframe.contentDocument.getElementById("chat-wrap");
+          const chatWrap = iframe.contentDocument.getElementById('chat-wrap')
           if (chatWrap) {
-            let modalContainer = iframe.contentDocument.getElementById(
-              "operator-modal-container"
-            );
+            let modalContainer = iframe.contentDocument.getElementById('operator-modal-container')
             if (!modalContainer) {
-              modalContainer = iframe.contentDocument.createElement("div");
-              modalContainer.id = "operator-modal-container";
+              modalContainer = iframe.contentDocument.createElement('div')
+              modalContainer.id = 'operator-modal-container'
               modalContainer.style.cssText = `
                 position: absolute;
                 top: 0;
@@ -848,8 +799,8 @@ export class ChatCustomUI {
                 bottom: 0;
                 z-index: 10000;
                 pointer-events: auto;
-              `;
-              chatWrap.appendChild(modalContainer);
+              `
+              chatWrap.appendChild(modalContainer)
             }
 
             modalContainer.innerHTML = `
@@ -865,21 +816,21 @@ export class ChatCustomUI {
                   </div>
                 </div>
               </div>
-            `;
-            return true;
+            `
+            return true
           }
         }
       } catch (error) {
-        console.warn("无法在 iframe 内创建 operator modal 容器:", error);
+        console.warn('无法在 iframe 内创建 operator modal 容器:', error)
       }
-      return false;
-    };
+      return false
+    }
 
     // 尝试创建，如果失败则降级到主页面
-    const success = tryCreateInIframe();
+    const success = tryCreateInIframe()
     if (!success) {
-      console.warn("无法在 iframe 内创建 operator modal 容器，降级到主页面");
-      this.renderOperatorModalInMainWindow();
+      console.warn('无法在 iframe 内创建 operator modal 容器，降级到主页面')
+      this.renderOperatorModalInMainWindow()
     }
   }
 
@@ -888,10 +839,10 @@ export class ChatCustomUI {
    */
   private renderOperatorModalInMainWindow(): void {
     // 查找或创建弹框容器
-    let modalContainer = document.getElementById("operator-modal-container");
+    let modalContainer = document.getElementById('operator-modal-container')
     if (!modalContainer) {
-      modalContainer = document.createElement("div");
-      modalContainer.id = "operator-modal-container";
+      modalContainer = document.createElement('div')
+      modalContainer.id = 'operator-modal-container'
       modalContainer.style.cssText = `
         position: fixed;
         top: 0;
@@ -900,8 +851,8 @@ export class ChatCustomUI {
         bottom: 0;
         z-index: 10000;
         pointer-events: auto;
-      `;
-      document.body.appendChild(modalContainer);
+      `
+      document.body.appendChild(modalContainer)
     }
 
     modalContainer.innerHTML = `
@@ -917,7 +868,7 @@ export class ChatCustomUI {
           </div>
         </div>
       </div>
-    `;
+    `
   }
 
   /**
@@ -926,26 +877,22 @@ export class ChatCustomUI {
   private removeOperatorModal(): void {
     // 首先尝试从 iframe 内移除
     try {
-      const iframe = document.getElementById(
-        "quick-chat-iframe"
-      ) as HTMLIFrameElement;
+      const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
       if (iframe && iframe.contentDocument) {
-        const modalContainer = iframe.contentDocument.getElementById(
-          "operator-modal-container"
-        );
+        const modalContainer = iframe.contentDocument.getElementById('operator-modal-container')
         if (modalContainer) {
-          modalContainer.remove();
-          return;
+          modalContainer.remove()
+          return
         }
       }
     } catch (error) {
-      console.warn("无法从 iframe 内移除 operator modal:", error);
+      console.warn('无法从 iframe 内移除 operator modal:', error)
     }
 
     // 降级：从主页面移除
-    const modalContainer = document.getElementById("operator-modal-container");
+    const modalContainer = document.getElementById('operator-modal-container')
     if (modalContainer) {
-      modalContainer.remove();
+      modalContainer.remove()
     }
   }
 
@@ -954,7 +901,7 @@ export class ChatCustomUI {
    */
   private renderOperatorModalList(): string {
     if (this.state.operatorListData.length === 0) {
-      return '<div class="no-operators">No operators available</div>';
+      return '<div class="no-operators">No operators available</div>'
     }
 
     return this.state.operatorListData
@@ -968,16 +915,14 @@ export class ChatCustomUI {
               </div>
               <div class="operator-info">
                 <div class="operator-name">${agent.employeeEnName}</div>
-                <div class="operator-status-text" style="color: ${this.getStatusColor(
-                  agent.status
-                )};">
+                <div class="operator-status-text" style="color: ${this.getStatusColor(agent.status)};">
                   ${this.getStatusText(agent.status)}
                 </div>
               </div>
             </div>
-          `;
+          `
       })
-      .join("");
+      .join('')
   }
 
   /**
@@ -1145,7 +1090,7 @@ export class ChatCustomUI {
           background: #a8a8a8;
         }
       </style>
-    `;
+    `
   }
 
   /**
@@ -1160,51 +1105,40 @@ export class ChatCustomUI {
         </div>
       </div>
       <div id="agent-tooltip" class="agent-tooltip"></div>
-    `;
+    `
   }
 
   /**
    * 生成完整头部HTML
    */
   generateHeaderHTML(): string {
-    const onlineAgents = this.state.customerServiceData.filter(
-      (agent) => agent.isOnline
-    );
+    const onlineAgents = this.state.customerServiceData.filter((agent) => agent.isOnline)
 
     // 基于 operatorListData 的新渲染逻辑
-    const shouldShowOperatorAgents = this.shouldShowOperatorAgents();
-    const operatorAgentsToShow = this.getOperatorAgentsToShow();
-    const shouldShowOperatorMoreIndicator =
-      this.shouldShowOperatorMoreIndicator();
-    const operatorAgentsCount = this.getOperatorAgentsCount();
+    const shouldShowOperatorAgents = this.shouldShowOperatorAgents()
+    const operatorAgentsToShow = this.getOperatorAgentsToShow()
+    const shouldShowOperatorMoreIndicator = this.shouldShowOperatorMoreIndicator()
+    const operatorAgentsCount = this.getOperatorAgentsCount()
 
-    const shouldShowOpenIcon = this.shouldShowOpenLeftBarIcon();
+    const shouldShowOpenIcon = this.shouldShowOpenLeftBarIcon()
 
     return `
       ${ChatStyles.generateHeaderStyles()}
       <div class="chat-header">
         <div class="chat-header-agents">
           ${this.renderCurrentAgent()}
-          ${
-            shouldShowOperatorAgents
-              ? this.renderOperatorAgents(operatorAgentsToShow)
-              : ""
-          }
-          ${
-            shouldShowOperatorMoreIndicator
-              ? this.renderOperatorMoreAgentsIndicator(operatorAgentsCount)
-              : ""
-          }
-          ${shouldShowOpenIcon ? this.renderOpenLeftBarIcon() : ""}
+          ${shouldShowOperatorAgents ? this.renderOperatorAgents(operatorAgentsToShow) : ''}
+          ${shouldShowOperatorMoreIndicator ? this.renderOperatorMoreAgentsIndicator(operatorAgentsCount) : ''}
+          ${shouldShowOpenIcon ? this.renderOpenLeftBarIcon() : ''}
           ${
             onlineAgents.length === 0 && !this.state.currentChatAgent
               ? `<div class="no-agents"></div>` // No agents online
-              : ""
+              : ''
           }
         </div>
       </div>
       <div id="agent-tooltip" class="agent-tooltip"></div>
-    `;
+    `
   }
 
   /**
@@ -1223,36 +1157,33 @@ export class ChatCustomUI {
           </div>
           <div class="agent-name-display">JLCONE</div>
         </div>
-      `;
+      `
     }
 
     // 当选择了客服时，显示选中客服的头像和名称
     const agent =
-      this.state.customerServiceData.find(
-        (a) => a.quickCepId === this.state.currentChatAgent!.quickCepId
-      ) || this.state.currentChatAgent;
+      this.state.customerServiceData.find((a) => a.quickCepId === this.state.currentChatAgent!.quickCepId) ||
+      this.state.currentChatAgent
 
     return `
       <div class="current-agent selected" 
            title="Current Chat: ${agent.employeeEnName}"
            onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
-             agent.employeeEnName
-           }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+             agent.employeeEnName || agent.employeeNameEn
+           }', '${agent.roleNameEn || ''}', '${this.getAvatarUrl(
       agent.imageFileIndexId
     )}'); } catch(e) { console.error('Tooltip error:', e); }"
            onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }">
         <div class="agent-avatar-wrapper">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                class="agent-avatar current"
-               style="border-color: ${agent.isOnline ? "#007bff" : "#d8d8d8"};"
+               style="border-color: ${agent.isOnline ? '#007bff' : '#d8d8d8'};"
                onerror="this.src='${this.getDefaultAvatar(36)}'">
-          <div class="status-indicator" style="background: ${this.getStatusColor(
-            agent.status
-          )};"></div>
+          <div class="status-indicator" style="background: ${this.getStatusColor(agent.status)};"></div>
         </div>
-        <div class="agent-name-display">${agent.employeeEnName}</div>
+        <div class="agent-name-display">${agent.employeeEnName || agent.employeeNameEn}</div>
       </div>
-    `;
+    `
   }
 
   /**
@@ -1260,11 +1191,7 @@ export class ChatCustomUI {
    */
   private renderOnlineAgents(displayAgents: CustomerServiceAgent[]): string {
     return displayAgents
-      .filter(
-        (agent) =>
-          !this.state.currentChatAgent ||
-          agent.quickCepId !== this.state.currentChatAgent.quickCepId
-      )
+      .filter((agent) => !this.state.currentChatAgent || agent.quickCepId !== this.state.currentChatAgent.quickCepId)
       .map(
         (agent) => `
         <div class="online-agent"
@@ -1281,13 +1208,11 @@ export class ChatCustomUI {
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                class="agent-avatar online"
                onerror="this.src='${this.getDefaultAvatar(28)}'">
-          <div class="status-indicator" style="background: ${this.getStatusColor(
-            agent.status
-          )};"></div>
+          <div class="status-indicator" style="background: ${this.getStatusColor(agent.status)};"></div>
         </div>
       `
       )
-      .join("");
+      .join('')
   }
 
   /**
@@ -1303,41 +1228,39 @@ export class ChatCustomUI {
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                class="agent-avatar operator"
                onerror="this.src='${this.getDefaultAvatar(28)}'">
-          <div class="status-indicator" style="background: ${this.getStatusColor(
-            agent.status
-          )};"></div>
+          <div class="status-indicator" style="background: ${this.getStatusColor(agent.status)};"></div>
         </div>
       `
       )
-      .join("");
+      .join('')
   }
 
   /**
    * 渲染操作员更多客服指示器（可点击展示弹框）
    */
   private renderOperatorMoreAgentsIndicator(totalCount: number): string {
-    const displayCount = totalCount - 3; // 显示的数量减去已显示的3个
+    const displayCount = totalCount - 3 // 显示的数量减去已显示的3个
     return `
       <div class="operator-more-agents"
            onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).showOperatorModal()"
            title="View All Operators (${totalCount} total)">
         •••
       </div>
-    `;
+    `
   }
 
   /**
    * 渲染更多客服指示器
    */
   private renderMoreAgentsIndicator(availableCount: number): string {
-    const displayCount = availableCount - 3;
+    const displayCount = availableCount - 3
     return `
       <div class="more-agents"
            onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()"
            title="View More Agents (${availableCount} available)">
         +${displayCount}
       </div>
-    `;
+    `
   }
 
   /**
@@ -1353,35 +1276,31 @@ export class ChatCustomUI {
               <path d="M749.056 862.848V938.666667H274.986667v-75.818667h474.026666z m113.792-113.792V274.944a113.792 113.792 0 0 0-113.792-113.792H274.986667a113.792 113.792 0 0 0-113.792 113.792v474.112a113.792 113.792 0 0 0 113.792 113.792V938.666667l-9.770667-0.256a189.653333 189.653333 0 0 1-179.626667-179.626667L85.333333 749.056V274.944a189.653333 189.653333 0 0 1 179.882667-189.354667L274.986667 85.333333h474.026666l9.813334 0.256A189.610667 189.610667 0 0 1 938.666667 274.944v474.112l-0.256 9.728a189.653333 189.653333 0 0 1-179.626667 179.626667l-9.728 0.256v-75.818667a113.834667 113.834667 0 0 0 113.792-113.792z" fill="#999" p-id="15575"></path>
         </svg>
       </div>
-    `;
+    `
   }
 
   /**
    * 生成左侧栏HTML
    */
   generateLeftBarHTML(): string {
-    const groupedAgents = this.groupByBusinessLine(
-      this.state.customerServiceData
-    );
+    const groupedAgents = this.groupByBusinessLine(this.state.customerServiceData)
 
     return `
       ${ChatStyles.generateLeftBarStyles()}
-      <div class="left-bar${this.isMobileDevice() ? " mobile" : ""}">
+      <div class="left-bar${this.isMobileDevice() ? ' mobile' : ''}">
         <div class="left-bar-content">
           ${Object.entries(groupedAgents)
-            .map(([businessLine, agents]) =>
-              this.renderBusinessLineGroup(businessLine, agents)
-            )
-            .join("")}
+            .map(([businessLine, agents]) => this.renderBusinessLineGroup(businessLine, agents))
+            .join('')}
         </div>
-        <div class="left-bar-footer${this.isMobileDevice() ? " mobile" : ""}">
+        <div class="left-bar-footer${this.isMobileDevice() ? ' mobile' : ''}">
             <svg onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()" t="1758522231178" class="expand-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
               <path d="M636.501333 383.658667a37.973333 37.973333 0 0 1 41.898667 62.762666l-3.157333 2.304-99.925334 66.645334 103.210667 86.016a37.930667 37.930667 0 1 1-48.554667 58.24l-142.250666-118.485334a37.973333 37.973333 0 0 1 3.242666-60.714666L633.173333 385.706667l3.328-2.005334zM308.181333 891.306667V156.416a37.930667 37.930667 0 1 1 75.818667 0v734.805333a37.930667 37.930667 0 0 1-75.818667 0z" fill="#999" p-id="15574"></path>
               <path d="M749.056 862.848V938.666667H274.986667v-75.818667h474.026666z m113.792-113.792V274.944a113.792 113.792 0 0 0-113.792-113.792H274.986667a113.792 113.792 0 0 0-113.792 113.792v474.112a113.792 113.792 0 0 0 113.792 113.792V938.666667l-9.770667-0.256a189.653333 189.653333 0 0 1-179.626667-179.626667L85.333333 749.056V274.944a189.653333 189.653333 0 0 1 179.882667-189.354667L274.986667 85.333333h474.026666l9.813334 0.256A189.610667 189.610667 0 0 1 938.666667 274.944v474.112l-0.256 9.728a189.653333 189.653333 0 0 1-179.626667 179.626667l-9.728 0.256v-75.818667a113.834667 113.834667 0 0 0 113.792-113.792z" fill="#999" p-id="15575"></path>
             </svg>
         </div>
         <div class="left-bar-close-btn${
-          this.isMobileDevice() ? " mobile" : ""
+          this.isMobileDevice() ? ' mobile' : ''
         }" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()">
           <svg width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 4L4 12M4 4L12 12" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1389,44 +1308,37 @@ export class ChatCustomUI {
         </div>
       </div>
       <div id="full-agent-tooltip" class="full-agent-tooltip"></div>
-    `;
+    `
   }
 
   /**
    * 渲染业务线分组
    */
-  private renderBusinessLineGroup(
-    businessLine: string,
-    agents: CustomerServiceAgent[]
-  ): string {
+  private renderBusinessLineGroup(businessLine: string, agents: CustomerServiceAgent[]): string {
     return `
       <div class="business-line-group">
         <div class="business-line-title">${businessLine}</div>
         <div class="agents-list">
-          ${agents.map((agent) => this.renderAgentItem(agent)).join("")}
+          ${agents.map((agent) => this.renderAgentItem(agent)).join('')}
         </div>
       </div>
-    `;
+    `
   }
 
   /**
    * 渲染客服项目
    */
   private renderAgentItem(agent: CustomerServiceAgent): string {
-    const isOnline = agent.isOnline;
-    const isCurrentChat =
-      this.state.currentChatAgent &&
-      this.state.currentChatAgent.quickCepId === agent.quickCepId;
-    const canClick = isOnline;
+    const isOnline = agent.isOnline
+    const isCurrentChat = this.state.currentChatAgent && this.state.currentChatAgent.quickCepId === agent.quickCepId
+    const canClick = isOnline
 
     return `
-      <div class="agent-item ${isCurrentChat ? "current" : ""} ${
-      isOnline ? "online" : "offline"
-    }"
+      <div class="agent-item ${isCurrentChat ? 'current' : ''} ${isOnline ? 'online' : 'offline'}"
            ${
              canClick
                ? `onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId}')"`
-               : ""
+               : ''
            }
            onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
              agent.employeeEnName
@@ -1439,23 +1351,15 @@ export class ChatCustomUI {
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                class="agent-avatar"
                onerror="this.src='${this.getDefaultAvatar(32)}'">
-          <div class="status-indicator" style="background: ${this.getStatusColor(
-            agent.status
-          )};"></div>
+          <div class="status-indicator" style="background: ${this.getStatusColor(agent.status)};"></div>
         </div>
 
         <div class="agent-info">
-          <div class="agent-name">${this.truncateText(
-            agent.employeeEnName,
-            8
-          )}</div>
-          <div class="agent-role">${this.truncateText(
-            agent.roleNameEn,
-            12
-          )}</div>
+          <div class="agent-name">${this.truncateText(agent.employeeEnName, 8)}</div>
+          <div class="agent-role">${this.truncateText(agent.roleNameEn, 12)}</div>
         </div>
       </div>
-    `;
+    `
   }
 
   /**
@@ -1465,7 +1369,7 @@ export class ChatCustomUI {
     return `
       ${ChatStyles.generateFooterStyles()}
       <div class="chat-footer">
-        <div class="footer-actions${this.isMobileDevice() ? " mobile" : ""}">
+        <div class="footer-actions${this.isMobileDevice() ? ' mobile' : ''}">
           <button class="footer-btn add-btn" title="send order" onclick="if(window.handleOrderButtonClick) window.handleOrderButtonClick(); else if(window.parent && window.parent.postMessage) window.parent.postMessage({type:'TOGGLE_ORDER_SELECTOR'},'*');">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M13.1116 4.91628H5.46284L5.46647 2.90638C5.46647 2.37896 5.89556 1.94987 6.42298 1.94987H7.41064C7.76377 1.2467 8.48817 0.790769 9.29087 0.790769C10.0936 0.790769 10.818 1.2467 11.1711 1.94987H12.1587C12.6862 1.94987 13.1153 2.37896 13.1153 2.90638L13.1116 4.91628ZM6.22871 4.15041H12.3458L12.3494 2.90638C12.3494 2.80126 12.2639 2.71574 12.1588 2.71574H10.6449L10.5558 2.45774C10.3698 1.91876 9.86146 1.55664 9.29087 1.55664C8.72027 1.55664 8.21192 1.91876 8.02589 2.45774L7.93684 2.71574H6.42298C6.31786 2.71574 6.23234 2.80126 6.23234 2.90638L6.22871 4.15041Z" fill="#999999"/>
@@ -1477,25 +1381,16 @@ export class ChatCustomUI {
           </button>
         </div>
       </div>
-    `;
+    `
   }
 
   // 事件处理方法
-  showTooltip(
-    event: MouseEvent,
-    name: string,
-    role: string,
-    avatarUrl?: string
-  ): void {
-    const currentDoc = this.getCurrentDocument();
-    let tooltip = currentDoc.getElementById("agent-tooltip");
+  showTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
+    const currentDoc = this.getCurrentDocument()
+    let tooltip = currentDoc.getElementById('agent-tooltip')
 
     if (!tooltip) {
-      tooltip = this.createTooltipElement(
-        currentDoc,
-        "agent-tooltip",
-        "agent-tooltip"
-      );
+      tooltip = this.createTooltipElement(currentDoc, 'agent-tooltip', 'agent-tooltip')
     }
 
     if (tooltip) {
@@ -1505,40 +1400,31 @@ export class ChatCustomUI {
           <div style="font-weight: 700; font-size: 18px; margin-bottom: 6px; color: #ffffff; line-height: 1.2;">${name}</div>
           <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); font-weight: 500; line-height: 1.2;">${role}</div>
         </div>
-      `;
+      `
 
       // 简化定位逻辑，确保 tooltip 可见且有箭头效果
-      tooltip.style.position = "absolute";
-      tooltip.style.display = "block";
-      tooltip.style.zIndex = "99999";
-      tooltip.style.left = event.clientX + 15 + "px";
-      tooltip.style.top = event.clientY - 80 + "px";
+      tooltip.style.position = 'absolute'
+      tooltip.style.display = 'block'
+      tooltip.style.zIndex = '99999'
+      tooltip.style.left = event.clientX + 15 + 'px'
+      tooltip.style.top = event.clientY - 80 + 'px'
     } else {
-      console.error("无法创建或找到 tooltip 元素");
+      console.error('无法创建或找到 tooltip 元素')
     }
   }
 
   hideTooltip(): void {
-    const currentDoc = this.getCurrentDocument();
-    const tooltip = currentDoc.getElementById("agent-tooltip");
-    if (tooltip) tooltip.style.display = "none";
+    const currentDoc = this.getCurrentDocument()
+    const tooltip = currentDoc.getElementById('agent-tooltip')
+    if (tooltip) tooltip.style.display = 'none'
   }
 
-  showFullTooltip(
-    event: MouseEvent,
-    name: string,
-    role: string,
-    avatarUrl?: string
-  ): void {
-    const currentDoc = this.getCurrentDocument();
-    let tooltip = currentDoc.getElementById("full-agent-tooltip");
+  showFullTooltip(event: MouseEvent, name: string, role: string, avatarUrl?: string): void {
+    const currentDoc = this.getCurrentDocument()
+    let tooltip = currentDoc.getElementById('full-agent-tooltip')
 
     if (!tooltip) {
-      tooltip = this.createTooltipElement(
-        currentDoc,
-        "full-agent-tooltip",
-        "full-agent-tooltip"
-      );
+      tooltip = this.createTooltipElement(currentDoc, 'full-agent-tooltip', 'full-agent-tooltip')
     }
 
     if (tooltip) {
@@ -1548,66 +1434,57 @@ export class ChatCustomUI {
           <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #ffffff; line-height: 1.2;">${name}</div>
           <div style="font-size: 12px; color: rgba(255, 255, 255, 0.9); font-weight: 500; line-height: 1.2;">${role}</div>
         </div>
-      `;
+      `
 
       // 简化定位逻辑，确保 tooltip 可见且有箭头效果
-      tooltip.style.display = "block";
-      tooltip.style.left =
-        event.clientX - Math.floor(tooltip.clientWidth / 4) + "px";
-      tooltip.style.top = event.clientY - 70 + "px";
+      tooltip.style.display = 'block'
+      tooltip.style.left = event.clientX - Math.floor(tooltip.clientWidth / 4) + 'px'
+      tooltip.style.top = event.clientY - 70 + 'px'
     }
   }
 
   hideFullTooltip(): void {
-    const currentDoc = this.getCurrentDocument();
-    const tooltip = currentDoc.getElementById("full-agent-tooltip");
-    if (tooltip) tooltip.style.display = "none";
+    const currentDoc = this.getCurrentDocument()
+    const tooltip = currentDoc.getElementById('full-agent-tooltip')
+    if (tooltip) tooltip.style.display = 'none'
   }
 
   /**
    * 获取当前文档上下文，支持iframe环境
    */
   private getCurrentDocument(): Document {
-    if (typeof document === "undefined") {
-      throw new TypeError("Document is not available");
+    if (typeof document === 'undefined') {
+      throw new TypeError('Document is not available')
     }
 
     // 如果容器存在，使用容器所在的文档
-    if (
-      this.state.containers.header &&
-      this.state.containers.header.ownerDocument
-    ) {
-      return this.state.containers.header.ownerDocument;
+    if (this.state.containers.header && this.state.containers.header.ownerDocument) {
+      return this.state.containers.header.ownerDocument
     }
-    if (
-      this.state.containers.leftBar &&
-      this.state.containers.leftBar.ownerDocument
-    ) {
-      return this.state.containers.leftBar.ownerDocument;
+    if (this.state.containers.leftBar && this.state.containers.leftBar.ownerDocument) {
+      return this.state.containers.leftBar.ownerDocument
     }
 
     // 尝试获取iframe内的文档
     try {
-      const iframe = document.getElementById(
-        "quick-chat-iframe"
-      ) as HTMLIFrameElement;
+      const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
       if (iframe && iframe.contentDocument) {
-        return iframe.contentDocument;
+        return iframe.contentDocument
       }
       // 如果在iframe内部运行，直接使用当前文档
       if (
-        typeof window !== "undefined" &&
+        typeof window !== 'undefined' &&
         window.frameElement &&
-        (window.frameElement as HTMLElement).id === "quick-chat-iframe"
+        (window.frameElement as HTMLElement).id === 'quick-chat-iframe'
       ) {
-        return document;
+        return document
       }
     } catch (error) {
-      console.warn("无法访问iframe文档:", error);
+      console.warn('无法访问iframe文档:', error)
     }
 
     // 否则使用当前文档
-    return document;
+    return document
   }
 
   /**
@@ -1618,31 +1495,25 @@ export class ChatCustomUI {
     leftBarSelector?: string | HTMLElement,
     footerSelector?: string | HTMLElement
   ): void {
-    const currentDoc = this.getCurrentDocument();
+    const currentDoc = this.getCurrentDocument()
 
     if (headerSelector) {
       this.state.containers.header =
-        typeof headerSelector === "string"
-          ? currentDoc.querySelector(headerSelector)
-          : headerSelector;
+        typeof headerSelector === 'string' ? currentDoc.querySelector(headerSelector) : headerSelector
     }
 
     if (leftBarSelector) {
       this.state.containers.leftBar =
-        typeof leftBarSelector === "string"
-          ? currentDoc.querySelector(leftBarSelector)
-          : leftBarSelector;
+        typeof leftBarSelector === 'string' ? currentDoc.querySelector(leftBarSelector) : leftBarSelector
     }
 
     if (footerSelector) {
       this.state.containers.footer =
-        typeof footerSelector === "string"
-          ? currentDoc.querySelector(footerSelector)
-          : footerSelector;
+        typeof footerSelector === 'string' ? currentDoc.querySelector(footerSelector) : footerSelector
     }
 
     // 设置左侧父元素的z-index
-    this.setLeftBarParentZIndex();
+    this.setLeftBarParentZIndex()
   }
 
   /**
@@ -1650,26 +1521,26 @@ export class ChatCustomUI {
    */
   setLeftBarParentZIndex(): void {
     try {
-      const currentDoc = this.getCurrentDocument();
-      const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+      const currentDoc = this.getCurrentDocument()
+      const leftBarParent = currentDoc.getElementById('DIY-LEFT-BAR')
 
       if (leftBarParent) {
         // 设置z-index
-        leftBarParent.style.zIndex = "999";
+        leftBarParent.style.zIndex = '999'
 
         // 设置box-shadow，向左扩散
-        leftBarParent.style.boxShadow = "-4px 0 8px rgba(0, 18, 46, 0.1)";
+        leftBarParent.style.boxShadow = '-4px 0 8px rgba(0, 18, 46, 0.1)'
 
         // 设置白色背景
-        leftBarParent.style.background = "white";
+        leftBarParent.style.background = 'white'
 
         // 移动端特殊定位处理
         if (this.isMobileDevice()) {
-          this.setMobileLeftBarPosition(leftBarParent);
+          this.setMobileLeftBarPosition(leftBarParent)
         }
       }
     } catch (error) {
-      console.error("设置左侧父元素样式时出错:", error);
+      console.error('设置左侧父元素样式时出错:', error)
     }
   }
 
@@ -1679,29 +1550,29 @@ export class ChatCustomUI {
   private setMobileLeftBarPosition(leftBarParent: HTMLElement): void {
     try {
       // 获取左侧栏的宽度
-      const leftBarWidth = leftBarParent.offsetWidth || 180; // 默认宽度180px
+      const leftBarWidth = leftBarParent.offsetWidth || 180 // 默认宽度180px
 
       // 在移动端，确保左侧栏的左边定位在屏幕的左边
       // 通过设置 right 属性来实现从右向左的展开效果
-      leftBarParent.style.position = "absolute";
-      leftBarParent.style.right = `${leftBarWidth}px`; // 初始状态隐藏在右侧
-      leftBarParent.style.left = "auto"; // 清除可能的 left 定位
+      leftBarParent.style.position = 'absolute'
+      leftBarParent.style.right = `${leftBarWidth}px` // 初始状态隐藏在右侧
+      leftBarParent.style.left = 'auto' // 清除可能的 left 定位
 
       // 当需要显示时，调整 right 值
       if (this.shouldShowLeftBar()) {
-        leftBarParent.style.right = "0px"; // 显示时贴右边
+        leftBarParent.style.right = '0px' // 显示时贴右边
       }
 
       // 确保在移动端有合适的宽度
       if (window.innerWidth <= 768) {
-        const maxWidth = Math.min(leftBarWidth, window.innerWidth * 0.8); // 最大占屏幕80%
-        leftBarParent.style.width = `${maxWidth}px`;
+        const maxWidth = Math.min(leftBarWidth, window.innerWidth * 0.8) // 最大占屏幕80%
+        leftBarParent.style.width = `${maxWidth}px`
       }
 
       // 添加过渡动画
-      leftBarParent.style.transition = "right 0.3s ease-in-out";
+      leftBarParent.style.transition = 'right 0.3s ease-in-out'
     } catch (error) {
-      console.error("设置移动端左侧栏定位时出错:", error);
+      console.error('设置移动端左侧栏定位时出错:', error)
     }
   }
 
@@ -1710,112 +1581,102 @@ export class ChatCustomUI {
    */
   private updateMobileLeftBarPosition(): void {
     try {
-      const currentDoc = this.getCurrentDocument();
-      const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+      const currentDoc = this.getCurrentDocument()
+      const leftBarParent = currentDoc.getElementById('DIY-LEFT-BAR')
 
       if (leftBarParent) {
-        const leftBarWidth = leftBarParent.offsetWidth || 180;
+        const leftBarWidth = leftBarParent.offsetWidth || 180
 
         if (this.shouldShowLeftBar()) {
           // 显示：从右侧滑入到可视区域
-          leftBarParent.style.right = "0px";
+          leftBarParent.style.right = '0px'
         } else {
           // 隐藏：滑出到右侧不可视区域
-          leftBarParent.style.right = `${leftBarWidth}px`;
+          leftBarParent.style.right = `${leftBarWidth}px`
         }
       }
     } catch (error) {
-      console.error("更新移动端左侧栏位置时出错:", error);
+      console.error('更新移动端左侧栏位置时出错:', error)
     }
   }
 
   /**
    * 创建tooltip元素
    */
-  private createTooltipElement(
-    doc: Document,
-    id: string,
-    className: string
-  ): HTMLElement | null {
-    const tooltip = doc.createElement("div");
-    tooltip.id = id;
-    tooltip.className = className;
+  private createTooltipElement(doc: Document, id: string, className: string): HTMLElement | null {
+    const tooltip = doc.createElement('div')
+    tooltip.id = id
+    tooltip.className = className
 
     // 简化容器选择逻辑，直接添加到 body
-    const targetContainer = doc.body || doc.documentElement;
+    const targetContainer = doc.body || doc.documentElement
 
     if (targetContainer) {
-      targetContainer.appendChild(tooltip);
-      return tooltip;
+      targetContainer.appendChild(tooltip)
+      return tooltip
     }
 
-    console.warn(`无法创建tooltip元素: ${id}，找不到合适的容器`);
-    return null;
+    console.warn(`无法创建tooltip元素: ${id}，找不到合适的容器`)
+    return null
   }
 
   /**
    * 公共方法：手动设置左侧父元素样式
    * 可以在需要时随时调用
    */
-  public updateLeftBarZIndex(
-    zIndex = "999",
-    includeBoxShadow = true,
-    backgroundColor = "white"
-  ): void {
+  public updateLeftBarZIndex(zIndex = '999', includeBoxShadow = true, backgroundColor = 'white'): void {
     try {
-      const currentDoc = this.getCurrentDocument();
-      const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+      const currentDoc = this.getCurrentDocument()
+      const leftBarParent = currentDoc.getElementById('DIY-LEFT-BAR')
 
       if (leftBarParent) {
         // 设置z-index
-        leftBarParent.style.zIndex = zIndex;
+        leftBarParent.style.zIndex = zIndex
 
         // 可选设置box-shadow
         if (includeBoxShadow) {
-          leftBarParent.style.boxShadow = "-4px 0 8px rgba(0, 18, 46, 0.12)";
+          leftBarParent.style.boxShadow = '-4px 0 8px rgba(0, 18, 46, 0.12)'
         }
 
         // 设置背景色
-        leftBarParent.style.background = backgroundColor;
+        leftBarParent.style.background = backgroundColor
       } else {
-        console.warn("未找到 id 为 DIY-LEFT-BAR 的左侧父元素");
+        console.warn('未找到 id 为 DIY-LEFT-BAR 的左侧父元素')
       }
     } catch (error) {
-      console.error("手动设置左侧父元素样式时出错:", error);
+      console.error('手动设置左侧父元素样式时出错:', error)
     }
   }
 
   /**
    * 公共方法：单独设置左侧父元素的box-shadow
    */
-  public updateLeftBarBoxShadow(
-    boxShadow = "-4px 0 8px rgba(0, 18, 46, 0.12)"
-  ): void {
+  public updateLeftBarBoxShadow(boxShadow = '-4px 0 8px rgba(0, 18, 46, 0.12)'): void {
     try {
-      const currentDoc = this.getCurrentDocument();
-      const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+      const currentDoc = this.getCurrentDocument()
+      const leftBarParent = currentDoc.getElementById('DIY-LEFT-BAR')
 
       if (leftBarParent) {
-        leftBarParent.style.boxShadow = boxShadow;
+        leftBarParent.style.boxShadow = boxShadow
       }
     } catch (error) {
-      console.error("设置左侧父元素 box-shadow 时出错:", error);
+      console.error('设置左侧父元素 box-shadow 时出错:', error)
     }
   }
 
   /**
    * 公共方法：单独设置左侧父元素的背景色
    */
-  public updateLeftBarBackground(backgroundColor = "white"): void {
+  public updateLeftBarBackground(backgroundColor = 'white'): void {
     try {
-      const currentDoc = this.getCurrentDocument();
-      const leftBarParent = currentDoc.getElementById("DIY-LEFT-BAR");
+      const currentDoc = this.getCurrentDocument()
+      const leftBarParent = currentDoc.getElementById('DIY-LEFT-BAR')
 
       if (leftBarParent) {
-        leftBarParent.style.background = backgroundColor;
+        leftBarParent.style.background = backgroundColor
       }
     } catch (error) {
-      console.error("设置左侧父元素背景色时出错:", error);
+      console.error('设置左侧父元素背景色时出错:', error)
     }
   }
 
@@ -1833,4 +1694,4 @@ export class ChatCustomUI {
   }
 }
 
-export default ChatCustomUI;
+export default ChatCustomUI
