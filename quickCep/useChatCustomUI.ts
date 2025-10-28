@@ -40,6 +40,8 @@ export class ChatCustomUI {
   private eventHandlers: Map<string, Function>
   private onAgentStatusChangeCallback?: () => void
   private dataManager: CustomerServiceDataManager
+  private clickDebounceMap: Map<string, number> = new Map() // 防重复点击的映射表
+  private readonly CLICK_DEBOUNCE_TIME = 1000 // 防重复点击的时间间隔（毫秒）
 
   constructor(customerServiceData?: CustomerServiceAgent[]) {
     this.state = {
@@ -347,25 +349,7 @@ export class ChatCustomUI {
    * 如果该客服仍在线，则自动切换到该客服
    */
   restorePreviousSelectedAgent(): void {
-    const storedAgent = this.getStoredSelectedAgent()
-    if (!storedAgent) {
-      return
-    }
-
-    // 查找该客服是否存在且在线
-    const agent = this.state.customerServiceData.find((a) => a.quickCepId === storedAgent.quickCepId)
-
-    if (!agent) {
-      this.saveSelectedAgent(null) // 清除无效的存储
-      return
-    }
-
-    if (!agent.isOnline) {
-      return
-    }
-
-    // 如果客服在线，自动切换到该客服
-    // this.selectAgent(storedAgent.quickCepId, false) // false 表示不是用户主动选择，避免重复保存
+    //
   }
 
   /**
@@ -406,9 +390,8 @@ export class ChatCustomUI {
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#e0e0e0"/>
         <circle cx="${size / 2}" cy="${size * 0.35}" r="${size * 0.15}" fill="#999"/>
-        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${size * 0.75} ${
-      size * 0.75
-    }" stroke="#999" stroke-width="2" fill="none"/>
+        <path d="M${size * 0.25} ${size * 0.75} Q${size / 2} ${size * 0.6} ${size * 0.75} ${size * 0.75
+      }" stroke="#999" stroke-width="2" fill="none"/>
       </svg>
     `)}`
   }
@@ -441,7 +424,7 @@ export class ChatCustomUI {
     let currentAgentWentOffline = false
 
     this.state.customerServiceData.forEach((agent, index) => {
-      if (operatorUserIdStatus.hasOwnProperty(agent.quickCepId)) {
+      if (Object.prototype.hasOwnProperty.call(operatorUserIdStatus, agent.quickCepId)) {
         const newStatus = operatorUserIdStatus[agent.quickCepId]
         const oldStatus = agent.status
         const oldOnlineStatus = agent.isOnline
@@ -453,13 +436,16 @@ export class ChatCustomUI {
           agent.isOnline = newOnlineStatus
           hasStatusChanged = true
 
-          // Check if the currently selected agent went offline
-          if (
-            this.state.currentChatAgent &&
-            this.state.currentChatAgent.quickCepId === agent.quickCepId &&
-            !newOnlineStatus
-          ) {
-            currentAgentWentOffline = true
+          // 如果当前选中的客服状态发生变化，同步更新 currentChatAgent
+          if (this.state.currentChatAgent && this.state.currentChatAgent.quickCepId === agent.quickCepId) {
+            // 更新当前聊天客服的状态
+            this.state.currentChatAgent.status = newStatus
+            this.state.currentChatAgent.isOnline = newOnlineStatus
+
+            // 如果当前客服下线，标记需要清除
+            if (!newOnlineStatus) {
+              currentAgentWentOffline = true
+            }
           }
         }
       }
@@ -552,11 +538,42 @@ export class ChatCustomUI {
   private pendingSwitchAgentId: string | null = null
 
   /**
-   * 选择客服
+   * 检查是否可以点击（防重复点击）
+   * @param quickCepId 客服ID
+   * @returns 是否可以点击
+   */
+  private canClickAgent(quickCepId: string): boolean {
+    const now = Date.now()
+    const lastClickTime = this.clickDebounceMap.get(quickCepId) || 0
+
+    // 如果距离上次点击时间小于防抖时间，则不允许点击
+    if (now - lastClickTime < this.CLICK_DEBOUNCE_TIME) {
+      return false
+    }
+
+    return true
+  }
+
+  /**
+   * 记录点击时间
+   * @param quickCepId 客服ID
+   */
+  private recordClickTime(quickCepId: string): void {
+    this.clickDebounceMap.set(quickCepId, Date.now())
+  }
+
+  /**
+   * 选择客服（带防重复点击保护）
    * @param quickCepId 客服ID
    * @param saveToStorage 是否保存到本地存储，默认为true
    */
   selectAgent(quickCepId: string, saveToStorage = true): void {
+    // 防重复点击检查
+    if (!this.canClickAgent(quickCepId)) {
+      console.log(`客服 ${quickCepId} 点击过于频繁，请稍后再试`)
+      return
+    }
+
     const agent = this.state.customerServiceData.find((a) => a.quickCepId === quickCepId)
 
     if (!agent) {
@@ -565,19 +582,24 @@ export class ChatCustomUI {
     }
 
     if (!agent.isOnline) {
+      console.log(`客服 ${agent.employeeEnName} 当前不在线`)
       return
     }
 
     if (this.state.currentChatAgent && this.state.currentChatAgent.quickCepId === quickCepId) {
+      console.log(`已经在与客服 ${agent.employeeEnName} 聊天中`)
       return
     }
+
+    // 记录点击时间
+    this.recordClickTime(quickCepId)
 
     // 记住待切换的座席ID，等待 chat.switch.operator.success 事件
     this.pendingSwitchAgentId = quickCepId
 
     if (typeof window !== 'undefined' && (window as any).quickChatApi && (window as any).quickChatApi.switchChat) {
       try {
-        ;(window as any).quickChatApi.switchChat(quickCepId)
+        ; (window as any).quickChatApi.switchChat(quickCepId)
       } catch (error) {
         console.error('切换客服失败:', error)
         // 如果API调用失败，清除待切换的座席ID
@@ -703,19 +725,19 @@ export class ChatCustomUI {
     try {
       // 尝试在当前窗口中查找
       if (typeof window !== 'undefined' && (window as any).simpleOrderSelector) {
-        ;(window as any).simpleOrderSelector.toggle()
+        ; (window as any).simpleOrderSelector.toggle()
         return
       }
 
       // 尝试在父窗口中查找
       if (typeof window !== 'undefined' && window.parent && (window.parent as any).simpleOrderSelector) {
-        ;(window.parent as any).simpleOrderSelector.toggle()
+        ; (window.parent as any).simpleOrderSelector.toggle()
         return
       }
 
       // 尝试在顶级窗口中查找
       if (typeof window !== 'undefined' && window.top && (window.top as any).simpleOrderSelector) {
-        ;(window.top as any).simpleOrderSelector.toggle()
+        ; (window.top as any).simpleOrderSelector.toggle()
         return
       }
 
@@ -745,6 +767,9 @@ export class ChatCustomUI {
     // Before refreshing UI, check if current agent is still online
     // this.checkCurrentAgentStatus()
 
+    // 清理过期的点击记录
+    this.cleanupExpiredClickRecords()
+
     // 更新头部
     if (this.state.containers.header) {
       this.state.containers.header.innerHTML = this.generateHeaderHTML()
@@ -768,11 +793,126 @@ export class ChatCustomUI {
   }
 
   /**
+   * 安全的选择客服方法（用于onclick事件）
+   * @param quickCepId 客服ID
+   */
+  safeSelectAgent(quickCepId: string): void {
+    try {
+      this.selectAgent(quickCepId)
+    } catch (error) {
+      console.error('选择客服时发生错误:', error)
+    }
+  }
+
+  /**
+   * 安全的显示操作员弹框方法（用于onclick事件）
+   */
+  safeShowOperatorModal(): void {
+    try {
+      // 防重复点击检查
+      if (!this.canClickAgent('operator-modal')) {
+        console.log('操作员弹框点击过于频繁，请稍后再试')
+        return
+      }
+
+      // 记录点击时间
+      this.recordClickTime('operator-modal')
+
+      this.showOperatorModal()
+    } catch (error) {
+      console.error('显示操作员弹框时发生错误:', error)
+    }
+  }
+
+  /**
+   * 安全的切换左侧栏方法（用于onclick事件）
+   */
+  safeToggleLeftBar(): void {
+    try {
+      // 防重复点击检查
+      if (!this.canClickAgent('toggle-leftbar')) {
+        console.log('左侧栏切换点击过于频繁，请稍后再试')
+        return
+      }
+
+      // 记录点击时间
+      this.recordClickTime('toggle-leftbar')
+
+      this.toggleLeftBar()
+    } catch (error) {
+      console.error('切换左侧栏时发生错误:', error)
+    }
+  }
+
+  /**
+   * 安全的隐藏操作员弹框方法（用于onclick事件）
+   */
+  safeHideOperatorModal(): void {
+    try {
+      // 防重复点击检查
+      if (!this.canClickAgent('hide-operator-modal')) {
+        console.log('隐藏操作员弹框点击过于频繁，请稍后再试')
+        return
+      }
+
+      // 记录点击时间
+      this.recordClickTime('hide-operator-modal')
+
+      this.hideOperatorModal()
+    } catch (error) {
+      console.error('隐藏操作员弹框时发生错误:', error)
+    }
+  }
+
+  /**
+   * 清理过期的点击记录（防止内存泄漏）
+   */
+  private cleanupExpiredClickRecords(): void {
+    const now = Date.now()
+    const expiredKeys: string[] = []
+
+    this.clickDebounceMap.forEach((timestamp, key) => {
+      if (now - timestamp > this.CLICK_DEBOUNCE_TIME * 2) {
+        // 保留2倍防抖时间的记录
+        expiredKeys.push(key)
+      }
+    })
+
+    expiredKeys.forEach((key) => {
+      this.clickDebounceMap.delete(key)
+    })
+  }
+
+  /**
+   * 销毁实例时的清理工作
+   */
+  destroy(): void {
+    // 清理点击记录
+    this.clickDebounceMap.clear()
+
+    // 清理事件处理器
+    this.eventHandlers.clear()
+
+    // 清理全局方法
+    if (typeof window !== 'undefined') {
+      delete (window as any).handleOrderButtonClick
+      delete (window as any).safeSelectAgent
+      delete (window as any).safeShowOperatorModal
+      delete (window as any).safeToggleLeftBar
+      delete (window as any).safeHideOperatorModal
+    }
+  }
+
+  /**
    * 绑定全局事件处理器
    */
   private bindGlobalEventHandlers(): void {
     if (typeof window !== 'undefined') {
-      ;(window as any).handleOrderButtonClick = () => this.handleOrderButtonClick()
+      ; (window as any).handleOrderButtonClick = () => this.handleOrderButtonClick()
+        ; (window as any).safeSelectAgent = (quickCepId: string) => this.safeSelectAgent(quickCepId)
+        ; (window as any).safeShowOperatorModal = () => this.safeShowOperatorModal()
+        ; (window as any).safeToggleLeftBar = () => this.safeToggleLeftBar()
+        ; (window as any).safeHideOperatorModal = () => this.safeHideOperatorModal()
     }
   }
 
@@ -805,11 +945,11 @@ export class ChatCustomUI {
 
             modalContainer.innerHTML = `
               ${this.generateOperatorModalStyles()}
-              <div class="operator-modal-backdrop" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).hideOperatorModal()">
+              <div class="operator-modal-backdrop" onclick="try { (window.safeHideOperatorModal || window.parent.safeHideOperatorModal || (window.chatUI && window.chatUI.safeHideOperatorModal) || (window.parent.chatUI && window.parent.chatUI.safeHideOperatorModal))(); } catch(e) { console.error('点击背景关闭弹框时出错:', e); }">
                 <div class="operator-modal-popup" onclick="event.stopPropagation()">
                   <div class="operator-modal-header">
                     <span class="operator-modal-title">Group</span>
-                    <span class="operator-modal-close" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).hideOperatorModal()">×</span>
+                    <span class="operator-modal-close" onclick="try { (window.safeHideOperatorModal || window.parent.safeHideOperatorModal || (window.chatUI && window.chatUI.safeHideOperatorModal) || (window.parent.chatUI && window.parent.chatUI.safeHideOperatorModal))(); } catch(e) { console.error('点击关闭按钮时出错:', e); }">×</span>
                   </div>
                   <div class="operator-modal-list">
                     ${this.renderOperatorModalList()}
@@ -857,11 +997,11 @@ export class ChatCustomUI {
 
     modalContainer.innerHTML = `
       ${this.generateOperatorModalStyles()}
-      <div class="operator-modal-backdrop" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).hideOperatorModal()">
+      <div class="operator-modal-backdrop" onclick="try { (window.safeHideOperatorModal || window.parent.safeHideOperatorModal || (window.chatUI && window.chatUI.safeHideOperatorModal) || (window.parent.chatUI && window.parent.chatUI.safeHideOperatorModal))(); } catch(e) { console.error('点击背景关闭弹框时出错:', e); }">
         <div class="operator-modal-popup" onclick="event.stopPropagation()">
           <div class="operator-modal-header">
             <span class="operator-modal-title">Group</span>
-            <span class="operator-modal-close" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).hideOperatorModal()">×</span>
+            <span class="operator-modal-close" onclick="try { (window.safeHideOperatorModal || window.parent.safeHideOperatorModal || (window.chatUI && window.chatUI.safeHideOperatorModal) || (window.parent.chatUI && window.parent.chatUI.safeHideOperatorModal))(); } catch(e) { console.error('点击关闭按钮时出错:', e); }">×</span>
           </div>
           <div class="operator-modal-list">
             ${this.renderOperatorModalList()}
@@ -1130,11 +1270,10 @@ export class ChatCustomUI {
           ${shouldShowOperatorAgents ? this.renderOperatorAgents(operatorAgentsToShow) : ''}
           ${shouldShowOperatorMoreIndicator ? this.renderOperatorMoreAgentsIndicator(operatorAgentsCount) : ''}
           ${shouldShowOpenIcon ? this.renderOpenLeftBarIcon() : ''}
-          ${
-            onlineAgents.length === 0 && !this.state.currentChatAgent
-              ? `<div class="no-agents"></div>` // No agents online
-              : ''
-          }
+          ${onlineAgents.length === 0 && !this.state.currentChatAgent
+        ? `<div class="no-agents"></div>` // No agents online
+        : ''
+      }
         </div>
       </div>
       <div id="agent-tooltip" class="agent-tooltip"></div>
@@ -1168,11 +1307,10 @@ export class ChatCustomUI {
     return `
       <div class="current-agent selected" 
            title="Current Chat: ${agent.employeeEnName}"
-           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
-             agent.employeeEnName || agent.employeeNameEn
-           }', '${agent.roleNameEn || ''}', '${this.getAvatarUrl(
-      agent.imageFileIndexId
-    )}'); } catch(e) { console.error('Tooltip error:', e); }"
+           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${agent.employeeEnName || agent.employeeNameEn
+      }', '${agent.roleNameEn || ''}', '${this.getAvatarUrl(
+        agent.imageFileIndexId
+      )}'); } catch(e) { console.error('Tooltip error:', e); }"
            onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }">
         <div class="agent-avatar-wrapper">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
@@ -1187,35 +1325,6 @@ export class ChatCustomUI {
   }
 
   /**
-   * 渲染在线客服
-   */
-  private renderOnlineAgents(displayAgents: CustomerServiceAgent[]): string {
-    return displayAgents
-      .filter((agent) => !this.state.currentChatAgent || agent.quickCepId !== this.state.currentChatAgent.quickCepId)
-      .map(
-        (agent) => `
-        <div class="online-agent"
-             onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${
-               agent.quickCepId
-             }')"
-             onmouseover="try { (window.chatUI || window.parent.chatUI).showTooltip(event, '${
-               agent.employeeEnName
-             }', '${agent.roleNameEn}', '${this.getAvatarUrl(
-          agent.imageFileIndexId
-        )}'); } catch(e) { console.error('Tooltip error:', e); }"
-             onmouseout="try { (window.chatUI || window.parent.chatUI).hideTooltip(); } catch(e) { console.error('Hide tooltip error:', e); }"
-             title="${agent.employeeEnName} - ${agent.roleNameEn}">
-          <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
-               class="agent-avatar online"
-               onerror="this.src='${this.getDefaultAvatar(28)}'">
-          <div class="status-indicator" style="background: ${this.getStatusColor(agent.status)};"></div>
-        </div>
-      `
-      )
-      .join('')
-  }
-
-  /**
    * 渲染操作员客服（可点击展示弹框）
    */
   private renderOperatorAgents(operatorAgents: CustomerServiceAgent[]): string {
@@ -1224,7 +1333,7 @@ export class ChatCustomUI {
         (agent) => `
         <div class="operator-agent" 
              title="${agent.employeeEnName} - ${agent.roleNameEn}"
-             onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).showOperatorModal()">
+             onclick="try { (window.safeShowOperatorModal || window.parent.safeShowOperatorModal || (window.chatUI && window.chatUI.safeShowOperatorModal) || (window.parent.chatUI && window.parent.chatUI.safeShowOperatorModal))(); } catch(e) { console.error('点击操作员时出错:', e); }">
           <img src="${this.getAvatarUrl(agent.imageFileIndexId)}"
                class="agent-avatar operator"
                onerror="this.src='${this.getDefaultAvatar(28)}'">
@@ -1242,7 +1351,7 @@ export class ChatCustomUI {
     const displayCount = totalCount - 3 // 显示的数量减去已显示的3个
     return `
       <div class="operator-more-agents"
-           onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).showOperatorModal()"
+           onclick="try { (window.safeShowOperatorModal || window.parent.safeShowOperatorModal || (window.chatUI && window.chatUI.safeShowOperatorModal) || (window.parent.chatUI && window.parent.chatUI.safeShowOperatorModal))(); } catch(e) { console.error('点击更多操作员时出错:', e); }"
            title="View All Operators (${totalCount} total)">
         •••
       </div>
@@ -1256,7 +1365,7 @@ export class ChatCustomUI {
     const displayCount = availableCount - 3
     return `
       <div class="more-agents"
-           onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()"
+           onclick="try { (window.safeToggleLeftBar || window.parent.safeToggleLeftBar || (window.chatUI && window.chatUI.safeToggleLeftBar) || (window.parent.chatUI && window.parent.chatUI.safeToggleLeftBar))(); } catch(e) { console.error('点击更多客服时出错:', e); }"
            title="View More Agents (${availableCount} available)">
         +${displayCount}
       </div>
@@ -1269,7 +1378,7 @@ export class ChatCustomUI {
   private renderOpenLeftBarIcon(): string {
     return `
       <div class="open-leftbar-icon"
-           onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()"
+           onclick="try { (window.safeToggleLeftBar || window.parent.safeToggleLeftBar || (window.chatUI && window.chatUI.safeToggleLeftBar) || (window.parent.chatUI && window.parent.chatUI.safeToggleLeftBar))(); } catch(e) { console.error('点击打开左侧栏时出错:', e); }"
            title="Open Agent List">
         <svg t="1758522231178" class="expand-icon-reverse" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
               <path d="M636.501333 383.658667a37.973333 37.973333 0 0 1 41.898667 62.762666l-3.157333 2.304-99.925334 66.645334 103.210667 86.016a37.930667 37.930667 0 1 1-48.554667 58.24l-142.250666-118.485334a37.973333 37.973333 0 0 1 3.242666-60.714666L633.173333 385.706667l3.328-2.005334zM308.181333 891.306667V156.416a37.930667 37.930667 0 1 1 75.818667 0v734.805333a37.930667 37.930667 0 0 1-75.818667 0z" fill="#999" p-id="15574"></path>
@@ -1290,18 +1399,17 @@ export class ChatCustomUI {
       <div class="left-bar${this.isMobileDevice() ? ' mobile' : ''}">
         <div class="left-bar-content">
           ${Object.entries(groupedAgents)
-            .map(([businessLine, agents]) => this.renderBusinessLineGroup(businessLine, agents))
-            .join('')}
+        .map(([businessLine, agents]) => this.renderBusinessLineGroup(businessLine, agents))
+        .join('')}
         </div>
         <div class="left-bar-footer${this.isMobileDevice() ? ' mobile' : ''}">
-            <svg onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()" t="1758522231178" class="expand-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
+            <svg onclick="try { (window.safeToggleLeftBar || window.parent.safeToggleLeftBar || (window.chatUI && window.chatUI.safeToggleLeftBar) || (window.parent.chatUI && window.parent.chatUI.safeToggleLeftBar))(); } catch(e) { console.error('点击收起左侧栏时出错:', e); }" t="1758522231178" class="expand-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15573" width="20" height="20">
               <path d="M636.501333 383.658667a37.973333 37.973333 0 0 1 41.898667 62.762666l-3.157333 2.304-99.925334 66.645334 103.210667 86.016a37.930667 37.930667 0 1 1-48.554667 58.24l-142.250666-118.485334a37.973333 37.973333 0 0 1 3.242666-60.714666L633.173333 385.706667l3.328-2.005334zM308.181333 891.306667V156.416a37.930667 37.930667 0 1 1 75.818667 0v734.805333a37.930667 37.930667 0 0 1-75.818667 0z" fill="#999" p-id="15574"></path>
               <path d="M749.056 862.848V938.666667H274.986667v-75.818667h474.026666z m113.792-113.792V274.944a113.792 113.792 0 0 0-113.792-113.792H274.986667a113.792 113.792 0 0 0-113.792 113.792v474.112a113.792 113.792 0 0 0 113.792 113.792V938.666667l-9.770667-0.256a189.653333 189.653333 0 0 1-179.626667-179.626667L85.333333 749.056V274.944a189.653333 189.653333 0 0 1 179.882667-189.354667L274.986667 85.333333h474.026666l9.813334 0.256A189.610667 189.610667 0 0 1 938.666667 274.944v474.112l-0.256 9.728a189.653333 189.653333 0 0 1-179.626667 179.626667l-9.728 0.256v-75.818667a113.834667 113.834667 0 0 0 113.792-113.792z" fill="#999" p-id="15575"></path>
             </svg>
         </div>
-        <div class="left-bar-close-btn${
-          this.isMobileDevice() ? ' mobile' : ''
-        }" onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).toggleLeftBar()">
+        <div class="left-bar-close-btn${this.isMobileDevice() ? ' mobile' : ''
+      }" onclick="try { (window.safeToggleLeftBar || window.parent.safeToggleLeftBar || (window.chatUI && window.chatUI.safeToggleLeftBar) || (window.parent.chatUI && window.parent.chatUI.safeToggleLeftBar))(); } catch(e) { console.error('点击关闭左侧栏时出错:', e); }">
           <svg width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 4L4 12M4 4L12 12" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -1335,16 +1443,14 @@ export class ChatCustomUI {
 
     return `
       <div class="agent-item ${isCurrentChat ? 'current' : ''} ${isOnline ? 'online' : 'offline'}"
-           ${
-             canClick
-               ? `onclick="(window.chatUI || window.parent.chatUI) && (window.chatUI || window.parent.chatUI).selectAgent('${agent.quickCepId}')"`
-               : ''
-           }
-           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${
-             agent.employeeEnName
-           }', '${agent.roleNameEn}', '${this.getAvatarUrl(
-      agent.imageFileIndexId
-    )}'); } catch(e) { console.error('Full tooltip error:', e); }"
+           ${canClick
+        ? `onclick="try { (window.safeSelectAgent || window.parent.safeSelectAgent || (window.chatUI && window.chatUI.safeSelectAgent) || (window.parent.chatUI && window.parent.chatUI.safeSelectAgent))('${agent.quickCepId}'); } catch(e) { console.error('点击客服时出错:', e); }"`
+        : ''
+      }
+           onmouseover="try { (window.chatUI || window.parent.chatUI).showFullTooltip(event, '${agent.employeeEnName
+      }', '${agent.roleNameEn}', '${this.getAvatarUrl(
+        agent.imageFileIndexId
+      )}'); } catch(e) { console.error('Full tooltip error:', e); }"
            onmouseout="try { (window.chatUI || window.parent.chatUI).hideFullTooltip(); } catch(e) { console.error('Hide full tooltip error:', e); }">
 
         <div class="agent-avatar-container">

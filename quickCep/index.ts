@@ -1,3 +1,4 @@
+import { getEnvConfig } from '../common'
 import { ChatManager } from './useChatManager'
 import { ChatCustomUI } from './useChatCustomUI'
 import { ChatStyles } from './useChatStyles'
@@ -39,15 +40,42 @@ export const initQuickCep = (rawCustomerServiceData = {}) => {
     }
   }
 
-  // // Set QuickChat ready callback
-
-  // initFn()
-
-  if (window.$nuxt.$store.state.isQuickCepReady) {
+  window.quickChatReadyHook = () => {
     initFn()
-  } else {
-    window.quickChatReadyHook = () => {
-      initFn()
-    }
   }
+}
+
+// 动态加载快牛脚本
+export function loadQuickCepScript() {
+  const envConfig = getEnvConfig()
+  const store = window.$nuxt.$store
+  const userStore = store.state.user
+  const userInfo = userStore.info
+
+  let quickCepUrl = envConfig.QUICK_CEP_URL
+
+  // 拼接 visitorId 参数
+  const separator = quickCepUrl.includes('?') ? '&' : '?'
+
+  if (userInfo && userInfo.customerCode) {
+    quickCepUrl = `${quickCepUrl}${separator}visitorId=${userInfo.customerCode}`
+  }
+  console.log('开始加载快牛脚本:', quickCepUrl)
+
+  const script = document.createElement('script')
+  script.src = quickCepUrl
+  script.setAttribute('data-quick-cep', 'true')
+
+  // 添加加载成功和失败的回调
+  script.onload = () => {
+    console.log('快牛脚本加载成功')
+    // 脚本加载成功后，执行快牛相关初始化
+    // 初始化快牛员工信息
+    initQuickCep(userStore.quickChatEmployeeInfo || {})
+  }
+  script.onerror = () => {
+    console.error('快牛脚本加载失败')
+  }
+
+  document.head.appendChild(script)
 }

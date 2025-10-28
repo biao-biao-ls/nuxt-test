@@ -1,4 +1,5 @@
 import { getImEmployeeInfoByQuickCepId } from '../../apis'
+import { getMessages } from '../imMessage'
 import { ChatCustomUI } from './useChatCustomUI'
 import { SimpleOrderSelector } from './useSimpleOrderSelector'
 import {
@@ -31,7 +32,7 @@ export class ChatManager {
    * 初始化聊天系统
    * @param customerServiceData 客服数据，可以是数组格式或分组格式
    */
-  async init(customerServiceData?: CustomerServiceAgent[] | GroupedCustomerServiceData): Promise<void> {
+  async init(customerServiceData?: GroupedCustomerServiceData): Promise<void> {
     if (this.isInitialized) {
       return
     }
@@ -41,20 +42,24 @@ export class ChatManager {
       await this.waitForAPI()
 
       // 处理客服数据格式转换
-      let finalCustomerServiceData: CustomerServiceAgent[] | undefined
-
+      const finalCustomerServiceData: CustomerServiceAgent[] = []
       if (customerServiceData) {
-        if (Array.isArray(customerServiceData)) {
-          // 如果传入的是数组格式，直接使用
-          finalCustomerServiceData = customerServiceData
-        } else {
-          // 如果传入的是分组格式，转换为数组格式
-          finalCustomerServiceData = CustomerServiceDataManager.convertToArrayFormat(customerServiceData)
+        for (const [businessLine, agents] of Object.entries(customerServiceData)) {
+          for (const agent of agents) {
+            finalCustomerServiceData.push({
+              employeeEnName: (agent as any).employeeNameEn || agent.employeeEnName,
+              quickCepId: agent.quickCepId,
+              imageFileIndexId: agent.imageFileIndexId,
+              roleNameEn: agent.roleNameEn,
+              isOnline: agent.isOnline ?? false,
+              status: agent.status ?? 1,
+              businessLine: agent.businessLine || businessLine
+            })
+          }
         }
-      } else if (this.customerServiceData) {
-        // 使用构造函数中的数据
-        finalCustomerServiceData = this.customerServiceData
       }
+
+      console.log('finalCustomerServiceData', finalCustomerServiceData)
 
       // 创建UI管理器实例
       this.chatUI = new ChatCustomUI(finalCustomerServiceData)
@@ -74,8 +79,8 @@ export class ChatManager {
 
       // 设置全局引用
       if (typeof window !== 'undefined') {
-        ;(window as any).chatUI = this.chatUI
-        ;(window as any).simpleOrderSelector = this.simpleOrderSelector
+        ; (window as any).chatUI = this.chatUI
+          ; (window as any).simpleOrderSelector = this.simpleOrderSelector
       }
 
       // Mount custom components
@@ -102,7 +107,7 @@ export class ChatManager {
       this.isInitialized = true
 
       // 在移动端自动打开聊天窗口
-      this.autoOpenChatOnMobile()
+      // this.autoOpenChatOnMobile()
     } catch (error) {
       console.error('Chat system initialization failed:', error)
       throw error
@@ -323,6 +328,7 @@ export class ChatManager {
                   const chatWrapWidth = chatWrap.offsetWidth
                   const diyLeftBarWidth = diyLeftBar ? diyLeftBar.offsetWidth : 0
                   const newIframeWidth = chatWrapWidth + diyLeftBarWidth + 60
+                  window.parent.postMessage(getMessages('resizeIframe', { width: newIframeWidth, height }), '*')
                   // 设置 iframe 的宽度
                   iframe.style.width = `${newIframeWidth}px`
                 } else {
@@ -333,6 +339,7 @@ export class ChatManager {
               console.warn('访问 iframe 内容时出错:', error)
             }
           } else {
+            window.parent.postMessage(getMessages('resizeIframe', { width, height }), '*')
             console.log(`iframe 高度 ${height}px <= 350px，跳过宽度调整`)
           }
         }
@@ -386,6 +393,7 @@ export class ChatManager {
   private fetchAgentStatus(): void {
     if (typeof window !== 'undefined' && window.quickChatApi?.emitGetAllOperatorStatus && this.chatUI) {
       const allQuickCepIds = this.chatUI.state.customerServiceData.map((agent) => agent.quickCepId)
+      console.log(allQuickCepIds)
       window.quickChatApi.emitGetAllOperatorStatus(allQuickCepIds)
       console.log('触发获取座席状态数据:', allQuickCepIds)
     }
@@ -395,74 +403,6 @@ export class ChatManager {
    * Handle operator list changes
    */
   private async handleOperatorListChange(data: any): Promise<void> {
-    // data = [
-    //   {
-    //     operatorId: '1942107108466016257',
-    //     profilePhoto:
-    //       'https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png',
-    //     profilePhotoColor: '#36CFC9',
-    //     firstName: '覃安',
-    //     lastName: '',
-    //     nickName: null,
-    //     onlineStatus: 1,
-    //     name: '覃安'
-    //   },
-    //   {
-    //     operatorId: '1938524999731687426',
-    //     profilePhoto:
-    //       'https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png',
-    //     profilePhotoColor: '#36CFC9',
-    //     firstName: '覃安',
-    //     lastName: '',
-    //     nickName: null,
-    //     onlineStatus: 1,
-    //     name: '覃安'
-    //   },
-    //   {
-    //     operatorId: '1942407035945005058',
-    //     profilePhoto:
-    //       'https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png',
-    //     profilePhotoColor: '#36CFC9',
-    //     firstName: '覃安',
-    //     lastName: '',
-    //     nickName: null,
-    //     onlineStatus: 1,
-    //     name: '覃安'
-    //   },
-    //   {
-    //     operatorId: '1938144757068906498',
-    //     profilePhoto:
-    //       'https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png',
-    //     profilePhotoColor: '#36CFC9',
-    //     firstName: '覃安',
-    //     lastName: '',
-    //     nickName: null,
-    //     onlineStatus: 1,
-    //     name: '覃安'
-    //   },
-    //   {
-    //     operatorId: '1946056607741292545',
-    //     profilePhoto:
-    //       'https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png',
-    //     profilePhotoColor: '#36CFC9',
-    //     firstName: '覃安',
-    //     lastName: '',
-    //     nickName: null,
-    //     onlineStatus: 1,
-    //     name: '覃安'
-    //   },
-    //   {
-    //     operatorId: '1938475369237098497',
-    //     profilePhoto:
-    //       'https://jlc-uat-quickcep-overseas.oss-eu-central-1.aliyuncs.com/9624/settings//avatar/1150398853380308992/a5225fcb-e662-4047-b1a4-d81b0790d8c7.png',
-    //     profilePhotoColor: '#36CFC9',
-    //     firstName: '覃安',
-    //     lastName: '',
-    //     nickName: null,
-    //     onlineStatus: 1,
-    //     name: '覃安'
-    //   }
-    // ]
     if (!this.chatUI) return
     // Handle operator list changes
     if (data && Array.isArray(data) && data.length > 0) {
@@ -500,7 +440,7 @@ export class ChatManager {
           }
         }
       }
-
+      newData.reverse()
       const matchedAgent = newData[0]
 
       console.log('找到匹配的客服:', matchedAgent)
@@ -509,7 +449,7 @@ export class ChatManager {
       this.chatUI.state.currentChatAgent = matchedAgent
 
       // 将 newData 传递给 ChatCustomUI，用于头部多客服渲染
-      this.chatUI.setOperatorListData(newData)
+      // this.chatUI.setOperatorListData(newData)
 
       // 注意：客服的在线状态应该通过 'chat.operator.status' 事件的 data.operatorUserIdStatus 来更新
       // 这里不直接更新状态，而是依赖 chat.operator.status 事件来更新客服状态
@@ -977,8 +917,7 @@ export class ChatManager {
         console.log('=== 当前客服状态 ===')
         this.chatUI.state.customerServiceData.forEach((agent) => {
           console.log(
-            `${agent.employeeEnName}: ${this.chatUI!.getStatusText(agent.status)} (${
-              agent.isOnline ? 'Online' : 'Offline'
+            `${agent.employeeEnName}: ${this.chatUI!.getStatusText(agent.status)} (${agent.isOnline ? 'Online' : 'Offline'
             })`
           )
         })
@@ -1012,7 +951,7 @@ export class ChatManager {
       testSwitchAgent: (quickCepId: string) => {
         console.log(`Testing switch to agent ID: ${quickCepId}`)
         if (this.chatUI) {
-          this.chatUI.selectAgent(quickCepId)
+          this.chatUI.safeSelectAgent(quickCepId)
         }
       },
 
@@ -1292,7 +1231,7 @@ export class ChatManager {
             // 等待一下再检查
             setTimeout(() => {
               if (typeof window !== 'undefined' && (window as any).debugQuickChat) {
-                ;(window as any).debugQuickChat.checkStyleInjection()
+                ; (window as any).debugQuickChat.checkStyleInjection()
               }
             }, 1000)
           } else {
@@ -1658,7 +1597,7 @@ export class ChatManager {
   private bindGlobalEventHandlers(): void {
     if (typeof window !== 'undefined' && this.chatUI) {
       // 绑定到当前窗口
-      ;(window as any).handleOrderButtonClick = () => this.chatUI?.handleOrderButtonClick()
+      ; (window as any).handleOrderButtonClick = () => this.chatUI?.handleOrderButtonClick()
 
       // 延迟绑定到 iframe 窗口，确保 iframe 内容已加载
       setTimeout(() => {
@@ -1675,7 +1614,7 @@ export class ChatManager {
       const iframe = document.getElementById('quick-chat-iframe') as HTMLIFrameElement
       if (iframe && iframe.contentWindow && iframe.contentDocument) {
         // 绑定函数到 iframe 的全局作用域
-        ;(iframe.contentWindow as any).handleOrderButtonClick = () => this.chatUI?.handleOrderButtonClick()
+        ; (iframe.contentWindow as any).handleOrderButtonClick = () => this.chatUI?.handleOrderButtonClick()
 
         // 创建一个脚本元素来确保函数在 iframe 内部可用
         const script = iframe.contentDocument.createElement('script')
